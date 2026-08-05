@@ -62,6 +62,7 @@ h2{margin-top:32px;}
 <a href="index.html"><button style="background:#00ffff;">Oversikt</button></a>
 <a href="stilling.html"><button>Stilling</button></a>
 <a href="styre.html"><button>Styre / Admin</button></a>
+<a href="veiledning.html"><button>Veiledning</button></a>
 </div>
 
 <h2>Lenker</h2>
@@ -86,56 +87,8 @@ h2{margin-top:32px;}
 <a class="linkbox" href="https://open.spotify.com/playlist/2graQbGg284bjZItDd1AbF?si=cdPwvm8yRjin5GYmtFmn2w" target="_blank"><b>Spotify - Før kamp</b><span>Intro-/oppvarmingslåter</span></a>
 <a class="linkbox" href="https://open.spotify.com/playlist/2Y2YYQiKsmLwjcFiIoRTEy" target="_blank"><b>Spotify - Kategorier Quiz2</b><span>Låter til kategorirunder</span></a>
 
-<h2>Hvordan regnearket brukes</h2>
-<p>Google-regnearket fungerer som selve databasen bak quizzen. Alt av lag, runder, fasit, svar, poeng, buzzertrykk, kategorier og opp-/nedrykkspillet lagres i egne faner (ark) i regnearket. Under en quizkveld skal du <b>ikke</b> trenge å redigere noe i regnearket direkte - alt styres fra Styre/Admin-siden.</p>
-<p>Kort om de viktigste arkene:</p>
-<ul>
-<li><b>QuizLag</b> - lagnavn, bordnummer og divisjon. Opprettes med "Generer lagrader" på Styre-siden.</li>
-<li><b>Runder</b> - sangene og fasiten for hver runde, samt status (åpen/lukket) for hvilken runde som spilles.</li>
-<li><b>Svar</b> - svarene lagene sender inn.</li>
-<li><b>Poengsum</b> - poengsummen til hvert lag.</li>
-<li><b>Buzzer</b> - hvem som trykket først på buzzeren, og når.</li>
-<li><b>KategoriBrukt</b> - hvilke kategorier som er brukt i kategori-trekningen.</li>
-<li><b>Opprykk</b> - status og fremdrift i opp-/nedrykksspillet.</li>
-<li><b>Finale</b> - status og poeng i finalen.</li>
-</ul>
-<p>Hvis noe skulle gå galt underveis, finnes det egne nullstillingsknapper for lag, poeng, opprykksspill og finale på Styre/Admin-siden (under "⚠ Nullstilling") - disse er trygge å bruke fra appen i stedet for å redigere regnearket manuelt.</p>
-
-<h2>Slik gjennomfører du en quiz</h2>
-<ol>
-<li><b>Sett opp lag.</b> Gå til Admin-siden og opprett alle lagene med navn, divisjon (1 eller 2) og bordnummer. Trykk lagre - QR-koder og lenker genereres automatisk for hvert lag.</li>
-<li><b>Del ut lenker/QR-koder.</b> Hvert lag skanner sin QR-kode eller åpner sin lenke på en mobil/nettbrett ved bordet.</li>
-<li><b>Spill av sangene.</b> Runde 1 er åpen fra start. Spill de 3 sangene for runden.</li>
-<li><b>Lagene svarer.</b> Hvert lag fyller inn Artist, Låt og Årstall for de 3 sangene på sin side, og trykker Send inn svar.</li>
-<li><b>Beregn poeng.</b> Når alle lag har svart: gå til Styre-siden. Fasit er allerede fylt inn automatisk fra regnearket (Ark 12). Trykk "Beregn poeng og lukk runde". Systemet gir 1p for riktig artist, 2p for riktig låt og 3p for riktig årstall (pluss/minus 1 år godkjennes), med toleranse for små skrivefeil.</li>
-<li><b>Vis stilling.</b> Åpne Stilling-siden på en skjerm alle kan se - den viser 1. og 2. divisjonstabell og oppdaterer seg selv.</li>
-<li><b>Åpne neste runde.</b> Trykk "Åpne runde" på Styre-siden og gjenta fra steg 3 for rundene 2-5.</li>
-<li><b>Etter runde 5:</b> opp-/nedrykksspillet mellom divisjonene - se detaljert fremgangsmåte i <a href="#trekningdetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
-<li><b>Runde 6</b> spilles som normalt, deretter <b>finale</b> for topp 3 lag i 1. divisjon - se detaljert fremgangsmate i <a href="#finaledetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
-</ol>
-
-<h2 id="trekningdetaljer">Slik gjennomføres kategori-trekningen (opp-/nedrykkspill)</h2>
-<ol>
-<li><b>Forutsetning.</b> Etter runde 5 beregnes stillingen automatisk. Nest nederste og nederste lag i 1. divisjon møter nr. 2 i 2. divisjon.</li>
-<li><b>Start opprykksspillet.</b> Klikk "Start opprykksspill" på Styre-siden. De tre lagene vises.</li>
-<li><b>Åpne Trekningssiden.</b> Klikk "Åpne trekningsside" på Styre-siden (åpnes i ny fane - vis på storskjerm).</li>
-<li><b>Kryss av brukte kategorier.</b> Nederst på Trekningssiden ligger en liste med avkrysningsbokser for alle kategorier som alt er brukt tidligere på kvelden, slik at de ikke kan trekkes på nytt. Avkrysning lagres automatisk med en gang.</li>
-<li><b>Start trekningen.</b> Klikk "Start trekning". Systemet trekker 4 tilfeldige kategorier blant de som ikke er krysset av (minst 4 ledige kreves), med animasjon og lyd.</li>
-<li><b>Laget velger kategori.</b> Gå til Styre-siden - de 4 trukne kategoriene vises som knapper. Klikk kategorien laget velger. Den krysses da automatisk av som brukt på Trekningssiden.</li>
-<li><b>Spill av og registrer vinner.</b> Styre-siden viser sangene i valgt kategori en etter en. Klikk laget som svarer riktig, eller "Ingen riktig / hopp over".</li>
-<li><b>Poenglikhet.</b> Ved likt poeng velger admin manuelt hvilket lag som rykker ned.</li>
-<li><b>Trekke på nytt.</b> For å gjøre trekningen på nytt: gå til regnearket, fane "Opprykk", og endre celle A2 fra "velger" til "trekker". Styre-siden på nytt - "Start trekning"-knappen er da tilbake.</li>
-</ol>
-
-<h2 id="finaledetaljer">Slik gjennomføres finalen</h2>
-<ol>
-<li><b>Hvem kvalifiserer.</b> De tre lagene med høyest poengsum i 1. divisjon etter siste runde - automatisk basert på stillingen, ingen manuell utvelgelse.</li>
-<li><b>Start finalen.</b> Gå til Styre-siden og trykk "Start finale" på Finale-kortet. Dette nullstiller finalepoengene til 0 for de tre lagene og lukker buzzeren.</li>
-<li><b>Buzzer-runde.</b> Les opp et spørsmål og åpne buzzeren på Buzzer-kortet. Kun de tre finalelagene ser en BUZZ-knapp på sin lag-side så lenge finalen pågår - de andre lagene ser ingen buzzer i det hele tatt.</li>
-<li><b>Gi poeng.</b> Når et lag har buzzet og svart riktig, trykk "+1" for laget på Finale-kortet. Steng/nullstill buzzeren for neste spørsmål og gjenta.</li>
-<li><b>Avslutt.</b> Trykk "Avslutt finale" for å kåre vinneren (høyest poengsum). "Nullstill finale" tilbakestiller hvis du må gjøre om.</li>
-<li><b>Visning.</b> Det er ikke laget noen egen storskjermside for finalen - alt styres og vises fra Styre-siden.</li>
-</ol>
+<h2>Slik gjennomføres en quizrunde</h2>
+<a class="linkbox" href="veiledning.html"><b>Veiledning: Slik gjennomføres en quizkveld</b><span>Full steg-for-steg forklaring med diagrammer - fra lag-oppsett og hver runde, til opp-/nedrykk, finale og hvordan regnearket brukes</span></a>
 
 <h2>Status på systemet</h2>
 <ul>
@@ -144,17 +97,6 @@ h2{margin-top:32px;}
 <li>Midlertidig web-buzzer (enkel trykknapp, egen storskjermside) <span class="status ferdig">klart</span></li>
 <li>Finale-modus (buzzer-runde for topp 3 i 1. divisjon) <span class="status ferdig">klart</span></li>
 </ul>
-
-<h2>Slik gjennomføres en quizkveld - steg for steg</h2>
-<div class="flow">
-<div class="flow-step"><div class="flow-num">1</div><h3>Lag-oppsett</h3><p>Opprett lag, sett divisjon og bord, og generer QR-koder/lenker til hvert lag på Admin/Styre-siden.</p></div>
-<div class="flow-step"><div class="flow-num">2</div><h3>Runde 1-5</h3><p>Hvert lag svarer på 3 sanger per runde. Fasit hentes automatisk og poeng beregnes for runde.</p></div>
-<div class="flow-step"><div class="flow-num">3</div><h3>Stilling</h3><p>Stillingen i 1. og 2. divisjon vises live på storskjerm mellom hver runde.</p></div>
-<div class="flow-step"><div class="flow-num">4</div><h3>Opp-/nedrykk</h3><p>Etter runde 5: kategori-trekning på storskjermen. Laget som møter i trekningen velger kategori, og admin registrerer hvilket lag som svarer riktig fra Styre-siden.</p></div>
-<div class="flow-step"><div class="flow-num">5</div><h3>Runde 6</h3><p>Siste ordinære runde, spilles på samme måte som de foregående.</p></div>
-<div class="flow-step flow-winner"><div class="flow-num">6</div><h3>Finale</h3><p>Topp 3 lag i 1. divisjon kjemper i en buzzer-finale. Første lag til å trykke får svare, og admin gir poeng fra Styre-siden.</p></div>
-<div class="flow-step flow-winner"><div class="flow-num">7</div><h3>Vinner kåres</h3><p>Laget med flest poeng i finalen kåres som vinner av kvelden.</p></div>
-</div>
 
 </div>
 </body>

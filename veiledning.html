@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Veiledning</title>
+<style>
+:root{
+  --bg:#000000;
+  --bg2:#000000;
+  --bg3:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gold:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;margin-top:32px;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid var(--accent);}
+th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+.linkbox{display:block;background:rgba(0,255,255,0.15);border-radius:0;padding:14px 16px;margin:8px 0;text-decoration:none;color:inherit;}
+.linkbox b{display:block;font-size:1.05em;margin-bottom:2px;}
+.linkbox span{opacity:0.75;font-size:0.9em;}
+ol,ul{padding-left:22px;}
+li{margin-bottom:8px;}
+.status{display:inline-block;padding:2px 8px;border-radius:0;font-size:0.8em;margin-left:6px;}
+.ferdig{background:#2e7d32;}
+.diagram-caption{text-align:center;color:#00ff00;font-size:0.85em;margin-top:-6px;margin-bottom:4px;}
+code{color:#ffff00;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Musikkquiz - Veiledning</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="stilling.html"><button>Stilling</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="veiledning.html"><button style="background:#00ffff;">Veiledning</button></a>
+</div>
+
+<p>Denne siden forklarer steg for steg hvordan en quizkveld gjennomføres, fra lag-oppsett til kåring av vinner - med diagrammer og lenker til de sidene og det regnearket dere faktisk skal bruke underveis.</p>
+
+<h2>Regnearket - databasen bak quizzen</h2>
+<div class="card">
+<p>Google-regnearket fungerer som selve databasen bak quizzen. Alt av lag, runder, fasit, svar, poeng, buzzertrykk, kategorier og opp-/nedrykkspillet lagres i egne faner (ark) i regnearket. Under en quizkveld skal du <b>ikke</b> trenge å redigere noe i regnearket direkte - alt styres fra Styre/Admin-siden.</p>
+<a class="linkbox" href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank"><b>Åpne regnearket</b><span>Alle data: lag, svar, runder, poeng og fasit</span></a>
+<p>Kort om de viktigste arkene:</p>
+<ul>
+<li><b>QuizLag</b> - lagnavn, bordnummer og divisjon. Opprettes med "Generer lagrader" på <a href="styre.html">Styre-siden</a>.</li>
+<li><b>Runder</b> - sangene og fasiten for hver runde, samt status (åpen/lukket) for hvilken runde som spilles.</li>
+<li><b>Svar</b> - svarene lagene sender inn.</li>
+<li><b>Poengsum</b> - poengsummen til hvert lag.</li>
+<li><b>Buzzer</b> - hvem som trykket først på buzzeren, og når.</li>
+<li><b>KategoriBrukt</b> - hvilke kategorier som er brukt i kategori-trekningen.</li>
+<li><b>Opprykk</b> - status og fremdrift i opp-/nedrykksspillet.</li>
+<li><b>Finale</b> - status og poeng i finalen.</li>
+</ul>
+<p>Hvis noe skulle gå galt underveis, finnes det egne nullstillingsknapper for lag, poeng, opprykksspill og finale på <a href="styre.html">Styre/Admin-siden</a> (under "Nullstilling") - disse er trygge å bruke fra appen i stedet for å redigere regnearket manuelt.</p>
+</div>
+
+<h2>Diagram: hele quizkvelden</h2>
+<div class="card">
+<svg viewBox="0 0 460 648" xmlns="http://www.w3.org/2000/svg" role="img" style="width:100%;max-width:460px;height:auto;display:block;margin:20px auto;">
+<defs>
+<marker id="arrowC1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#00ffff"/></marker>
+</defs>
+<rect x="30" y="24" width="400" height="87" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="46" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">1. LAG-OPPSETT</text>
+<text x="230.0" y="64" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Opprett lag, sett divisjon/bord, del ut QR-</text>
+<text x="230.0" y="81" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">koder</text>
+<line x1="230.0" y1="111" x2="230.0" y2="147" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
+<rect x="30" y="147" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="169" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">2. RUNDE 1-5</text>
+<text x="230.0" y="187" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Gjentas - se eget diagram under</text>
+<line x1="230.0" y1="217" x2="230.0" y2="253" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
+<rect x="30" y="253" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="275" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">3. OPP-/NEDRYKK</text>
+<text x="230.0" y="293" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Kategori-trekning mellom divisjonene</text>
+<line x1="230.0" y1="323" x2="230.0" y2="359" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
+<rect x="30" y="359" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="381" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. RUNDE 6</text>
+<text x="230.0" y="399" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Siste ordinære runde</text>
+<line x1="230.0" y1="429" x2="230.0" y2="465" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
+<rect x="30" y="465" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="487" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. FINALE</text>
+<text x="230.0" y="505" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Buzzer-duell, topp 3 lag i 1. divisjon</text>
+<line x1="230.0" y1="535" x2="230.0" y2="571" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
+<rect x="30" y="571" width="400" height="53" fill="#000000" stroke="#ffff00" stroke-width="2"/>
+<text x="230.0" y="593" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">6. VINNER KÅRES</text>
+</svg>
+<p class="diagram-caption">Gul boks = kveldens høydepunkt</p>
+</div>
+
+<h2>Slik gjennomfører du en quiz</h2>
+<div class="card">
+<ol>
+<li><b>Sett opp lag.</b> Gå til <a href="styre.html">Admin-siden</a> og opprett alle lagene med navn, divisjon (1 eller 2) og bordnummer. Trykk lagre - QR-koder og lenker genereres automatisk for hvert lag.</li>
+<li><b>Del ut lenker/QR-koder.</b> Hvert lag skanner sin QR-kode eller åpner sin lenke på en mobil/nettbrett ved bordet.</li>
+<li><b>Spill av sangene.</b> Runde 1 er åpen fra start. Spill de 3 sangene for runden.</li>
+<li><b>Lagene svarer.</b> Hvert lag fyller inn Artist, Låt og Årstall for de 3 sangene på sin side, og trykker Send inn svar.</li>
+<li><b>Beregn poeng.</b> Når alle lag har svart: gå til Styre-siden. Fasit er allerede fylt inn automatisk fra <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>. Trykk "Beregn poeng og lukk runde". Systemet gir 1p for riktig artist, 2p for riktig låt og 3p for riktig årstall (pluss/minus 1 år godkjennes), med toleranse for små skrivefeil.</li>
+<li><b>Vis stilling.</b> Åpne <a href="stilling.html">Stilling-siden</a> på en skjerm alle kan se - den viser 1. og 2. divisjonstabell og oppdaterer seg selv.</li>
+<li><b>Åpne neste runde.</b> Trykk "Åpne runde" på Styre-siden og gjenta fra steg 3 for rundene 2-5.</li>
+<li><b>Etter runde 5:</b> opp-/nedrykksspillet mellom divisjonene - se detaljert fremgangsmåte i <a href="#trekningdetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
+<li><b>Runde 6</b> spilles som normalt, deretter <b>finale</b> for topp 3 lag i 1. divisjon - se detaljert fremgangsmåte i <a href="#finaledetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
+</ol>
+</div>
+
+<h2>Diagram: én runde (gjentas for runde 1-6)</h2>
+<div class="card">
+<svg viewBox="0 0 460 552" xmlns="http://www.w3.org/2000/svg" role="img" style="width:100%;max-width:460px;height:auto;display:block;margin:20px auto;">
+<defs>
+<marker id="arrowC2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#00ffff"/></marker>
+<marker id="arrowY2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#ffff00"/></marker>
+</defs>
+<rect x="30" y="24" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="46" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">1. ÅPNE RUNDE</text>
+<text x="230.0" y="64" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Runde 1 er åpen fra start</text>
+<line x1="230.0" y1="94" x2="230.0" y2="130" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC2)"/>
+<rect x="30" y="130" width="400" height="53" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="152" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">2. SPILL AV 3 SANGER</text>
+<line x1="230.0" y1="183" x2="230.0" y2="219" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC2)"/>
+<rect x="30" y="219" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="241" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">3. LAGENE SVARER</text>
+<text x="230.0" y="259" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Artist, låt og årstall på lagets side</text>
+<line x1="230.0" y1="289" x2="230.0" y2="325" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC2)"/>
+<rect x="30" y="325" width="400" height="87" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="347" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. BEREGN POENG</text>
+<text x="230.0" y="365" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Styre-siden henter fasit automatisk fra</text>
+<text x="230.0" y="382" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">regnearket</text>
+<line x1="230.0" y1="412" x2="230.0" y2="448" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC2)"/>
+<rect x="30" y="448" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="470" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. VIS STILLING</text>
+<text x="230.0" y="488" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Stilling-siden på storskjerm</text>
+<path d="M430,483.0 L436,483.0 L436,59.0 L438,59.0" fill="none" stroke="#ffff00" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowY2)"/>
+<text x="428" y="271.0" fill="#ffff00" font-family="Courier New, monospace" font-size="11" text-anchor="middle" transform="rotate(-90 428 271.0)">NESTE RUNDE</text>
+</svg>
+<p class="diagram-caption">Den stiplede gule pilen viser at syklusen gjentas for hver runde (1-6)</p>
+</div>
+
+<h2 id="trekningdetaljer">Slik gjennomføres kategori-trekningen (opp-/nedrykkspill)</h2>
+<div class="card">
+<ol>
+<li><b>Forutsetning.</b> Etter runde 5 beregnes stillingen automatisk. Nest nederste og nederste lag i 1. divisjon møter nr. 2 i 2. divisjon.</li>
+<li><b>Start opprykksspillet.</b> Klikk "Start opprykksspill" på <a href="styre.html">Styre-siden</a>. De tre lagene vises.</li>
+<li><b>Åpne Trekningssiden.</b> Klikk "Åpne trekningsside" på Styre-siden (åpnes i ny fane - vis på storskjerm). <a href="https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec?page=trekning" target="_blank">Direktelenke til Trekningssiden</a>.</li>
+<li><b>Kryss av brukte kategorier.</b> Nederst på Trekningssiden ligger en liste med avkrysningsbokser for alle kategorier som alt er brukt tidligere på kvelden, slik at de ikke kan trekkes på nytt. Avkrysning lagres automatisk med en gang.</li>
+<li><b>Start trekningen.</b> Klikk "Start trekning". Systemet trekker 4 tilfeldige kategorier blant de som ikke er krysset av (minst 4 ledige kreves), med animasjon og lyd.</li>
+<li><b>Laget velger kategori.</b> Gå til Styre-siden - de 4 trukne kategoriene vises som knapper. Klikk kategorien laget velger. Den krysses da automatisk av som brukt på Trekningssiden.</li>
+<li><b>Spill av og registrer vinner.</b> Styre-siden viser sangene i valgt kategori en etter en. Klikk laget som svarer riktig, eller "Ingen riktig / hopp over".</li>
+<li><b>Poenglikhet.</b> Ved likt poeng velger admin manuelt hvilket lag som rykker ned.</li>
+<li><b>Trekke på nytt.</b> For å gjøre trekningen på nytt: gå til <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>, fane "Opprykk", og endre celle A2 fra "velger" til "trekker". Last Styre-siden på nytt - "Start trekning"-knappen er da tilbake.</li>
+</ol>
+</div>
+
+<h2>Diagram: opp-/nedrykk (kategori-trekning)</h2>
+<div class="card">
+<svg viewBox="0 0 460 648" xmlns="http://www.w3.org/2000/svg" role="img" style="width:100%;max-width:460px;height:auto;display:block;margin:20px auto;">
+<defs>
+<marker id="arrowC3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#00ffff"/></marker>
+</defs>
+<rect x="30" y="24" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="46" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">1. STILLING BEREGNES</text>
+<text x="230.0" y="64" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Etter runde 5, automatisk</text>
+<line x1="230.0" y1="94" x2="230.0" y2="130" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC3)"/>
+<rect x="30" y="130" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="152" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">2. START OPPRYKKSSPILL</text>
+<text x="230.0" y="170" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">På Styre-siden</text>
+<line x1="230.0" y1="200" x2="230.0" y2="236" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC3)"/>
+<rect x="30" y="236" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="258" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">3. TREKK 4 KATEGORIER</text>
+<text x="230.0" y="276" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Åpne Trekningssiden på storskjerm</text>
+<line x1="230.0" y1="306" x2="230.0" y2="342" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC3)"/>
+<rect x="30" y="342" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="364" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. LAGET VELGER KATEGORI</text>
+<text x="230.0" y="382" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Registreres på Styre-siden</text>
+<line x1="230.0" y1="412" x2="230.0" y2="448" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC3)"/>
+<rect x="30" y="448" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="470" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. SPILL 5 SANGER</text>
+<text x="230.0" y="488" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Registrer riktig lag for hver sang</text>
+<line x1="230.0" y1="518" x2="230.0" y2="554" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC3)"/>
+<rect x="30" y="554" width="400" height="70" fill="#000000" stroke="#ffff00" stroke-width="2"/>
+<text x="230.0" y="576" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">6. FERDIG</text>
+<text x="230.0" y="594" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Ett lag rykker ned til 2. divisjon</text>
+</svg>
+</div>
+
+<h2 id="finaledetaljer">Slik gjennomføres finalen</h2>
+<div class="card">
+<ol>
+<li><b>Hvem kvalifiserer.</b> De tre lagene med høyest poengsum i 1. divisjon etter siste runde - automatisk basert på stillingen, ingen manuell utvelgelse.</li>
+<li><b>Start finalen.</b> Gå til <a href="styre.html">Styre-siden</a> og trykk "Start finale" på Finale-kortet. Dette nullstiller finalepoengene til 0 for de tre lagene og lukker buzzeren.</li>
+<li><b>Buzzer-runde.</b> Les opp et spørsmål og åpne buzzeren på Buzzer-kortet. Kun de tre finalelagene ser en BUZZ-knapp på sin lag-side så lenge finalen pågår - de andre lagene ser ingen buzzer i det hele tatt.</li>
+<li><b>Gi poeng.</b> Når et lag har buzzet og svart riktig, trykk "+1" for laget på Finale-kortet. Steng/nullstill buzzeren for neste spørsmål og gjenta.</li>
+<li><b>Avslutt.</b> Trykk "Avslutt finale" for å kåre vinneren (høyest poengsum). "Nullstill finale" tilbakestiller hvis du må gjøre om.</li>
+<li><b>Visning.</b> Det er ikke laget noen egen storskjermside for finalen - alt styres og vises fra Styre-siden.</li>
+</ol>
+</div>
+
+<h2>Diagram: finalen</h2>
+<div class="card">
+<svg viewBox="0 0 460 590" xmlns="http://www.w3.org/2000/svg" role="img" style="width:100%;max-width:460px;height:auto;display:block;margin:20px auto;">
+<defs>
+<marker id="arrowC4" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#00ffff"/></marker>
+<marker id="arrowY4" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#ffff00"/></marker>
+</defs>
+<rect x="30" y="24" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="46" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">1. START FINALE</text>
+<text x="230.0" y="64" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Nullstiller finalepoeng, lukker buzzer</text>
+<line x1="230.0" y1="94" x2="230.0" y2="130" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC4)"/>
+<rect x="30" y="130" width="400" height="53" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="152" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">2. LES SPØRSMÅL, ÅPNE BUZZER</text>
+<line x1="230.0" y1="183" x2="230.0" y2="219" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC4)"/>
+<rect x="30" y="219" width="400" height="53" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="241" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">3. LAG TRYKKER BUZZER FØRST</text>
+<line x1="230.0" y1="272" x2="230.0" y2="308" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC4)"/>
+<rect x="30" y="308" width="400" height="53" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="330" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. GI POENG TIL RIKTIG LAG</text>
+<line x1="230.0" y1="361" x2="230.0" y2="397" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC4)"/>
+<rect x="30" y="397" width="400" height="53" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="419" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. STENG/NULLSTILL BUZZER</text>
+<line x1="230.0" y1="450" x2="230.0" y2="486" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC4)"/>
+<rect x="30" y="486" width="400" height="70" fill="#000000" stroke="#ffff00" stroke-width="2"/>
+<text x="230.0" y="508" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">6. AVSLUTT FINALE</text>
+<text x="230.0" y="526" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Vinner kåres automatisk</text>
+<path d="M430,423.5 L436,423.5 L436,156.5 L438,156.5" fill="none" stroke="#ffff00" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowY4)"/>
+<text x="428" y="290.0" fill="#ffff00" font-family="Courier New, monospace" font-size="11" text-anchor="middle" transform="rotate(-90 428 290.0)">NESTE SPØRSMÅL</text>
+</svg>
+<p class="diagram-caption">Den stiplede gule pilen viser at buzzer-runden gjentas for hvert spørsmål</p>
+</div>
+
+<h2>Hurtiglenker</h2>
+<div class="card">
+<a class="linkbox" href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank"><b>Regneark</b><span>Databasen bak quizzen</span></a>
+<a class="linkbox" href="styre.html"><b>Styre / Admin</b><span>Lag-oppsett, fasit, poeng, opprykk, buzzer og finale</span></a>
+<a class="linkbox" href="stilling.html"><b>Stilling</b><span>Divisjonstabeller for storskjerm</span></a>
+<a class="linkbox" href="https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec?page=trekning" target="_blank"><b>Storskjerm (trekning + buzzer)</b><span>Vis på prosjektor under opp-/nedrykk og finale</span></a>
+<a class="linkbox" href="index.html"><b>Oversikt</b><span>Tilbake til forsiden med alle lenker</span></a>
+</div>
+
+</div>
+</body>
+</html>
