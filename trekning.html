@@ -36,6 +36,11 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 .confetti{position:fixed;top:-12px;width:8px;height:8px;border-radius:0;animation:fall linear forwards;z-index:999;}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3;}}
 #final{font-size:1.6em;text-align:center;margin-top:20px;}
+#wheelStage{position:relative;width:360px;height:360px;margin:20px auto;}
+#wheelPointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:32px solid #ffff00;z-index:5;filter:drop-shadow(0 0 4px #000);}
+#wheelSvg{width:360px;height:360px;border-radius:50%;border:6px solid #00ffff;background:#000;transform:rotate(0deg);}
+#wheelHub{position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#ffff00;border:3px solid #000;z-index:4;}
+#uavgjortResultat div{margin:6px 0;color:#00ff00;}
 </style>
 </head>
 <body>
@@ -68,6 +73,24 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 <div id="buzzerLukket" class="card" style="display:none;padding:60px 20px;background:#ff0000;">
 <h2 style="font-size:2em;color:#fff;margin-bottom:10px;">Først til å trykke:</h2>
 <h1 id="buzzerVinnernavn" style="font-size:4.5em;color:#fff;"></h1>
+</div>
+</div>
+
+<div id="uavgjortWrap" style="display:none;text-align:center;">
+<div class="card">
+<h1 style="color:#ff00ff;">LYKKEHJULET</h1>
+<p id="uavgjortLabel" style="font-size:1.2em;"></p>
+</div>
+<div class="card" style="padding:40px 20px;">
+<div id="wheelStage">
+<div id="wheelPointer"></div>
+<div id="wheelHub"></div>
+<svg id="wheelSvg" viewBox="0 0 300 300"></svg>
+</div>
+<div style="margin-top:10px;">
+<button id="spinBtn" onclick="spinWheel()">Drei hjulet!</button>
+</div>
+<div id="uavgjortResultat" style="margin-top:20px;font-size:1.6em;"></div>
 </div>
 </div>
 </div>
@@ -260,22 +283,189 @@ function visBuzzerDisplay(o) {
 
 var gjeldendeModus = null;
 function sjekkModus() {
-  apiGet('opprykkStatus').then(function(o) {
-    var skalViseTrekning = (o.status === 'trekker' || o.status === 'velger');
-    var nyModus = skalViseTrekning ? 'trekning' : 'buzzer';
-    if (nyModus !== gjeldendeModus) {
-      gjeldendeModus = nyModus;
-      document.getElementById('trekningWrap').style.display = skalViseTrekning ? 'block' : 'none';
-      document.getElementById('buzzerWrap').style.display = skalViseTrekning ? 'none' : 'block';
-      if (skalViseTrekning) {
+  apiGet('uavgjortStatus').then(function(u) {
+    if (u.status === 'venter' || u.status === 'trukket') {
+      var key = u.kontekst + '|' + u.type + '|' + u.status;
+      if (gjeldendeModus !== 'uavgjort') {
+        gjeldendeModus = 'uavgjort';
+        document.getElementById('trekningWrap').style.display = 'none';
+        document.getElementById('buzzerWrap').style.display = 'none';
+        document.getElementById('uavgjortWrap').style.display = 'block';
         if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
-        initTrekning();
-      } else {
         if (katListeIntervalId) { clearInterval(katListeIntervalId); katListeIntervalId = null; }
-        initBuzzer();
+        lastUavgjortKey = key;
+        initUavgjort(u);
+      } else if (key !== lastUavgjortKey && !wheelSpinning) {
+        lastUavgjortKey = key;
+        initUavgjort(u);
       }
+      return;
     }
+    apiGet('opprykkStatus').then(function(o) {
+      var skalViseTrekning = (o.status === 'trekker' || o.status === 'velger');
+      var nyModus = skalViseTrekning ? 'trekning' : 'buzzer';
+      if (nyModus !== gjeldendeModus) {
+        gjeldendeModus = nyModus;
+        document.getElementById('trekningWrap').style.display = skalViseTrekning ? 'block' : 'none';
+        document.getElementById('buzzerWrap').style.display = skalViseTrekning ? 'none' : 'block';
+        document.getElementById('uavgjortWrap').style.display = 'none';
+        if (skalViseTrekning) {
+          if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
+          initTrekning();
+        } else {
+          if (katListeIntervalId) { clearInterval(katListeIntervalId); katListeIntervalId = null; }
+          initBuzzer();
+        }
+      }
+    }).catch(function(e) { console.error(e); });
   }).catch(function(e) { console.error(e); });
+}
+
+// ---- Lykkehjul (uavgjort-trekning) ----
+var WHEEL_COLORS = ['#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6b6b', '#3a86ff', '#ffa500', '#ff1493'];
+var wheelKandidater = [];
+var wheelRotation = 0;
+var wheelSpinning = false;
+var lastUavgjortKey = '';
+var uavgjortWinnersQueue = [];
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  var rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeSlice(cx, cy, r, startAngle, endAngle) {
+  var start = polarToCartesian(cx, cy, r, endAngle);
+  var end = polarToCartesian(cx, cy, r, startAngle);
+  var largeArc = (endAngle - startAngle) <= 180 ? '0' : '1';
+  return ['M', cx, cy, 'L', start.x, start.y, 'A', r, r, 0, largeArc, 0, end.x, end.y, 'Z'].join(' ');
+}
+
+function buildWheel(kandidater) {
+  var svg = document.getElementById('wheelSvg');
+  svg.innerHTML = '';
+  svg.style.transition = 'none';
+  svg.style.transform = 'rotate(0deg)';
+  var n = kandidater.length;
+  if (!n) return;
+  var cx = 150, cy = 150, r = 148;
+  var sliceAngle = 360 / n;
+  for (var i = 0; i < n; i++) {
+    var start = i * sliceAngle;
+    var end = start + sliceAngle;
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', describeSlice(cx, cy, r, start, end));
+    path.setAttribute('fill', WHEEL_COLORS[i % WHEEL_COLORS.length]);
+    path.setAttribute('stroke', '#000');
+    path.setAttribute('stroke-width', '2');
+    svg.appendChild(path);
+    var midAngle = start + sliceAngle / 2;
+    var labelPos = polarToCartesian(cx, cy, r * 0.62, midAngle);
+    var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', labelPos.x);
+    text.setAttribute('y', labelPos.y);
+    text.setAttribute('fill', '#000');
+    text.setAttribute('font-family', 'Courier New, monospace');
+    text.setAttribute('font-weight', 'bold');
+    text.setAttribute('font-size', n > 8 ? '9' : '13');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('transform', 'rotate(' + midAngle + ' ' + labelPos.x + ' ' + labelPos.y + ')');
+    text.textContent = kandidater[i].navn;
+    svg.appendChild(text);
+  }
+  void svg.offsetWidth;
+  svg.style.transition = 'transform 5s cubic-bezier(0.12,0.67,0.1,1)';
+}
+
+function initUavgjort(u) {
+  document.getElementById('uavgjortLabel').textContent = u.label || '';
+  document.getElementById('uavgjortResultat').innerHTML = '';
+  wheelKandidater = (u.kandidater || []).slice();
+  wheelRotation = 0;
+  wheelSpinning = false;
+  buildWheel(wheelKandidater);
+  var spinBtn = document.getElementById('spinBtn');
+  if (u.status === 'trukket') {
+    spinBtn.style.display = 'none';
+    var resHtml = '';
+    (u.valgt || []).forEach(function (v) { resHtml += '<div>Vinner: ' + v.navn + '</div>'; });
+    resHtml += '<p style="font-size:.5em;opacity:.7;margin-top:10px;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
+    document.getElementById('uavgjortResultat').innerHTML = resHtml;
+  } else {
+    spinBtn.style.display = 'inline-block';
+    spinBtn.disabled = false;
+  }
+}
+
+function tickSoundsDuring(durationMs) {
+  var elapsed = 0;
+  var interval = 80;
+  function tick() {
+    if (elapsed >= durationMs - 300) return;
+    beep(300 + Math.random() * 80, .05, 'square', .1);
+    elapsed += interval;
+    interval = interval * 1.06;
+    setTimeout(tick, interval);
+  }
+  tick();
+}
+
+function beepWinFanfare() {
+  [523, 659, 784, 1046].forEach(function (f, k) { setTimeout(function () { beep(f, .3, 'triangle', .3); }, k * 150); });
+}
+
+function spinWheel() {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  apiGet('trekkUavgjort').then(function (rad) {
+    uavgjortWinnersQueue = (rad.valgt || []).slice();
+    spinToNextWinner(rad.kandidater ? rad.kandidater.slice() : wheelKandidater.slice());
+  }).catch(function (e) { console.error(e); wheelSpinning = false; document.getElementById('spinBtn').disabled = false; });
+}
+
+function spinToNextWinner(pool) {
+  if (!uavgjortWinnersQueue.length) { finishSpin(); return; }
+  var winner = uavgjortWinnersQueue.shift();
+  var idx = -1;
+  for (var i = 0; i < pool.length; i++) {
+    if (String(pool[i].id) === String(winner.id)) { idx = i; break; }
+  }
+  if (idx === -1) { spinToNextWinner(pool); return; }
+  var n = pool.length;
+  var sliceAngle = 360 / n;
+  var winnerMid = idx * sliceAngle + sliceAngle / 2;
+  var fullSpins = 6 + Math.floor(Math.random() * 3);
+  wheelRotation = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var svg = document.getElementById('wheelSvg');
+  svg.style.transform = 'rotate(' + wheelRotation + 'deg)';
+  tickSoundsDuring(5000);
+  setTimeout(function () {
+    var el = document.getElementById('uavgjortResultat');
+    el.innerHTML += '<div>Vinner: ' + winner.navn + '</div>';
+    beepWinFanfare();
+    if (uavgjortWinnersQueue.length) {
+      pool = pool.slice();
+      pool.splice(idx, 1);
+      setTimeout(function () {
+        buildWheel(pool);
+        wheelRotation = 0;
+        spinToNextWinner(pool);
+      }, 1200);
+    } else {
+      finishSpin();
+    }
+  }, 5200);
+}
+
+function finishSpin() {
+  wheelSpinning = false;
+  confetti();
+  var spinBtn = document.getElementById('spinBtn');
+  if (spinBtn) spinBtn.style.display = 'none';
+  var el = document.getElementById('uavgjortResultat');
+  el.innerHTML += '<p style="font-size:.5em;opacity:.7;margin-top:10px;">Gå til Styre-siden for å bekrefte og fortsette.</p>';
 }
 
 sjekkModus();

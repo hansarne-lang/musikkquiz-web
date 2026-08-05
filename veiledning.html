@@ -66,6 +66,8 @@ code{color:#ffff00;}
 <li><b>KategoriBrukt</b> - hvilke kategorier som er brukt i kategori-trekningen.</li>
 <li><b>Opprykk</b> - status og fremdrift i opp-/nedrykksspillet.</li>
 <li><b>Finale</b> - status og poeng i finalen.</li>
+<li><b>Uavgjort</b> - hvilken uavgjort-trekning (lykkehjul) som eventuelt venter eller nettopp er trukket akkurat nå.</li>
+<li><b>UavgjortLogg</b> - historikk over tidligere lykkehjul-trekninger denne kvelden, slik at samme uavgjorte situasjon ikke trekkes på nytt hvis den dukker opp igjen senere (f.eks. hvis flere lag er involvert i flere grenser samtidig).</li>
 </ul>
 <p>Hvis noe skulle gå galt underveis, finnes det egne nullstillingsknapper for lag, poeng, opprykksspill/trekning, brukte kategorier og runder/fasit på <a href="styre.html">Styre/Admin-siden</a> (under "Nullstilling") - disse er trygge å bruke fra appen i stedet for å redigere regnearket manuelt. "Nullstill kategorier" gjør alle kategorier tilgjengelige for trekning igjen, og "Nullstill runder/fasit" fjerner eventuell manuelt lagret fasit slik at alle runder faller tilbake til automatisk henting fra Ark 12 - nyttig som opprydding før en ny quizkveld.</p>
 </div>
@@ -110,11 +112,12 @@ code{color:#ffff00;}
 <li><b>Del ut lenker/QR-koder.</b> Hvert lag skanner sin QR-kode eller åpner sin lenke på en mobil/nettbrett ved bordet.</li>
 <li><b>Spill av sangene.</b> Runde 1 er åpen fra start. Spill de 3 sangene for runden.</li>
 <li><b>Lagene svarer.</b> Hvert lag fyller inn Artist, Låt og Årstall for de 3 sangene på sin side, og trykker Send inn svar.</li>
-<li><b>Beregn poeng.</b> Når alle lag har svart: gå til Styre-siden. Fasit er allerede fylt inn automatisk fra <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>. Du har to valg: (a) trykk "Beregn poeng runde X (automatisk)" for rask automatisk poengberegning - systemet gir 1p for riktig artist, 2p for riktig låt og 3p for riktig årstall (pluss/minus 1 år godkjennes), med toleranse for små skrivefeil - eller (b) trykk "Vurder svar med Claude først" for å la Claude kvalitetssikre svarene før poengberegning (se eget avsnitt under). Uansett hvilket valg du bruker, lagres en fasit-vurdering (riktig/feil per artist, låt og år, samt om Claude har overstyrt) for hvert innsendt svar i <b>Svar-arket</b> i regnearket, slik at du kan ettergå avgjørelsene i etterkant.</li>
-<li><b>Vis stilling.</b> Åpne <a href="stilling.html">Stilling-siden</a> på en skjerm alle kan se - den viser 1. og 2. divisjonstabell og oppdaterer seg selv.</li>
-<li><b>Åpne neste runde.</b> Trykk "Åpne runde" på Styre-siden og gjenta fra steg 3 for rundene 2-5.</li>
+<li><b>Beregn poeng - sang for sang.</b> Fasit er allerede fylt inn automatisk fra <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>. På Styre-siden vises hver av de 3 sangene i runden som et eget kort. Så snart en sang er spilt og lagene har svart, trenger du <b>ikke</b> vente på de andre sangene - trykk "Beregn poeng sang X (automatisk)" for den sangen med en gang. Systemet gir 1p for riktig artist, 2p for riktig låt og 3p for riktig årstall (pluss/minus 1 år godkjennes), med toleranse for små skrivefeil. Alternativt trykk "Vurder svar med Claude først" på det samme sang-kortet for å la Claude kvalitetssikre svarene for akkurat den sangen før poengberegning (se eget avsnitt under). Stillingen på <a href="stilling.html">Stilling-siden</a> oppdaterer seg da <b>umiddelbart</b> - tilskuerne ser poengsummen endre seg etter hver sang, ikke bare når hele runden er ferdig. Et grønt merke ("SCORET") viser hvilke sanger som allerede er poengberegnet, og en sang kan ikke beregnes to ganger. For hvert innsendt svar lagres en fasit-vurdering (riktig/feil per artist, låt og år, samt om Claude har overstyrt) i <b>Svar-arket</b> i regnearket, slik at du kan ettergå avgjørelsene i etterkant.</li>
+<li><b>Vis stilling.</b> Åpne <a href="stilling.html">Stilling-siden</a> på en skjerm alle kan se - den viser 1. og 2. divisjonstabell og oppdaterer seg selv, sang for sang.</li>
+<li><b>Åpne neste runde.</b> Når alle 3 sangene i runden er poengberegnet, lukkes runden automatisk og en "Åpne runde X+1"-knapp dukker opp på Styre-siden. Trykk den og gjenta fra steg 3 for rundene 2-5.</li>
 <li><b>Etter runde 5:</b> opp-/nedrykksspillet mellom divisjonene - se detaljert fremgangsmåte i <a href="#trekningdetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
 <li><b>Runde 6</b> spilles som normalt, deretter <b>finale</b> for topp 3 lag i 1. divisjon - se detaljert fremgangsmåte i <a href="#finaledetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
+<li><b>Uavgjort underveis?</b> Blir det uavgjort om 1. plass, om hvem som skal med i opp-/nedrykk-trekningen, om finaleplass eller om finalevinner, avgjøres det med et fysisk lykkehjul på storskjermen - se <a href="#lykkehjuldetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
 </ol>
 <p><b>Kategorier og sanger:</b> under "Kategorier" på <a href="styre.html">Styre-siden</a> kan du se, redigere, legge til og fjerne sanger i hver kategori, samt opprette og slette hele kategorier - uten å måtte redigere regnearket direkte.</p>
 <p><b>Fargekodet stilling:</b> på <a href="stilling.html">Stilling-siden</a> markeres laget på 1. plass i hver divisjon med grønt, og lagene som er med i opp-/nedrykk-trekningen (de to nederste i 1. divisjon og nr. 2 i 2. divisjon) markeres med gult.</p>
@@ -139,13 +142,13 @@ code{color:#ffff00;}
 <text x="230.0" y="259" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Artist, låt og årstall på lagets side</text>
 <line x1="230.0" y1="289" x2="230.0" y2="325" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC2)"/>
 <rect x="30" y="325" width="400" height="87" fill="#000000" stroke="#00ffff" stroke-width="2"/>
-<text x="230.0" y="347" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. BEREGN POENG</text>
-<text x="230.0" y="365" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Styre-siden henter fasit automatisk fra</text>
-<text x="230.0" y="382" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">regnearket</text>
+<text x="230.0" y="347" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. BEREGN POENG PER SANG</text>
+<text x="230.0" y="365" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Styre-siden henter fasit automatisk -</text>
+<text x="230.0" y="382" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">poeng beregnes for én sang av gangen</text>
 <line x1="230.0" y1="412" x2="230.0" y2="448" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC2)"/>
 <rect x="30" y="448" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
-<text x="230.0" y="470" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. VIS STILLING</text>
-<text x="230.0" y="488" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Stilling-siden på storskjerm</text>
+<text x="230.0" y="470" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. STILLING OPPDATERES</text>
+<text x="230.0" y="488" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Umiddelbart etter hver sang, på storskjerm</text>
 <path d="M430,483.0 L436,483.0 L436,59.0 L438,59.0" fill="none" stroke="#ffff00" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowY2)"/>
 <text x="428" y="271.0" fill="#ffff00" font-family="Courier New, monospace" font-size="11" text-anchor="middle" transform="rotate(-90 428 271.0)">NESTE RUNDE</text>
 </svg>
@@ -154,12 +157,12 @@ code{color:#ffff00;}
 
 <h2 id="clauderevisjon">Slik bruker du Claude til å kvalitetssikre svar</h2>
 <div class="card">
-<p>Systemet kan bruke Claude til å vurdere alle innsendte svar før poeng beregnes - nyttig når svar inneholder skrivefeil, forkortelser eller ufullstendige navn (f.eks. kun etternavn på en artist) som den automatiske fuzzy-matchingen kan avvise selv om svaret egentlig er riktig. Dette er en <b>ren kopier/lim-løsning</b> - ingen API-nøkkel eller automatisk tilkobling til Claude er involvert, og ingenting sendes automatisk noe sted.</p>
+<p>Systemet kan bruke Claude til å vurdere innsendte svar før poeng beregnes - nyttig når svar inneholder skrivefeil, forkortelser eller ufullstendige navn (f.eks. kun etternavn på en artist) som den automatiske fuzzy-matchingen kan avvise selv om svaret egentlig er riktig. Dette gjøres <b>per sang</b>, samtidig med den vanlige per-sang-poengberegningen, og er en <b>ren kopier/lim-løsning</b> - ingen API-nøkkel eller automatisk tilkobling til Claude er involvert, og ingenting sendes automatisk noe sted.</p>
 <ol>
-<li><b>Trykk "Vurder svar med Claude først"</b> på Styre-siden for gjeldende runde. En tekstboks fylles automatisk med fasit og alle innsendte svar for runden.</li>
+<li><b>Trykk "Vurder svar med Claude først"</b> på sang-kortet for den aktuelle sangen på Styre-siden. En tekstboks fylles automatisk med fasit og alle innsendte svar for akkurat den sangen.</li>
 <li><b>Kopier teksten</b> (egen knapp) og lim den inn i en vanlig Claude-samtale (nettleser, app eller her).</li>
-<li><b>Claude vurderer</b> hvert svar og svarer med én linje per lag/sang/felt i formatet <code>LAGID|SANGNR|FELT|OK</code>.</li>
-<li><b>Lim inn Claude sitt svar</b> i feltet under på Styre-siden og trykk "Bruk vurdering og beregn poeng". Poeng beregnes da med Claude sin vurdering av artist og låt, mens årstall fortsatt sjekkes automatisk (pluss/minus 1 år).</li>
+<li><b>Claude vurderer</b> hvert svar og svarer med én linje per lag/felt i formatet <code>LAGID|FELT|OK</code>.</li>
+<li><b>Lim inn Claude sitt svar</b> i feltet under på det samme sang-kortet og trykk "Bruk vurdering og beregn poeng". Poeng for akkurat den sangen beregnes da med Claude sin vurdering av artist og låt, mens årstall fortsatt sjekkes automatisk (pluss/minus 1 år) - og stillingen oppdateres umiddelbart.</li>
 <li><b>Alt lagres til gjennomgang:</b> for hvert innsendte svar lagrer systemet i <b>Svar-arket</b> i regnearket om artist, låt og årstall ble godkjent, poengsummen for svaret, og om Claude overstyrte den automatiske vurderingen - slik at du alltid kan ettergå avgjørelsen i etterkant.</li>
 </ol>
 </div>
@@ -168,7 +171,7 @@ code{color:#ffff00;}
 <div class="card">
 <ol>
 <li><b>Forutsetning.</b> Etter runde 5 beregnes stillingen automatisk. Nest nederste og nederste lag i 1. divisjon møter nr. 2 i 2. divisjon.</li>
-<li><b>Start opprykksspillet.</b> Klikk "Start opprykksspill" på <a href="styre.html">Styre-siden</a>. De tre lagene vises.</li>
+<li><b>Start opprykksspillet.</b> Klikk "Start opprykksspill" på <a href="styre.html">Styre-siden</a>. De tre lagene vises. <b>Er det uavgjort</b> om hvilke lag som skal med (f.eks. delt poengsum om nest nederste plass), stopper systemet automatisk opp og ber deg avgjøre det med lykkehjulet før det går videre - se <a href="#lykkehjuldetaljer">eget avsnitt lenger ned</a>.</li>
 <li><b>Åpne Trekningssiden.</b> Klikk "Åpne trekningsside" på Styre-siden (åpnes i ny fane - vis på storskjerm). <a href="trekning.html" target="_blank">Direktelenke til Trekningssiden</a>.</li>
 <li><b>Kryss av brukte kategorier.</b> Nederst på Trekningssiden ligger en liste med avkrysningsbokser for alle kategorier som alt er brukt tidligere på kvelden, slik at de ikke kan trekkes på nytt. Avkrysning lagres automatisk med en gang.</li>
 <li><b>Start trekningen.</b> Klikk "Start trekning". Systemet trekker 4 tilfeldige kategorier blant de som ikke er krysset av (minst 4 ledige kreves), med animasjon og lyd.</li>
@@ -214,12 +217,12 @@ code{color:#ffff00;}
 <h2 id="finaledetaljer">Slik gjennomføres finalen</h2>
 <div class="card">
 <ol>
-<li><b>Hvem kvalifiserer.</b> De tre lagene med høyest poengsum i 1. divisjon etter siste runde - automatisk basert på stillingen, ingen manuell utvelgelse.</li>
+<li><b>Hvem kvalifiserer.</b> De tre lagene med høyest poengsum i 1. divisjon etter siste runde - automatisk basert på stillingen, ingen manuell utvelgelse. <b>Er det uavgjort</b> om 3. plassen (flere lag med samme poengsum), stopper systemet automatisk opp og ber deg avgjøre det med lykkehjulet - se <a href="#lykkehjuldetaljer">eget avsnitt lenger ned</a>.</li>
 <li><b>Start finalen.</b> Gå til <a href="styre.html">Styre-siden</a> og trykk "Start finale" på Finale-kortet. Dette nullstiller finalepoengene til 0 for de tre lagene og lukker buzzeren.</li>
 <li><b>Buzzer-runde.</b> Les opp et spørsmål og åpne buzzeren på Buzzer-kortet. Kun de tre finalelagene ser en BUZZ-knapp på sin lag-side så lenge finalen pågår - de andre lagene ser ingen buzzer i det hele tatt.</li>
 <li><b>Gi poeng.</b> Når et lag har buzzet og svart riktig, trykk "+1" for laget på Finale-kortet. Steng/nullstill buzzeren for neste spørsmål og gjenta.</li>
-<li><b>Avslutt.</b> Trykk "Avslutt finale" for å kåre vinneren (høyest poengsum). "Nullstill finale" tilbakestiller hvis du må gjøre om.</li>
-<li><b>Visning.</b> Det er ikke laget noen egen storskjermside for finalen - alt styres og vises fra Styre-siden.</li>
+<li><b>Avslutt.</b> Trykk "Avslutt finale" for å kåre vinneren (høyest poengsum). Er det uavgjort om seieren, avgjøres det med lykkehjulet på samme måte. "Nullstill finale" tilbakestiller hvis du må gjøre om.</li>
+<li><b>Visning.</b> Det er ikke laget noen egen storskjermside for selve finale-spørsmålene - alt styres og vises fra Styre-siden. Lykkehjulet (ved uavgjort) vises derimot på Trekningssiden/storskjermen, akkurat som kategori-trekningen.</li>
 </ol>
 </div>
 
@@ -255,12 +258,58 @@ code{color:#ffff00;}
 <p class="diagram-caption">Den stiplede gule pilen viser at buzzer-runden gjentas for hvert spørsmål</p>
 </div>
 
+<h2 id="lykkehjuldetaljer">Slik avgjøres uavgjort med lykkehjulet</h2>
+<div class="card">
+<p>Fire situasjoner i løpet av kvelden kan ende med poenglikhet der systemet selv ikke kan avgjøre hvem som skal videre. I stedet for at admin må gjette eller diskutere, avgjøres disse med et fysisk lykkehjul som spinnes på storskjermen:</p>
+<ol>
+<li><b>1. plass i en divisjon</b> (kun for kåring/dramatikk - påvirker ikke hvem som går videre til opp-/nedrykk eller finale).</li>
+<li><b>Hvem som skal med i opp-/nedrykk-trekningen</b> fra 1. eller 2. divisjon, hvis flere lag deler plassen på vippepunktet.</li>
+<li><b>Hvem som får den siste finaleplassen</b> (3. plass i 1. divisjon), hvis flere lag deler poengsum der.</li>
+<li><b>Hvem som vinner finalen</b>, hvis flere lag deler høyeste poengsum når finalen avsluttes.</li>
+</ol>
+<p>De tre siste (opp-/nedrykk, finaleplass, finalevinner) oppdages <b>automatisk</b> av systemet når du trykker "Start opprykksspill", "Start finale" eller "Avslutt finale" - spillet stopper da opp av seg selv til uavgjort er løst. Den første (1. plass) er kun kosmetisk og sjekkes manuelt når du ønsker det.</p>
+<ol>
+<li><b>Systemet oppdager uavgjort.</b> På <a href="styre.html">Styre-siden</a> dukker det opp et lyserosa kort "Uavgjort-trekning" med hvem som er involvert og hva trekningen gjelder. For 1. plass-kåring: trykk "Sjekk divisjonsvinner (Div 1/2)" i samme kort for å sjekke manuelt, f.eks. rett etter runde 6.</li>
+<li><b>Åpne lykkehjulet på storskjermen.</b> Trykk "Åpne lykkehjulet (storskjerm)" i kortet, eller gå direkte til <a href="trekning.html" target="_blank">Trekningssiden</a> - den bytter automatisk til hjul-visning så lenge en uavgjort-trekning venter.</li>
+<li><b>Drei hjulet.</b> Trykk "Drei hjulet!" på storskjermen. Hjulet spinner med lyd og confetti og lander på vinneren/vinnerne. Trengs det flere vinnere fra samme trekning (f.eks. to av tre lag skal videre), gjentas trekningen automatisk for gjenværende kandidater rett etterpå.</li>
+<li><b>Bekreft på Styre-siden.</b> Gå tilbake til Styre-siden - kortet viser nå resultatet av trekningen. Trykk "Bekreft og fortsett" for å gå videre i spillet med det trukne resultatet.</li>
+<li><b>Spillet fortsetter</b> akkurat der det stoppet - opp-/nedrykksspillet, finale-kvalifiseringen eller kåringen av finalevinner fullføres automatisk med resultatet fra hjulet.</li>
+</ol>
+<p style="font-size:.85em;opacity:.75;">Alle trekninger lagres i <b>UavgjortLogg</b>-arket i regnearket, slik at samme uavgjorte situasjon ikke trekkes på nytt hvis den av en eller annen grunn dukker opp igjen senere samme kveld.</p>
+</div>
+
+<h2>Diagram: lykkehjulet</h2>
+<div class="card">
+<svg viewBox="0 0 460 520" xmlns="http://www.w3.org/2000/svg" role="img" style="width:100%;max-width:460px;height:auto;display:block;margin:20px auto;">
+<defs>
+<marker id="arrowC5" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#00ffff"/></marker>
+</defs>
+<rect x="30" y="24" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="46" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">1. UAVGJORT OPPDAGES</text>
+<text x="230.0" y="64" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Automatisk, eller manuelt sjekket for 1. plass</text>
+<line x1="230.0" y1="94" x2="230.0" y2="130" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC5)"/>
+<rect x="30" y="130" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="152" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">2. ÅPNE LYKKEHJULET</text>
+<text x="230.0" y="170" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Trekningssiden bytter selv til hjul-visning</text>
+<line x1="230.0" y1="200" x2="230.0" y2="236" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC5)"/>
+<rect x="30" y="236" width="400" height="53" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="258" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">3. DREI HJULET</text>
+<line x1="230.0" y1="289" x2="230.0" y2="325" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC5)"/>
+<rect x="30" y="325" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="347" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. BEKREFT PÅ STYRE-SIDEN</text>
+<text x="230.0" y="365" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Se resultatet og trykk "Bekreft og fortsett"</text>
+<line x1="230.0" y1="395" x2="230.0" y2="431" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC5)"/>
+<rect x="30" y="431" width="400" height="53" fill="#000000" stroke="#ffff00" stroke-width="2"/>
+<text x="230.0" y="453" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. SPILLET FORTSETTER</text>
+</svg>
+</div>
+
 <h2>Hurtiglenker</h2>
 <div class="card">
 <a class="linkbox" href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank"><b>Regneark</b><span>Databasen bak quizzen</span></a>
 <a class="linkbox" href="styre.html"><b>Styre / Admin</b><span>Lag-oppsett, fasit, poeng, opprykk, buzzer og finale</span></a>
 <a class="linkbox" href="stilling.html"><b>Stilling</b><span>Divisjonstabeller for storskjerm</span></a>
-<a class="linkbox" href="trekning.html" target="_blank"><b>Storskjerm (trekning + buzzer)</b><span>Vis på prosjektor under opp-/nedrykk og finale</span></a>
+<a class="linkbox" href="trekning.html" target="_blank"><b>Storskjerm (trekning + buzzer + lykkehjul)</b><span>Vis på prosjektor under opp-/nedrykk, finale og eventuelle uavgjort-trekninger</span></a>
 <a class="linkbox" href="index.html"><b>Oversikt</b><span>Tilbake til forsiden med alle lenker</span></a>
 </div>
 

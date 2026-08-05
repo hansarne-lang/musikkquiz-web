@@ -66,9 +66,9 @@ h2{margin-top:32px;}
 </div>
 
 <h2>Lenker</h2>
-<a class="linkbox" href="styre.html" target="_blank"><b>1. Admin / Styre (lagoppsett + dommerpanel)</b><span>Opprett lag, sett divisjon/bord og generer QR-koder - og styr selve quizen: se gjeldende runde, fasit hentes automatisk, beregn poeng automatisk eller la Claude kvalitetssikre svarene først, rediger kategorier/sanger, åpne neste runde, opp-/nedrykk, buzzer og finale</span></a>
-<a class="linkbox" href="stilling.html" target="_blank"><b>2. Stilling (divisjonstabeller)</b><span>Vis på storskjerm - oppdaterer seg selv med 1. og 2. divisjonstabell</span></a>
-<a class="linkbox" href="trekning.html" target="_blank"><b>3. Storskjerm (trekning + buzzer)</b><span>Vis på prosjektor/skjerm - bytter automatisk mellom kategori-trekning (opp-/nedrykk) og buzzer-visning etter hva som er aktivt. Styres fra Styre-siden.</span></a>
+<a class="linkbox" href="styre.html" target="_blank"><b>1. Admin / Styre (lagoppsett + dommerpanel)</b><span>Opprett lag, sett divisjon/bord og generer QR-koder - og styr selve quizen: se gjeldende runde, fasit hentes automatisk, beregn poeng sang for sang (automatisk eller med Claude-kvalitetssikring), rediger kategorier/sanger, åpne neste runde, opp-/nedrykk, buzzer, finale og lykkehjul ved uavgjort</span></a>
+<a class="linkbox" href="stilling.html" target="_blank"><b>2. Stilling (divisjonstabeller)</b><span>Vis på storskjerm - oppdaterer seg selv med 1. og 2. divisjonstabell, live etter hver sang</span></a>
+<a class="linkbox" href="trekning.html" target="_blank"><b>3. Storskjerm (trekning + buzzer + lykkehjul)</b><span>Vis på prosjektor/skjerm - bytter automatisk mellom kategori-trekning (opp-/nedrykk), buzzer-visning og lykkehjul (ved uavgjort) etter hva som er aktivt. Styres fra Styre-siden.</span></a>
 <p><span>Lenker til hvert enkelt lags svarside (med QR-kode) finner du under "Lag-oppsett" på Admin/Styre-siden etter at lagene er opprettet.</span></p>
 
 <h2>Tilgang for andre</h2>
@@ -100,6 +100,8 @@ h2{margin-top:32px;}
 <li>Kategori-styring i Admin - se, rediger, legg til og fjern sanger/kategorier uten å røre regnearket <span class="status ferdig">klart</span></li>
 <li>Claude-vurdering av svar (kopier/lim, ingen API) med revisjonsspor per svar i regnearket <span class="status ferdig">klart</span></li>
 <li>Alle sider (lag-svar, storskjerm, styre, stilling, oversikt) kjører nå på Netlify - ingen Google-innlogging kreves <span class="status ferdig">klart</span></li>
+<li>Poengberegning per sang - stillingen oppdateres live med en gang hver sang er scoret, i stedet for å vente på hele runden <span class="status ferdig">klart</span></li>
+<li>Uavgjort-trekninger avgjøres med et animert lykkehjul på storskjermen (1. plass i divisjon, opp-/nedrykk-utfordrer, finaleplass og finalevinner) <span class="status ferdig">klart</span></li>
 </ul>
 
 </div>
