@@ -149,6 +149,7 @@ function vis(data) {
   gjeldendeRunde = data.runde;
   gjeldendeFasit = data.fasit;
   var f = data.fasit;
+  var scoreStatus = data.sangScoreStatus || { s1: false, s2: false, s3: false };
   var html = '<div class="card"><h2>Fasit for runde ' + data.runde + '</h2>';
   for (var i = 1; i <= 3; i++) {
     var s = f ? f['sang' + i] : null;
@@ -159,86 +160,127 @@ function vis(data) {
   }
   html += '</div>';
   html += '<div class="card"><button onclick="lagreFasit()">Lagre fasit</button></div>';
-  html += '<div class="card"><button onclick="beregnPoeng()">Beregn poeng runde ' + data.runde + ' (automatisk)</button> ';
-  html += '<button onclick="eksporterTilClaude()">Vurder svar med Claude først</button></div>';
-  html += '<div id="claudeEksportWrap" class="card" style="display:none;">' +
-    '<h3>1. Kopier teksten under inn i en Claude-samtale</h3>' +
-    '<textarea id="claudeEksport" rows="10" style="width:100%;background:#000;color:#0f0;border:2px solid #00ffff;font-family:\'Courier New\',Courier,monospace;padding:8px;"></textarea>' +
-    '<div style="margin-top:8px;"><button onclick="kopierEksport()">Kopier tekst</button></div>' +
-    '<h3 style="margin-top:16px;">2. Lim inn Claude sitt svar her</h3>' +
-    '<textarea id="claudeSvar" rows="8" style="width:100%;background:#000;color:#fff;border:2px solid #ffff00;font-family:\'Courier New\',Courier,monospace;padding:8px;"></textarea>' +
-    '<div style="margin-top:8px;"><button onclick="brukClaudeVurdering()">Bruk vurdering og beregn poeng</button></div>' +
-    '<div id="claudeStatus" style="margin-top:8px;"></div>' +
-    '</div>';
-  html += '<div id="resultat"></div>';
+
+  for (var sn = 1; sn <= 3; sn++) {
+    var scoret = !!scoreStatus['s' + sn];
+    var badgeHtml = scoret
+      ? '<span style="background:#2e7d32;padding:2px 8px;font-size:0.8em;">SCORET</span>'
+      : '<span style="background:#8a6d00;padding:2px 8px;font-size:0.8em;">IKKE SCORET</span>';
+    html += '<div class="card"><h3>Sang ' + sn + ' <span id="sangBadge' + sn + '">' + badgeHtml + '</span></h3>';
+    html += '<button id="beregnBtn' + sn + '" onclick="beregnSang(' + sn + ')"' + (scoret ? ' disabled' : '') + '>Beregn poeng sang ' + sn + ' (automatisk)</button> ';
+    html += '<button id="claudeBtn' + sn + '" onclick="eksporterSangTilClaude(' + sn + ')"' + (scoret ? ' disabled' : '') + '>Vurder svar med Claude først</button>';
+    html += '<div id="claudeEksportWrap' + sn + '" class="card" style="display:none;">' +
+      '<h3>1. Kopier teksten under inn i en Claude-samtale</h3>' +
+      '<textarea id="claudeEksport' + sn + '" rows="8" style="width:100%;background:#000;color:#0f0;border:2px solid #00ffff;font-family:\'Courier New\',Courier,monospace;padding:8px;"></textarea>' +
+      '<div style="margin-top:8px;"><button onclick="kopierEksportSang(' + sn + ')">Kopier tekst</button></div>' +
+      '<h3 style="margin-top:16px;">2. Lim inn Claude sitt svar her</h3>' +
+      '<textarea id="claudeSvar' + sn + '" rows="6" style="width:100%;background:#000;color:#fff;border:2px solid #ffff00;font-family:\'Courier New\',Courier,monospace;padding:8px;"></textarea>' +
+      '<div style="margin-top:8px;"><button onclick="brukClaudeVurderingSang(' + sn + ')">Bruk vurdering og beregn poeng</button></div>' +
+      '<div id="claudeStatus' + sn + '" style="margin-top:8px;"></div>' +
+      '</div>';
+    html += '<div id="sangResultat' + sn + '"></div>';
+    html += '</div>';
+  }
+
+  html += '<div id="apneNesteWrap"></div>';
   if (data.harLag && data.alleFasit) {
     html += renderAlleFasit(data.alleFasit.filter(function (r) { return r.runde !== data.runde; }), data.runde);
   }
   document.getElementById('app').innerHTML = html;
+  if (scoreStatus.s1 && scoreStatus.s2 && scoreStatus.s3) {
+    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Apne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+  }
 }
 
-function eksporterTilClaude() {
-  document.getElementById('claudeEksportWrap').style.display = 'block';
-  document.getElementById('claudeEksport').value = 'Henter svar...';
-  apiGet('alleSvarForRunde', { runde: gjeldendeRunde }).then(function (svarListe) {
-    var f = gjeldendeFasit;
+function markerSangScoret(sangNr) {
+  var badge = document.getElementById('sangBadge' + sangNr);
+  if (badge) badge.innerHTML = '<span style="background:#2e7d32;padding:2px 8px;font-size:0.8em;">SCORET</span>';
+  var beregnBtn = document.getElementById('beregnBtn' + sangNr);
+  if (beregnBtn) beregnBtn.disabled = true;
+  var claudeBtn = document.getElementById('claudeBtn' + sangNr);
+  if (claudeBtn) claudeBtn.disabled = true;
+}
+
+function visSangResultat(sangNr, res) {
+  var html = '<table><tr><th>Lag</th><th>Poeng</th></tr>';
+  var sortert = res.resultater.slice().sort(function (a, b) { return b.poeng - a.poeng; });
+  sortert.forEach(function (r) {
+    html += '<tr><td>' + r.navn + '</td><td>' + r.poeng + '</td></tr>';
+  });
+  html += '</table>';
+  document.getElementById('sangResultat' + sangNr).innerHTML = html;
+  markerSangScoret(sangNr);
+  if (res.status && res.status.s1 && res.status.s2 && res.status.s3) {
+    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Apne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+  }
+}
+
+function beregnSang(sangNr) {
+  document.getElementById('sangResultat' + sangNr).innerHTML = '<p>Beregner...</p>';
+  apiGet('scoreSang', { runde: gjeldendeRunde, sangNr: sangNr }).then(function (res) {
+    visSangResultat(sangNr, res);
+  }).catch(feil);
+}
+
+function eksporterSangTilClaude(sangNr) {
+  document.getElementById('claudeEksportWrap' + sangNr).style.display = 'block';
+  document.getElementById('claudeEksport' + sangNr).value = 'Henter svar...';
+  apiGet('svarForSang', { runde: gjeldendeRunde, sangNr: sangNr }).then(function (svarListe) {
+    var f = gjeldendeFasit ? gjeldendeFasit['sang' + sangNr] : null;
     var tekst = 'Du vurderer svar i en musikkquiz. Vær raus med stavefeil, forkortelser, delvise navn (f.eks. kun etternavn på en artist) og andre rimelige skrivemåter, men avvis svar som er tydelig feil eller for vage til å identifisere riktig svar.\n\n';
-    tekst += 'FASIT RUNDE ' + gjeldendeRunde + ':\n';
-    for (var i = 1; i <= 3; i++) {
-      var s = f ? f['sang' + i] : null;
-      tekst += 'Sang ' + i + ': Artist="' + (s ? s.artist : '') + '", Låt/tittel="' + (s ? s.latt : '') + '"\n';
-    }
-    tekst += '\nINNSENDTE SVAR (format: [LagID] Lagnavn - Sang N):\n';
+    tekst += 'FASIT SANG ' + sangNr + ' (runde ' + gjeldendeRunde + '):\n';
+    tekst += 'Artist="' + (f ? f.artist : '') + '", Låt/tittel="' + (f ? f.latt : '') + '"\n';
+    tekst += '\nINNSENDTE SVAR (format: [LagID] Lagnavn):\n';
     if (!svarListe.length) {
-      tekst += '(Ingen svar innsendt for denne runden ennå)\n';
+      tekst += '(Ingen svar innsendt for denne sangen ennå)\n';
     }
     svarListe.forEach(function (sv) {
-      tekst += '[' + sv.lagId + '] ' + sv.navn + ' - Sang ' + sv.sangNr + ': Artist="' + sv.artist + '", Låt/tittel="' + sv.latt + '"\n';
+      tekst += '[' + sv.lagId + '] ' + sv.navn + ': Artist="' + sv.artist + '", Låt/tittel="' + sv.latt + '"\n';
     });
-    tekst += '\nSvar med NØYAKTIG dette formatet, en linje per lag+sang+felt (kun artist og låt/tittel - årstall vurderes automatisk separat med +-1 års toleranse), ingen annen tekst før eller etter:\n';
-    tekst += 'LAGID|SANGNR|FELT|OK\n\n';
+    tekst += '\nSvar med NØYAKTIG dette formatet, en linje per lag+felt (kun artist og låt/tittel - årstall vurderes automatisk separat med +-1 års toleranse), ingen annen tekst før eller etter:\n';
+    tekst += 'LAGID|FELT|OK\n\n';
     tekst += 'FELT skal være enten "artist" eller "latt". OK skal være "true" eller "false".\n';
-    tekst += 'Eksempel: 3|2|artist|true';
-    document.getElementById('claudeEksport').value = tekst;
+    tekst += 'Eksempel: 3|artist|true';
+    document.getElementById('claudeEksport' + sangNr).value = tekst;
   }).catch(function (e) {
-    document.getElementById('claudeEksport').value = 'Feil ved henting av svar: ' + (e && e.message ? e.message : e);
+    document.getElementById('claudeEksport' + sangNr).value = 'Feil ved henting av svar: ' + (e && e.message ? e.message : e);
   });
 }
 
-function kopierEksport() {
-  var ta = document.getElementById('claudeEksport');
+function kopierEksportSang(sangNr) {
+  var ta = document.getElementById('claudeEksport' + sangNr);
   ta.select();
   ta.setSelectionRange(0, 999999);
   try {
     document.execCommand('copy');
-    document.getElementById('claudeStatus').innerHTML = 'Kopiert!';
+    document.getElementById('claudeStatus' + sangNr).innerHTML = 'Kopiert!';
   } catch (e) {
-    document.getElementById('claudeStatus').innerHTML = 'Fikk ikke kopiert automatisk - marker teksten manuelt og kopier (Ctrl+C).';
+    document.getElementById('claudeStatus' + sangNr).innerHTML = 'Fikk ikke kopiert automatisk - marker teksten manuelt og kopier (Ctrl+C).';
   }
 }
 
-function brukClaudeVurdering() {
-  var tekst = document.getElementById('claudeSvar').value;
+function brukClaudeVurderingSang(sangNr) {
+  var tekst = document.getElementById('claudeSvar' + sangNr).value;
   var linjer = tekst.split('\n');
   var overstyringer = {};
-  var regex = /^(\d+)\|(\d+)\|(artist|latt)\|(true|false)$/i;
+  var regex = /^(\d+)\|(artist|latt)\|(true|false)$/i;
   var antallLinjer = 0;
   linjer.forEach(function (linje) {
     var m = linje.trim().match(regex);
     if (m) {
-      var key = m[1] + '_' + m[2] + '_' + m[3].toLowerCase();
-      overstyringer[key] = (m[4].toLowerCase() === 'true');
+      var key = m[1] + '_' + m[2].toLowerCase();
+      overstyringer[key] = (m[3].toLowerCase() === 'true');
       antallLinjer++;
     }
   });
   if (antallLinjer === 0) {
-    document.getElementById('claudeStatus').innerHTML = '<p style="color:#ff6b6b">Fant ingen gyldige vurderingslinjer i teksten (forventet format: LAGID|SANGNR|FELT|OK). Sjekk at du limte inn hele svaret fra Claude.</p>';
+    document.getElementById('claudeStatus' + sangNr).innerHTML = '<p style="color:#ff6b6b">Fant ingen gyldige vurderingslinjer i teksten (forventet format: LAGID|FELT|OK). Sjekk at du limte inn hele svaret fra Claude.</p>';
     return;
   }
-  document.getElementById('claudeStatus').innerHTML = 'Bruker ' + antallLinjer + ' vurderinger og beregner poeng...';
-  apiGet('scoreRundeMedOverstyringer', { runde: gjeldendeRunde, overstyringer: JSON.stringify(overstyringer) }).then(function (res) {
-    document.getElementById('claudeStatus').innerHTML = antallLinjer + ' Claude-vurderinger brukt.';
-    visResultat(res);
+  document.getElementById('claudeStatus' + sangNr).innerHTML = 'Bruker ' + antallLinjer + ' vurderinger og beregner poeng...';
+  apiGet('scoreSangMedOverstyringer', { runde: gjeldendeRunde, sangNr: sangNr, overstyringer: JSON.stringify(overstyringer) }).then(function (res) {
+    document.getElementById('claudeStatus' + sangNr).innerHTML = antallLinjer + ' Claude-vurderinger brukt.';
+    visSangResultat(sangNr, res);
   }).catch(feil);
 }
 
@@ -251,24 +293,8 @@ function lagreFasit() {
     fasit.push({ artist: a[i].value, latt: l[i].value, aar: aa[i].value });
   }
   apiGet('setFasit', { runde: gjeldendeRunde, fasit: JSON.stringify(fasit) }).then(function () {
-    document.getElementById('resultat').innerHTML = '<p>Fasit lagret.</p>';
+    document.getElementById('apneNesteWrap').insertAdjacentHTML('beforebegin', '<p>Fasit lagret.</p>');
   }).catch(feil);
-}
-
-function beregnPoeng() {
-  document.getElementById('resultat').innerHTML = '<p>Beregner...</p>';
-  apiGet('scoreRunde', { runde: gjeldendeRunde }).then(visResultat).catch(feil);
-}
-
-function visResultat(res) {
-  var html = '<div class="card"><h3>Poeng runde ' + gjeldendeRunde + '</h3><table><tr><th>Lag</th><th>Poeng</th></tr>';
-  res.sort(function (a, b) { return b.poengDenneRunden - a.poengDenneRunden; });
-  res.forEach(function (r) {
-    html += '<tr><td>' + r.navn + '</td><td>' + r.poengDenneRunden + '</td></tr>';
-  });
-  html += '</table></div>';
-  html += '<div class="card"><button onclick="apneNeste()">Apne runde ' + (gjeldendeRunde + 1) + '</button></div>';
-  document.getElementById('resultat').innerHTML = html;
 }
 
 function apneNeste() {
