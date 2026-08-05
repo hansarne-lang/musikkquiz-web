@@ -307,12 +307,20 @@ function visOpprykk(o) {
     html += '<button onclick="registrer(\'' + o.lagC.id + '\')">' + o.lagC.navn + '</button> ';
     html += '<button onclick="hopp()">Ingen riktig / hopp over...</button></div>';
   } else if (o.status === 'uavgjort') {
+    var lagliste = [o.lagA, o.lagB, o.lagC];
+    var poengliste = [o.poengA, o.poengB, o.poengC];
+    var minPoeng = Math.min(poengliste[0], poengliste[1], poengliste[2]);
     html = '<div class="card"><h2>Likt poeng - velg hvilket lag som rykker ned til 2. divisjon:</h2>';
-    html += '<button onclick="velgNed(\'' + o.lagB.id + '\')">' + o.lagB.navn + '</button> ';
-    html += '<button onclick="velgNed(\'' + o.lagC.id + '\')">' + o.lagC.navn + '</button></div>';
+    lagliste.forEach(function (lag, i) {
+      if (poengliste[i] === minPoeng) {
+        html += '<button onclick="velgNed(\'' + lag.id + '\')">' + lag.navn + '</button> ';
+      }
+    });
+    html += '</div>';
   } else if (o.status === 'ferdig') {
     var nedNavn = '';
-    if (o.resultat && String(o.resultat.nedrykket) === String(o.lagB.id)) nedNavn = o.lagB.navn;
+    if (o.resultat && String(o.resultat.nedrykket) === String(o.lagA.id)) nedNavn = o.lagA.navn;
+    else if (o.resultat && String(o.resultat.nedrykket) === String(o.lagB.id)) nedNavn = o.lagB.navn;
     else if (o.resultat && String(o.resultat.nedrykket) === String(o.lagC.id)) nedNavn = o.lagC.navn;
     html = '<div class="card"><h2>Ferdig!</h2><p><b>' + nedNavn + '</b> rykker ned til 2. divisjon. De to andre spiller i 1. divisjon.</p></div>';
   }
