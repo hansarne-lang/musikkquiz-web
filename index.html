@@ -68,17 +68,17 @@ h2{margin-top:32px;}
 <h2>Lenker</h2>
 <a class="linkbox" href="styre.html" target="_blank"><b>1. Admin / Styre (lagoppsett + dommerpanel)</b><span>Opprett lag, sett divisjon/bord og generer QR-koder - og styr selve quizen: se gjeldende runde, fasit hentes automatisk, beregn poeng automatisk eller la Claude kvalitetssikre svarene først, rediger kategorier/sanger, åpne neste runde, opp-/nedrykk, buzzer og finale</span></a>
 <a class="linkbox" href="stilling.html" target="_blank"><b>2. Stilling (divisjonstabeller)</b><span>Vis på storskjerm - oppdaterer seg selv med 1. og 2. divisjonstabell</span></a>
-<a class="linkbox" href="https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec?page=trekning" target="_blank"><b>3. Storskjerm (trekning + buzzer)</b><span>Vis på prosjektor/skjerm - bytter automatisk mellom kategori-trekning (opp-/nedrykk) og buzzer-visning etter hva som er aktivt. Styres fra Styre-siden.</span></a>
+<a class="linkbox" href="trekning.html" target="_blank"><b>3. Storskjerm (trekning + buzzer)</b><span>Vis på prosjektor/skjerm - bytter automatisk mellom kategori-trekning (opp-/nedrykk) og buzzer-visning etter hva som er aktivt. Styres fra Styre-siden.</span></a>
 <p><span>Lenker til hvert enkelt lags svarside (med QR-kode) finner du under "Lag-oppsett" på Admin/Styre-siden etter at lagene er opprettet.</span></p>
 
 <h2>Tilgang for andre</h2>
-<p>Appen er satt til <b>Alle</b> under "Hvem har tilgang" i implementeringen - alle med lenken kan bruke den uten å logge inn på Google. Alt kjører på din konto.</p>
-<p>Del riktig side med riktig gruppe (samme grunnadresse, ulik <code>?page=</code>):</p>
-<p><b>Vertskap/dommer:</b> https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec?page=styre<br>
-<b>Hvert lag (unik lenke/QR per lag):</b> https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec?page=lag&amp;id=X<br>
-<b>Storskjerm:</b> https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec?page=trekning<br>
-<b>Publikum:</b> stilling.html (samme mappe som denne siden)<br>
-<b>Sameside med alle lenker:</b> denne siden (grunnadressen)</p>
+<p>Alle sidene ligger nå på Netlify og krever ingen innlogging - alle med lenken kan bruke den. Data lagres i regnearket via Google Apps Script i bakgrunnen.</p>
+<p>Del riktig side med riktig gruppe:</p>
+<p><b>Vertskap/dommer:</b> https://musikkquiz-web.netlify.app/styre.html<br>
+<b>Hvert lag (unik lenke/QR per lag):</b> https://musikkquiz-web.netlify.app/lag.html?id=X<br>
+<b>Storskjerm:</b> https://musikkquiz-web.netlify.app/trekning.html<br>
+<b>Publikum:</b> https://musikkquiz-web.netlify.app/stilling.html<br>
+<b>Samleside med alle lenker:</b> denne siden (https://musikkquiz-web.netlify.app/)</p>
 <p>Dette gir kun tilgang til å <i>bruke</i> appen. Skal noen redigere selve koden, må du gi delingstilgang til Apps Script-prosjektet separat (Del-knappen i editoren) - bør kun gis til noen som skal videreutvikle løsningen.</p>
 
 <h2>Ressurser</h2>
@@ -99,6 +99,7 @@ h2{margin-top:32px;}
 <li>Fargekodet stilling - 1. plass i grønt, opp-/nedrykk-kandidater i gult <span class="status ferdig">klart</span></li>
 <li>Kategori-styring i Admin - se, rediger, legg til og fjern sanger/kategorier uten å røre regnearket <span class="status ferdig">klart</span></li>
 <li>Claude-vurdering av svar (kopier/lim, ingen API) med revisjonsspor per svar i regnearket <span class="status ferdig">klart</span></li>
+<li>Alle sider (lag-svar, storskjerm, styre, stilling, oversikt) kjører nå på Netlify - ingen Google-innlogging kreves <span class="status ferdig">klart</span></li>
 </ul>
 
 </div>

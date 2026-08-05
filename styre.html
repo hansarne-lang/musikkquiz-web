@@ -87,6 +87,7 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <script>
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
 var baseUrl = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var siteUrl = "https://musikkquiz-web.netlify.app";
 var gjeldendeRunde = 0;
 var gjeldendeFasit = null;
 
@@ -286,7 +287,7 @@ function visOpprykk(o) {
     html = '<div class="card"><h2>Opp-/nedrykksspill</h2>';
     html += '<p>Lag: ' + o.lagA.navn + ' (nest nederst div1), ' + o.lagB.navn + ' (nederst div1), ' + o.lagC.navn + ' (2. plass div2)</p>';
     html += '<p>Apne trekningssiden (vis pa storskjerm) for a trekke 4 kategorier:</p>';
-    html += '<a href="' + baseUrl + '?page=trekning" target="_blank"><button>Apne trekningsside</button></a></div>';
+    html += '<a href="' + siteUrl + '/trekning.html" target="_blank"><button>Apne trekningsside</button></a></div>';
   } else if (o.status === 'velger') {
     html = '<div class="card"><h2>Kandidatkategorier: ' + o.kandidater.join(', ') + '</h2>';
     html += '<p>' + o.lagA.navn + ' velger kategori. Klikk hvilken kategori laget valgte:</p>';
@@ -571,7 +572,7 @@ function lagreLag() {
 function lagOppsettVisResultat(teams) {
   var html = '<h3>Lag og QR-koder</h3><div class="grid">';
   teams.forEach(function (t) {
-    var link = baseUrl + '?page=lag&id=' + t.id;
+    var link = siteUrl + '/lag.html?id=' + t.id;
     var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(link);
     html += '<div class="qrcard" id="qr' + t.id + '"><h3>' + t.navn + '</h3><p>Divisjon ' + t.divisjon + ' - Bord ' + t.bord + '</p><img src="' + qrUrl + '" width="150" height="150" alt="QR-kode"><p class="small">' + link + '</p></div>';
   });

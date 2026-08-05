@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Lag</title>
+<style>
+:root{
+  --bg:#000000;
+  --bg2:#000000;
+  --bg3:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gold:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+input,select{background:#000000;border:2px solid var(--accent2);color:var(--text);border-radius:0;padding:8px 10px;font-size:15px;font-family:'Courier New',Courier,monospace;width:100%;max-width:400px;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+label{display:inline-block;margin-top:10px;font-size:0.9em;color:#00ffff;}
+#buzzknapp{font-size:1.5em;padding:20px 40px;background:#2ecc71;color:#fff;border:none;}
+#buzzknapp:disabled{background:#999;color:#fff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Svar</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="stilling.html"><button>Stilling</button></a>
+<a href="veiledning.html"><button>Veiledning</button></a>
+</div>
+<div id="app"><p>Laster...</p></div>
+<div id="buzzerdiv" class="card" style="display:none;text-align:center;">
+<button id="buzzknapp" onclick="buzz()">BUZZ!</button>
+<p id="buzztekst"></p>
+</div>
+</div>
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var params = new URLSearchParams(window.location.search);
+var teamId = params.get('id') || '';
+var currentRunde = 0;
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function(k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+function feil(e) {
+  document.getElementById('app').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p></div>';
+}
+
+function init() {
+  if (!teamId) {
+    document.getElementById('app').innerHTML = '<div class="card"><p>Mangler lag-id. Sjekk QR-koden/lenken.</p></div>';
+    return;
+  }
+  apiGet('lagData', { id: teamId }).then(function(data) {
+    currentRunde = data.runde;
+    vis(data);
+  }).catch(feil);
+}
+
+function finnSvar(liste, nr) {
+  for (var i = 0; i < liste.length; i++) {
+    if (liste[i].sangNr == nr) return liste[i];
+  }
+  return null;
+}
+
+function vis(data) {
+  if (!data.team) {
+    document.getElementById('app').innerHTML = '<div class="card"><p>Fant ikke laget. Sjekk QR-koden.</p></div>';
+    return;
+  }
+  var html = '<div class="card"><h2>' + data.team.navn + '</h2><p>Divisjon ' + data.team.divisjon + ' - Bord ' + data.team.bord + '</p><p>Runde ' + data.runde + '</p>' +
+    '<button onclick="init()">Oppdater</button></div>';
+  if (data.status !== 'apen') {
+    html += '<div class="card"><p>Runden er ikke åpen for innsending akkurat nå.</p></div>';
+    document.getElementById('app').innerHTML = html;
+    return;
+  }
+  html += '<div class="card"><form id="svarForm">';
+  for (var i = 1; i <= 3; i++) {
+    var eks = finnSvar(data.svar, i);
+    html += '<h3>Sang ' + i + '</h3>' +
+      '<label>Artist</label><br><input class="artist" data-sang="' + i + '" value="' + (eks ? eks.artist : '') + '"><br>' +
+      '<label>Låt/tittel</label><br><input class="latt" data-sang="' + i + '" value="' + (eks ? eks.latt : '') + '"><br>' +
+      '<label>Årstall</label><br><input type="number" class="aar" data-sang="' + i + '" value="' + (eks ? eks.aar : '') + '"><br><br>';
+  }
+  html += '<button type="button" onclick="sendInn()">Send inn svar</button></form><div id="status"></div></div>';
+  document.getElementById('app').innerHTML = html;
+}
+
+function sendInn() {
+  var artistEl = document.querySelectorAll('.artist');
+  var lattEl = document.querySelectorAll('.latt');
+  var aarEl = document.querySelectorAll('.aar');
+  var svarListe = [];
+  for (var i = 0; i < artistEl.length; i++) {
+    svarListe.push({ sangNr: i + 1, artist: artistEl[i].value, latt: lattEl[i].value, aar: aarEl[i].value });
+  }
+  apiGet('sendSvar', { lagId: teamId, runde: currentRunde, svar: JSON.stringify(svarListe) }).then(function() {
+    document.getElementById('status').innerHTML = '<p>Svar sendt inn!</p>';
+  }).catch(feil);
+}
+
+function lastBuzzerLag() {
+  apiGet('buzzerStatusForLag', { lagId: teamId }).then(visBuzzerLag).catch(function(e) { console.error(e); });
+}
+
+function visBuzzerLag(o) {
+  var div = document.getElementById('buzzerdiv');
+  var knapp = document.getElementById('buzzknapp');
+  var tekst = document.getElementById('buzztekst');
+  if (!div) return;
+  if (o.finaleAktiv && !o.tillattForLag) {
+    div.style.display = 'none';
+    return;
+  }
+  if (o.status === 'ledig') {
+    div.style.display = 'none';
+  } else if (o.status === 'apen') {
+    div.style.display = 'block';
+    knapp.disabled = false;
+    knapp.style.background = '#2ecc71';
+    tekst.textContent = '';
+  } else if (o.status === 'lukket') {
+    div.style.display = 'block';
+    knapp.disabled = true;
+    knapp.style.background = '#999';
+    tekst.textContent = (o.vinnerId == teamId) ? 'Du var først!' : (o.vinnerNavn + ' var først!');
+  }
+}
+
+function buzz() {
+  document.getElementById('buzzknapp').disabled = true;
+  apiGet('trykkBuzzer', { lagId: teamId }).then(visBuzzerLag).catch(function(e) { console.error(e); });
+}
+
+init();
+if (teamId) {
+  lastBuzzerLag();
+  setInterval(lastBuzzerLag, 700);
+}
+</script>
+</body>
+</html>
