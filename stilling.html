@@ -70,13 +70,14 @@ function vis(data) {
     '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2, 2) + '</div>' +
     '<div class="card" style="font-size:0.85em;">' +
     '<span style="background:#00cc00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> 1. plass &nbsp;&nbsp; ' +
-    '<span style="background:#ffff00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> Med i opp-/nedrykk-trekning' +
+    '<span style="background:#ffff00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> Med i opp-/nedrykk-trekning<br>' +
+    '<span>"Svart" viser hvor mange sanger laget totalt har sendt inn svar på</span>' +
     '</div>';
   document.getElementById('app').innerHTML = html;
 }
 
 function lagTabell(rader, divisjon) {
-  var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th></tr>';
+  var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th><th>Svart</th></tr>';
   rader.forEach(function(r, i) {
     var stil = '';
     if (i === 0) {
@@ -86,7 +87,7 @@ function lagTabell(rader, divisjon) {
     } else if (divisjon === 2 && i === 1) {
       stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
     }
-    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + r.poeng + '</td></tr>';
+    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + r.poeng + '</td><td>' + (r.antallSvar || 0) + '</td></tr>';
   });
   html += '</table>';
   return html;
