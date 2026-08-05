@@ -66,15 +66,27 @@ function last() {
 
 function vis(data) {
   var html = '<p>Runde ' + data.runde + '</p>' +
-    '<div class="card"><h2>1. divisjon</h2>' + lagTabell(data.div1) + '</div>' +
-    '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2) + '</div>';
+    '<div class="card"><h2>1. divisjon</h2>' + lagTabell(data.div1, 1) + '</div>' +
+    '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2, 2) + '</div>' +
+    '<div class="card" style="font-size:0.85em;">' +
+    '<span style="background:#00cc00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> 1. plass &nbsp;&nbsp; ' +
+    '<span style="background:#ffff00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> Med i opp-/nedrykk-trekning' +
+    '</div>';
   document.getElementById('app').innerHTML = html;
 }
 
-function lagTabell(rader) {
+function lagTabell(rader, divisjon) {
   var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th></tr>';
   rader.forEach(function(r, i) {
-    html += '<tr><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + r.poeng + '</td></tr>';
+    var stil = '';
+    if (i === 0) {
+      stil = ' style="background:#00cc00;color:#000000;font-weight:bold;"';
+    } else if (divisjon === 1 && rader.length >= 2 && (i === rader.length - 2 || i === rader.length - 1)) {
+      stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
+    } else if (divisjon === 2 && i === 1) {
+      stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
+    }
+    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + r.poeng + '</td></tr>';
   });
   html += '</table>';
   return html;

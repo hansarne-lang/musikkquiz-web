@@ -59,6 +59,14 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 </details>
 <div id="lagOppsettResultat"></div>
 
+<details class="card">
+<summary>Kategorier (rediger sanger, legg til/fjern kategori)</summary>
+<div id="kategoriDiag" style="color:#f66;font-family:monospace;font-size:12px;margin-top:8px"></div>
+<div style="margin-top:12px"><button onclick="visNyKategoriSkjema()">+ Ny kategori</button></div>
+<div id="nyKategoriSkjema"></div>
+<div id="kategoriListe" style="margin-top:12px"><p>Laster...</p></div>
+</details>
+
 <div id="app"><p>Laster...</p></div>
 <div id="opprykk"></div>
 <div id="buzzer"></div>
@@ -319,6 +327,142 @@ function nullstillFinaleClick() {
   apiGet('nullstillFinale').then(visFinale).catch(feil);
 }
 
+var kategoriData = [];
+
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function lastKategorier() {
+  apiGet('kategorier').then(function (data) {
+    kategoriData = data;
+    renderKategoriListe();
+  }).catch(function (e) {
+    document.getElementById('kategoriListe').innerHTML = '<p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p>';
+  });
+}
+
+function renderKategoriListe() {
+  var html = '';
+  kategoriData.forEach(function (k, idx) {
+    html += renderKategoriKort(k, idx);
+  });
+  document.getElementById('kategoriListe').innerHTML = html || '<p>Ingen kategorier funnet.</p>';
+}
+
+function renderSangRad(idx, si, s) {
+  s = s || { artist: '', latt: '', aar: '', spotify: '' };
+  return '<div class="kat-sang-rad" data-idx="' + idx + '" data-si="' + si + '" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;align-items:center;">' +
+    '<input class="ks-artist" placeholder="Artist" value="' + escHtml(s.artist) + '" style="flex:1;min-width:100px;">' +
+    '<input class="ks-latt" placeholder="Lat/tittel" value="' + escHtml(s.latt) + '" style="flex:1;min-width:100px;">' +
+    '<input class="ks-aar" placeholder="Ar" value="' + escHtml(s.aar) + '" style="width:70px;">' +
+    '<input class="ks-spotify" placeholder="Spotify-lenke" value="' + escHtml(s.spotify) + '" style="flex:2;min-width:140px;">' +
+    '<button onclick="fjernSangRad(this)" style="padding:6px 10px;">X</button>' +
+    '</div>';
+}
+
+function fjernSangRad(btn) {
+  btn.closest('.kat-sang-rad').remove();
+}
+
+function renderKategoriKort(k, idx) {
+  var bruktBadge = k.brukt
+    ? '<span style="background:#8a6d00;padding:2px 8px;font-size:0.8em;margin-left:8px;">BRUKT</span>'
+    : '<span style="background:#2e7d32;padding:2px 8px;font-size:0.8em;margin-left:8px;">LEDIG</span>';
+  var html = '<details style="border-top:1px solid #00ffff;padding-top:10px;margin-top:10px;"><summary>' + escHtml(k.navn) + bruktBadge + '</summary>';
+  html += '<div style="margin-top:10px;">';
+  html += '<label>Kategorinavn</label><br><input class="kat-navn" data-idx="' + idx + '" value="' + escHtml(k.navn) + '"><br>';
+  html += '<div id="katSanger' + idx + '">';
+  k.sanger.forEach(function (s, si) {
+    html += renderSangRad(idx, si, s);
+  });
+  html += '</div>';
+  html += '<button onclick="leggTilSangRad(' + idx + ')">+ Legg til sang</button> ';
+  html += '<button onclick="lagreKategori(' + idx + ')">Lagre</button> ';
+  html += '<button onclick="slettKategoriClick(' + idx + ')">Slett kategori</button>';
+  html += '<span id="katRes' + idx + '"></span>';
+  html += '</div></details>';
+  return html;
+}
+
+function leggTilSangRad(idx) {
+  var container = document.getElementById('katSanger' + idx);
+  var si = container.querySelectorAll('.kat-sang-rad').length;
+  container.insertAdjacentHTML('beforeend', renderSangRad(idx, si, null));
+}
+
+function samleSanger(container) {
+  var rows = container.querySelectorAll('.kat-sang-rad');
+  var sanger = [];
+  rows.forEach(function (row) {
+    var artist = row.querySelector('.ks-artist').value.trim();
+    var latt = row.querySelector('.ks-latt').value.trim();
+    var aar = row.querySelector('.ks-aar').value.trim();
+    var spotify = row.querySelector('.ks-spotify').value.trim();
+    if (artist || latt) { sanger.push({ artist: artist, latt: latt, aar: aar, spotify: spotify }); }
+  });
+  return sanger;
+}
+
+function lagreKategori(idx) {
+  var k = kategoriData[idx];
+  var navnInput = document.querySelector('.kat-navn[data-idx="' + idx + '"]');
+  var nyttNavn = navnInput.value.trim();
+  if (!nyttNavn) { document.getElementById('katRes' + idx).innerHTML = ' Navn pakrevd.'; return; }
+  var sanger = samleSanger(document.getElementById('katSanger' + idx));
+  var resEl = document.getElementById('katRes' + idx);
+  resEl.innerHTML = ' Lagrer...';
+  apiGet('saveKategori', { oldNavn: k.navn, navn: nyttNavn, sanger: JSON.stringify(sanger) }).then(function (data) {
+    kategoriData = data;
+    renderKategoriListe();
+  }).catch(function (e) {
+    resEl.innerHTML = ' Feil: ' + (e && e.message ? e.message : e);
+  });
+}
+
+function slettKategoriClick(idx) {
+  var k = kategoriData[idx];
+  if (!confirm('Slette kategorien "' + k.navn + '" og alle sangene i den?')) return;
+  apiGet('deleteKategori', { navn: k.navn }).then(function (data) {
+    kategoriData = data;
+    renderKategoriListe();
+  }).catch(feil);
+}
+
+function visNyKategoriSkjema() {
+  var html = '<div class="card" style="border-color:#ffff00;">';
+  html += '<label>Nytt kategorinavn</label><br><input id="nyKatNavn"><br>';
+  html += '<div id="nyKatSanger">';
+  for (var i = 0; i < 5; i++) { html += renderSangRad('ny', i, null); }
+  html += '</div>';
+  html += '<button onclick="leggTilSangRadNy()">+ Legg til sang</button> ';
+  html += '<button onclick="lagreNyKategori()">Lagre ny kategori</button> ';
+  html += '<button onclick="document.getElementById(\'nyKategoriSkjema\').innerHTML=\'\'">Avbryt</button>';
+  html += '<span id="nyKatRes"></span></div>';
+  document.getElementById('nyKategoriSkjema').innerHTML = html;
+}
+
+function leggTilSangRadNy() {
+  var container = document.getElementById('nyKatSanger');
+  var si = container.querySelectorAll('.kat-sang-rad').length;
+  container.insertAdjacentHTML('beforeend', renderSangRad('ny', si, null));
+}
+
+function lagreNyKategori() {
+  var navn = document.getElementById('nyKatNavn').value.trim();
+  if (!navn) { document.getElementById('nyKatRes').innerHTML = ' Navn pakrevd.'; return; }
+  var sanger = samleSanger(document.getElementById('nyKatSanger'));
+  document.getElementById('nyKatRes').innerHTML = ' Lagrer...';
+  apiGet('saveKategori', { oldNavn: '', navn: navn, sanger: JSON.stringify(sanger) }).then(function (data) {
+    kategoriData = data;
+    document.getElementById('nyKategoriSkjema').innerHTML = '';
+    renderKategoriListe();
+  }).catch(function (e) {
+    document.getElementById('nyKatRes').innerHTML = ' Feil: ' + (e && e.message ? e.message : e);
+  });
+}
+
 window.onerror = function(msg, src, line, col, err) {
   var d = document.getElementById('lagDiag');
   if (d) d.innerHTML += '<div>FEIL: ' + msg + ' (linje ' + line + ')</div>';
@@ -368,6 +512,7 @@ function nullstill(action, sporsmal) {
 }
 
 init();
+lastKategorier();
 lastOpprykk();
 setInterval(lastOpprykk, 4000);
 lastBuzzer();
