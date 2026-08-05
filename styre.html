@@ -120,8 +120,8 @@ function renderAlleFasit(alleFasit, gjeldende) {
     for (var i = 1; i <= 3; i++) {
       var s = f ? f['sang' + i] : null;
       html += '<label>Sang ' + i + ' - Artist</label><br><input class="af-artist" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.artist : '') + '"><br>';
-      html += '<label>Lat/tittel</label><br><input class="af-latt" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.latt : '') + '"><br>';
-      html += '<label>Arstall</label><br><input class="af-aar" type="number" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.aar : '') + '"><br>';
+      html += '<label>Låt/tittel</label><br><input class="af-latt" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.latt : '') + '"><br>';
+      html += '<label>Årstall</label><br><input class="af-aar" type="number" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.aar : '') + '"><br>';
     }
     html += '<button onclick="lagreFasitRunde(' + r.runde + ')">Lagre fasit runde ' + r.runde + '</button><span id="afres' + r.runde + '"></span></div>';
   });
@@ -152,13 +152,13 @@ function vis(data) {
     var s = f ? f['sang' + i] : null;
     html += '<h3>Sang ' + i + '</h3>';
     html += '<label>Artist</label><br><input class="fartist" data-sang="' + i + '" value="' + (s ? s.artist : '') + '"><br>';
-    html += '<label>Lat/tittel</label><br><input class="flatt" data-sang="' + i + '" value="' + (s ? s.latt : '') + '"><br>';
-    html += '<label>Arstall</label><br><input class="faar" type="number" data-sang="' + i + '" value="' + (s ? s.aar : '') + '">';
+    html += '<label>Låt/tittel</label><br><input class="flatt" data-sang="' + i + '" value="' + (s ? s.latt : '') + '"><br>';
+    html += '<label>Årstall</label><br><input class="faar" type="number" data-sang="' + i + '" value="' + (s ? s.aar : '') + '">';
   }
   html += '</div>';
   html += '<div class="card"><button onclick="lagreFasit()">Lagre fasit</button></div>';
   html += '<div class="card"><button onclick="beregnPoeng()">Beregn poeng runde ' + data.runde + ' (automatisk)</button> ';
-  html += '<button onclick="eksporterTilClaude()">Vurder svar med Claude forst</button></div>';
+  html += '<button onclick="eksporterTilClaude()">Vurder svar med Claude først</button></div>';
   html += '<div id="claudeEksportWrap" class="card" style="display:none;">' +
     '<h3>1. Kopier teksten under inn i en Claude-samtale</h3>' +
     '<textarea id="claudeEksport" rows="10" style="width:100%;background:#000;color:#0f0;border:2px solid #00ffff;font-family:\'Courier New\',Courier,monospace;padding:8px;"></textarea>' +
@@ -180,22 +180,22 @@ function eksporterTilClaude() {
   document.getElementById('claudeEksport').value = 'Henter svar...';
   apiGet('alleSvarForRunde', { runde: gjeldendeRunde }).then(function (svarListe) {
     var f = gjeldendeFasit;
-    var tekst = 'Du vurderer svar i en musikkquiz. Vaer raus med stavefeil, forkortelser, delvise navn (f.eks. kun etternavn pa en artist) og andre rimelige skrivemater, men avvis svar som er tydelig feil eller for vage til a identifisere riktig svar.\n\n';
+    var tekst = 'Du vurderer svar i en musikkquiz. Vær raus med stavefeil, forkortelser, delvise navn (f.eks. kun etternavn på en artist) og andre rimelige skrivemåter, men avvis svar som er tydelig feil eller for vage til å identifisere riktig svar.\n\n';
     tekst += 'FASIT RUNDE ' + gjeldendeRunde + ':\n';
     for (var i = 1; i <= 3; i++) {
       var s = f ? f['sang' + i] : null;
-      tekst += 'Sang ' + i + ': Artist="' + (s ? s.artist : '') + '", Lat/tittel="' + (s ? s.latt : '') + '"\n';
+      tekst += 'Sang ' + i + ': Artist="' + (s ? s.artist : '') + '", Låt/tittel="' + (s ? s.latt : '') + '"\n';
     }
     tekst += '\nINNSENDTE SVAR (format: [LagID] Lagnavn - Sang N):\n';
     if (!svarListe.length) {
-      tekst += '(Ingen svar innsendt for denne runden enna)\n';
+      tekst += '(Ingen svar innsendt for denne runden ennå)\n';
     }
     svarListe.forEach(function (sv) {
-      tekst += '[' + sv.lagId + '] ' + sv.navn + ' - Sang ' + sv.sangNr + ': Artist="' + sv.artist + '", Lat/tittel="' + sv.latt + '"\n';
+      tekst += '[' + sv.lagId + '] ' + sv.navn + ' - Sang ' + sv.sangNr + ': Artist="' + sv.artist + '", Låt/tittel="' + sv.latt + '"\n';
     });
-    tekst += '\nSvar med NOYAKTIG dette formatet, en linje per lag+sang+felt (kun artist og lat/tittel - arstall vurderes automatisk separat med +-1 ars toleranse), ingen annen tekst for eller etter:\n';
+    tekst += '\nSvar med NØYAKTIG dette formatet, en linje per lag+sang+felt (kun artist og låt/tittel - årstall vurderes automatisk separat med +-1 års toleranse), ingen annen tekst før eller etter:\n';
     tekst += 'LAGID|SANGNR|FELT|OK\n\n';
-    tekst += 'FELT skal vaere enten "artist" eller "latt". OK skal vaere "true" eller "false".\n';
+    tekst += 'FELT skal være enten "artist" eller "latt". OK skal være "true" eller "false".\n';
     tekst += 'Eksempel: 3|2|artist|true';
     document.getElementById('claudeEksport').value = tekst;
   }).catch(function (e) {
@@ -286,7 +286,7 @@ function visOpprykk(o) {
   } else if (o.status === 'trekker') {
     html = '<div class="card"><h2>Opp-/nedrykksspill</h2>';
     html += '<p>Lag: ' + o.lagA.navn + ' (nest nederst div1), ' + o.lagB.navn + ' (nederst div1), ' + o.lagC.navn + ' (2. plass div2)</p>';
-    html += '<p>Apne trekningssiden (vis pa storskjerm) for a trekke 4 kategorier:</p>';
+    html += '<p>Åpne trekningssiden (vis på storskjerm) for å trekke 4 kategorier:</p>';
     html += '<a href="' + siteUrl + '/trekning.html" target="_blank"><button>Apne trekningsside</button></a></div>';
   } else if (o.status === 'velger') {
     html = '<div class="card"><h2>Kandidatkategorier: ' + o.kandidater.join(', ') + '</h2>';
@@ -346,11 +346,11 @@ function lastBuzzer() {
 function visBuzzer(o) {
   var html = '<div class="card"><h2>Buzzer</h2>';
   if (o.status === 'ledig') {
-    html += '<p>Buzzer er lukket.</p><button onclick="apneBuzz()">Apne buzzer</button>';
+    html += '<p>Buzzer er lukket.</p><button onclick="apneBuzz()">Åpne buzzer</button>';
   } else if (o.status === 'apen') {
-    html += '<p style="color:#2ecc71;font-weight:bold;">Buzzer er apen - lagene kan trykke.</p><button onclick="nullstillBuzz()">Steng / nullstill</button>';
+    html += '<p style="color:#2ecc71;font-weight:bold;">Buzzer er åpen - lagene kan trykke.</p><button onclick="nullstillBuzz()">Steng / nullstill</button>';
   } else if (o.status === 'lukket') {
-    html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> var forst!</p><button onclick="apneBuzz()">Apne igjen</button> <button onclick="nullstillBuzz()">Nullstill</button>';
+    html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> var først!</p><button onclick="apneBuzz()">Åpne igjen</button> <button onclick="nullstillBuzz()">Nullstill</button>';
   }
   html += '</div>';
   document.getElementById('buzzer').innerHTML = html;
@@ -371,14 +371,14 @@ function lastFinale() {
 function visFinale(o) {
   var html = '<div class="card"><h2>Finale (topp 3 i Divisjon 1)</h2>';
   if (o.status === 'ikke_startet') {
-    html += '<p>Finalen er ikke startet enna.</p><button onclick="startFinaleClick()">Start finale</button>';
+    html += '<p>Finalen er ikke startet ennå.</p><button onclick="startFinaleClick()">Start finale</button>';
   } else {
     var sortert = o.lag.slice().sort(function(a,b){return b.poeng-a.poeng;});
     html += '<ol>';
     sortert.forEach(function(l){ html += '<li>' + (l.navn||'(tomt)') + ': ' + l.poeng + ' poeng</li>'; });
     html += '</ol>';
     if (o.status === 'pagar') {
-      html += '<p style="font-size:0.9em;color:#aaa;">Bruk Buzzer-kortet over til a apne/lukke runder. Gi poeng til laget som svarte riktig:</p><div>';
+      html += '<p style="font-size:0.9em;color:#aaa;">Bruk Buzzer-kortet over til å åpne/lukke runder. Gi poeng til laget som svarte riktig:</p><div>';
       o.lag.forEach(function(l){ if (l.id) { html += '<button onclick="giPoengClick(' + l.id + ')">+1: ' + l.navn + '</button> '; } });
       html += '</div><button onclick="avsluttFinaleClick()">Avslutt finale</button>';
     } else if (o.status === 'ferdig') {
@@ -433,7 +433,7 @@ function renderSangRad(idx, si, s) {
   s = s || { artist: '', latt: '', aar: '', spotify: '' };
   return '<div class="kat-sang-rad" data-idx="' + idx + '" data-si="' + si + '" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;align-items:center;">' +
     '<input class="ks-artist" placeholder="Artist" value="' + escHtml(s.artist) + '" style="flex:1;min-width:100px;">' +
-    '<input class="ks-latt" placeholder="Lat/tittel" value="' + escHtml(s.latt) + '" style="flex:1;min-width:100px;">' +
+    '<input class="ks-latt" placeholder="Låt/tittel" value="' + escHtml(s.latt) + '" style="flex:1;min-width:100px;">' +
     '<input class="ks-aar" placeholder="Ar" value="' + escHtml(s.aar) + '" style="width:70px;">' +
     '<input class="ks-spotify" placeholder="Spotify-lenke" value="' + escHtml(s.spotify) + '" style="flex:2;min-width:140px;">' +
     '<button onclick="fjernSangRad(this)" style="padding:6px 10px;">X</button>' +
@@ -582,9 +582,9 @@ function lagOppsettVisResultat(teams) {
 
 function nullstill(action, sporsmal) {
   if (!confirm(sporsmal)) return;
-  document.getElementById('nullstillResultat').innerHTML = '<p>Utforer...</p>';
+  document.getElementById('nullstillResultat').innerHTML = '<p>Utfører...</p>';
   apiGet(action).then(function () {
-    document.getElementById('nullstillResultat').innerHTML = '<p>Utfort. Laster siden pa nytt...</p>';
+    document.getElementById('nullstillResultat').innerHTML = '<p>Utført. Laster siden på nytt...</p>';
     setTimeout(function () { location.reload(); }, 1000);
   }).catch(feil);
 }
