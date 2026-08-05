@@ -60,7 +60,7 @@ code{color:#ffff00;}
 <ul>
 <li><b>QuizLag</b> - lagnavn, bordnummer og divisjon. Opprettes med "Generer lagrader" på <a href="styre.html">Styre-siden</a>.</li>
 <li><b>Runder</b> - sangene og fasiten for hver runde, samt status (åpen/lukket) for hvilken runde som spilles.</li>
-<li><b>Svar</b> - svarene lagene sender inn.</li>
+<li><b>Svar</b> - svarene lagene sender inn, samt (etter poengberegning) om artist, låt og årstall ble godkjent for hvert svar, poengsummen, og om vurderingen ble overstyrt via Claude - slik at svarene kan ettergås i etterkant.</li>
 <li><b>Poengsum</b> - poengsummen til hvert lag.</li>
 <li><b>Buzzer</b> - hvem som trykket først på buzzeren, og når.</li>
 <li><b>KategoriBrukt</b> - hvilke kategorier som er brukt i kategori-trekningen.</li>
@@ -110,12 +110,14 @@ code{color:#ffff00;}
 <li><b>Del ut lenker/QR-koder.</b> Hvert lag skanner sin QR-kode eller åpner sin lenke på en mobil/nettbrett ved bordet.</li>
 <li><b>Spill av sangene.</b> Runde 1 er åpen fra start. Spill de 3 sangene for runden.</li>
 <li><b>Lagene svarer.</b> Hvert lag fyller inn Artist, Låt og Årstall for de 3 sangene på sin side, og trykker Send inn svar.</li>
-<li><b>Beregn poeng.</b> Når alle lag har svart: gå til Styre-siden. Fasit er allerede fylt inn automatisk fra <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>. Trykk "Beregn poeng og lukk runde". Systemet gir 1p for riktig artist, 2p for riktig låt og 3p for riktig årstall (pluss/minus 1 år godkjennes), med toleranse for små skrivefeil.</li>
+<li><b>Beregn poeng.</b> Når alle lag har svart: gå til Styre-siden. Fasit er allerede fylt inn automatisk fra <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>. Du har to valg: (a) trykk "Beregn poeng runde X (automatisk)" for rask automatisk poengberegning - systemet gir 1p for riktig artist, 2p for riktig låt og 3p for riktig årstall (pluss/minus 1 år godkjennes), med toleranse for små skrivefeil - eller (b) trykk "Vurder svar med Claude først" for å la Claude kvalitetssikre svarene før poengberegning (se eget avsnitt under). Uansett hvilket valg du bruker, lagres en fasit-vurdering (riktig/feil per artist, låt og år, samt om Claude har overstyrt) for hvert innsendt svar i <b>Svar-arket</b> i regnearket, slik at du kan ettergå avgjørelsene i etterkant.</li>
 <li><b>Vis stilling.</b> Åpne <a href="stilling.html">Stilling-siden</a> på en skjerm alle kan se - den viser 1. og 2. divisjonstabell og oppdaterer seg selv.</li>
 <li><b>Åpne neste runde.</b> Trykk "Åpne runde" på Styre-siden og gjenta fra steg 3 for rundene 2-5.</li>
 <li><b>Etter runde 5:</b> opp-/nedrykksspillet mellom divisjonene - se detaljert fremgangsmåte i <a href="#trekningdetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
 <li><b>Runde 6</b> spilles som normalt, deretter <b>finale</b> for topp 3 lag i 1. divisjon - se detaljert fremgangsmåte i <a href="#finaledetaljer">eget avsnitt lenger ned</a>. <span class="status ferdig">klart</span></li>
 </ol>
+<p><b>Kategorier og sanger:</b> under "Kategorier" på <a href="styre.html">Styre-siden</a> kan du se, redigere, legge til og fjerne sanger i hver kategori, samt opprette og slette hele kategorier - uten å måtte redigere regnearket direkte.</p>
+<p><b>Fargekodet stilling:</b> på <a href="stilling.html">Stilling-siden</a> markeres laget på 1. plass i hver divisjon med grønt, og lagene som er med i opp-/nedrykk-trekningen (de to nederste i 1. divisjon og nr. 2 i 2. divisjon) markeres med gult.</p>
 </div>
 
 <h2>Diagram: én runde (gjentas for runde 1-6)</h2>
@@ -148,6 +150,18 @@ code{color:#ffff00;}
 <text x="428" y="271.0" fill="#ffff00" font-family="Courier New, monospace" font-size="11" text-anchor="middle" transform="rotate(-90 428 271.0)">NESTE RUNDE</text>
 </svg>
 <p class="diagram-caption">Den stiplede gule pilen viser at syklusen gjentas for hver runde (1-6)</p>
+</div>
+
+<h2 id="clauderevisjon">Slik bruker du Claude til å kvalitetssikre svar</h2>
+<div class="card">
+<p>Systemet kan bruke Claude til å vurdere alle innsendte svar før poeng beregnes - nyttig når svar inneholder skrivefeil, forkortelser eller ufullstendige navn (f.eks. kun etternavn på en artist) som den automatiske fuzzy-matchingen kan avvise selv om svaret egentlig er riktig. Dette er en <b>ren kopier/lim-løsning</b> - ingen API-nøkkel eller automatisk tilkobling til Claude er involvert, og ingenting sendes automatisk noe sted.</p>
+<ol>
+<li><b>Trykk "Vurder svar med Claude først"</b> på Styre-siden for gjeldende runde. En tekstboks fylles automatisk med fasit og alle innsendte svar for runden.</li>
+<li><b>Kopier teksten</b> (egen knapp) og lim den inn i en vanlig Claude-samtale (nettleser, app eller her).</li>
+<li><b>Claude vurderer</b> hvert svar og svarer med én linje per lag/sang/felt i formatet <code>LAGID|SANGNR|FELT|OK</code>.</li>
+<li><b>Lim inn Claude sitt svar</b> i feltet under på Styre-siden og trykk "Bruk vurdering og beregn poeng". Poeng beregnes da med Claude sin vurdering av artist og låt, mens årstall fortsatt sjekkes automatisk (pluss/minus 1 år).</li>
+<li><b>Alt lagres til gjennomgang:</b> for hvert innsendte svar lagrer systemet i <b>Svar-arket</b> i regnearket om artist, låt og årstall ble godkjent, poengsummen for svaret, og om Claude overstyrte den automatiske vurderingen - slik at du alltid kan ettergå avgjørelsen i etterkant.</li>
+</ol>
 </div>
 
 <h2 id="trekningdetaljer">Slik gjennomføres kategori-trekningen (opp-/nedrykkspill)</h2>

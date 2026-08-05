@@ -66,7 +66,7 @@ h2{margin-top:32px;}
 </div>
 
 <h2>Lenker</h2>
-<a class="linkbox" href="styre.html" target="_blank"><b>1. Admin / Styre (lagoppsett + dommerpanel)</b><span>Opprett lag, sett divisjon/bord og generer QR-koder - og styr selve quizen: se gjeldende runde, fasit hentes automatisk, beregn poeng, åpne neste runde, opp-/nedrykk, buzzer og finale</span></a>
+<a class="linkbox" href="styre.html" target="_blank"><b>1. Admin / Styre (lagoppsett + dommerpanel)</b><span>Opprett lag, sett divisjon/bord og generer QR-koder - og styr selve quizen: se gjeldende runde, fasit hentes automatisk, beregn poeng automatisk eller la Claude kvalitetssikre svarene først, rediger kategorier/sanger, åpne neste runde, opp-/nedrykk, buzzer og finale</span></a>
 <a class="linkbox" href="stilling.html" target="_blank"><b>2. Stilling (divisjonstabeller)</b><span>Vis på storskjerm - oppdaterer seg selv med 1. og 2. divisjonstabell</span></a>
 <a class="linkbox" href="https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec?page=trekning" target="_blank"><b>3. Storskjerm (trekning + buzzer)</b><span>Vis på prosjektor/skjerm - bytter automatisk mellom kategori-trekning (opp-/nedrykk) og buzzer-visning etter hva som er aktivt. Styres fra Styre-siden.</span></a>
 <p><span>Lenker til hvert enkelt lags svarside (med QR-kode) finner du under "Lag-oppsett" på Admin/Styre-siden etter at lagene er opprettet.</span></p>
@@ -82,7 +82,7 @@ h2{margin-top:32px;}
 <p>Dette gir kun tilgang til å <i>bruke</i> appen. Skal noen redigere selve koden, må du gi delingstilgang til Apps Script-prosjektet separat (Del-knappen i editoren) - bør kun gis til noen som skal videreutvikle løsningen.</p>
 
 <h2>Ressurser</h2>
-<a class="linkbox" href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank"><b>Regneark (Excel-ark)</b><span>Alle data: lag, svar, runder, poeng og fasit (Ark 12)</span></a>
+<a class="linkbox" href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank"><b>Regneark (Excel-ark)</b><span>Alle data: lag, svar, runder, poeng og fasit (Ark 12). Svar-arket viser også riktig/feil-vurdering (artist/låt/årstall), poeng og om Claude har overstyrt vurderingen for hvert innsendte svar - til bruk ved ettergåelse</span></a>
 <a class="linkbox" href="https://open.spotify.com/playlist/2A7DFpTm6887VT4vMRrqvl?si=lR4OWiKjQqOd8JbdsLEmMw" target="_blank"><b>Spotify - Runde 1-6</b><span>Sangene til rundene 1-6</span></a>
 <a class="linkbox" href="https://open.spotify.com/playlist/2graQbGg284bjZItDd1AbF?si=cdPwvm8yRjin5GYmtFmn2w" target="_blank"><b>Spotify - Før kamp</b><span>Intro-/oppvarmingslåter</span></a>
 <a class="linkbox" href="https://open.spotify.com/playlist/2Y2YYQiKsmLwjcFiIoRTEy" target="_blank"><b>Spotify - Kategorier Quiz2</b><span>Låter til kategorirunder</span></a>
@@ -96,6 +96,9 @@ h2{margin-top:32px;}
 <li>Opp-/nedrykk med kategori-trekning (egen trekningsside + admin velger i Styre) <span class="status ferdig">klart</span></li>
 <li>Midlertidig web-buzzer (enkel trykknapp, egen storskjermside) <span class="status ferdig">klart</span></li>
 <li>Finale-modus (buzzer-runde for topp 3 i 1. divisjon) <span class="status ferdig">klart</span></li>
+<li>Fargekodet stilling - 1. plass i grønt, opp-/nedrykk-kandidater i gult <span class="status ferdig">klart</span></li>
+<li>Kategori-styring i Admin - se, rediger, legg til og fjern sanger/kategorier uten å røre regnearket <span class="status ferdig">klart</span></li>
+<li>Claude-vurdering av svar (kopier/lim, ingen API) med revisjonsspor per svar i regnearket <span class="status ferdig">klart</span></li>
 </ul>
 
 </div>
