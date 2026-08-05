@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Stilling</title>
+<style>
+:root{
+  --bg:#000000;
+  --bg2:#000000;
+  --bg3:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gold:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+input,select{background:#000000;border:2px solid var(--accent2);color:var(--text);border-radius:0;padding:8px 10px;font-size:15px;font-family:'Courier New',Courier,monospace;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid var(--accent);}
+th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:16px;}
+.qrcard{background:#ffffff;color:#000000;border-radius:0;border:3px solid #00ffff;padding:12px;text-align:center;}
+.qrcard h3{color:#111;margin-bottom:4px;}
+.small{font-size:11px;word-break:break-all;color:#00ff00;}
+@media print{body{background:#fff;color:#000;} .card,button{display:none;}}
+
+table{width:100%;border-collapse:collapse;}
+th,td{padding:6px 10px;text-align:left;}
+tr:nth-child(even){background:rgba(0,255,255,0.08);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Stilling</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="stilling.html"><button style="background:#00ffff;">Stilling</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+</div>
+<div id="app"><p>Laster...</p></div>
+</div>
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+
+function last() {
+  fetch(API_BASE + "?api=stilling")
+    .then(function(res) { return res.json(); })
+    .then(vis)
+    .catch(function(err) {
+      document.getElementById('app').innerHTML = '<p>Klarte ikke å hente stilling. Prøver igjen om litt...</p>';
+      console.error(err);
+    });
+}
+
+function vis(data) {
+  var html = '<p>Runde ' + data.runde + '</p>' +
+    '<div class="card"><h2>1. divisjon</h2>' + lagTabell(data.div1) + '</div>' +
+    '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2) + '</div>';
+  document.getElementById('app').innerHTML = html;
+}
+
+function lagTabell(rader) {
+  var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th></tr>';
+  rader.forEach(function(r, i) {
+    html += '<tr><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + r.poeng + '</td></tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+last();
+setInterval(last, 8000);
+</script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Styring</title>
+<style>
+:root{
+  --bg:#000000;
+  --bg2:#000000;
+  --bg3:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gold:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+input,select{background:#000000;border:2px solid var(--accent2);color:var(--text);border-radius:0;padding:8px 10px;font-size:15px;font-family:'Courier New',Courier,monospace;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid var(--accent);}
+th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:16px;}
+.qrcard{background:#ffffff;color:#000000;border-radius:0;border:3px solid #00ffff;padding:12px;text-align:center;}
+.qrcard h3{color:#111;margin-bottom:4px;}
+.small{font-size:11px;word-break:break-all;color:#00ff00;}
+@media print{body{background:#fff;color:#000;} .card,button{display:none;}}
+label{display:inline-block;margin-top:6px;}
+summary{cursor:pointer;font-weight:800;font-size:1.05em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Styring</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="stilling.html"><button>Stilling</button></a>
+<a href="styre.html"><button style="background:#00ffff;">Styre / Admin</button></a>
+</div>
+
+<details class="card" open>
+<summary>Lag-oppsett (opprett/rediger lag, generer QR-koder)</summary>
+<div id="lagDiag" style="color:#f66;font-family:monospace;font-size:12px;margin-top:8px"></div>
+<div style="margin-top:12px">
+<label>Antall lag (4-28)</label><br>
+<input type="number" id="lagAntall" min="4" max="28" value="6"> <button onclick="lagRader()">Generer lagrader</button>
+</div>
+<div id="lagRaderDiv"></div>
+</details>
+<div id="lagOppsettResultat"></div>
+
+<div id="app"><p>Laster...</p></div>
+<div id="opprykk"></div>
+<div id="buzzer"></div>
+<div id="finale"></div>
+
+<details class="card">
+<summary>Nullstilling (forsiktig - kan ikke angres)</summary>
+<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+<button onclick="nullstill('resetTeams','Nullstille alle lag?')">Nullstill lag</button>
+<button onclick="nullstill('nullstillPoeng','Nullstille alle poeng?')">Nullstill poeng</button>
+<button onclick="nullstill('resetOpprykk','Nullstille opprykksspillet?')">Nullstill opprykk</button>
+<button onclick="nullstill('resetTrekningTilStart','Nullstille trekning til start?')">Nullstill trekning</button>
+</div>
+<div id="nullstillResultat" style="margin-top:10px;"></div>
+</details>
+
+</div>
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var baseUrl = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var gjeldendeRunde = 0;
+
+function apiGet(action, params) {
+  var url = API_BASE + "?api=" + action;
+  if (params) {
+    Object.keys(params).forEach(function(k) {
+      url += "&" + k + "=" + encodeURIComponent(params[k]);
+    });
+  }
+  return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+function feil(e) {
+  document.getElementById('app').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p></div>';
+}
+
+function init() {
+  apiGet('styreData').then(vis).catch(feil);
+}
+
+function renderAlleFasit(alleFasit, gjeldende) {
+  var html = '<details class="card" open><summary>Fasit for de andre rundene (runde ' + gjeldende + ' redigeres over)</summary>';
+  alleFasit.forEach(function (r) {
+    var f = r.fasit;
+    html += '<div style="margin-top:14px;border-top:1px solid #00ffff;padding-top:10px;"><h3>Runde ' + r.runde + '</h3>';
+    for (var i = 1; i <= 3; i++) {
+      var s = f ? f['sang' + i] : null;
+      html += '<label>Sang ' + i + ' - Artist</label><br><input class="af-artist" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.artist : '') + '"><br>';
+      html += '<label>Lat/tittel</label><br><input class="af-latt" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.latt : '') + '"><br>';
+      html += '<label>Arstall</label><br><input class="af-aar" type="number" data-runde="' + r.runde + '" data-sang="' + i + '" value="' + (s ? s.aar : '') + '"><br>';
+    }
+    html += '<button onclick="lagreFasitRunde(' + r.runde + ')">Lagre fasit runde ' + r.runde + '</button><span id="afres' + r.runde + '"></span></div>';
+  });
+  html += '</details>';
+  return html;
+}
+
+function lagreFasitRunde(runde) {
+  var a = document.querySelectorAll('.af-artist[data-runde="' + runde + '"]');
+  var l = document.querySelectorAll('.af-latt[data-runde="' + runde + '"]');
+  var aa = document.querySelectorAll('.af-aar[data-runde="' + runde + '"]');
+  var fasit = [];
+  for (var i = 0; i < a.length; i++) {
+    fasit.push({ artist: a[i].value, latt: l[i].value, aar: aa[i].value });
+  }
+  document.getElementById('afres' + runde).innerHTML = ' Lagrer...';
+  apiGet('setFasit', { runde: runde, fasit: JSON.stringify(fasit) }).then(function () {
+    document.getElementById('afres' + runde).innerHTML = ' Lagret!';
+  }).catch(feil);
+}
+
+function vis(data) {
+  gjeldendeRunde = data.runde;
+  var f = data.fasit;
+  var html = '<div class="card"><h2>Fasit for runde ' + data.runde + '</h2>';
+  for (var i = 1; i <= 3; i++) {
+    var s = f ? f['sang' + i] : null;
+    html += '<h3>Sang ' + i + '</h3>';
+    html += '<label>Artist</label><br><input class="fartist" data-sang="' + i + '" value="' + (s ? s.artist : '') + '"><br>';
+    html += '<label>Lat/tittel</label><br><input class="flatt" data-sang="' + i + '" value="' + (s ? s.latt : '') + '"><br>';
+    html += '<label>Arstall</label><br><input class="faar" type="number" data-sang="' + i + '" value="' + (s ? s.aar : '') + '">';
+  }
+  html += '</div>';
+  html += '<div class="card"><button onclick="lagreFasit()">Lagre fasit</button></div>';
+  html += '<div class="card"><button onclick="beregnPoeng()">Beregn poeng runde ' + (data.runde + 1) + '</button></div>';
+  html += '<div id="resultat"></div>';
+  if (data.harLag && data.alleFasit) {
+    html += renderAlleFasit(data.alleFasit.filter(function (r) { return r.runde !== data.runde; }), data.runde);
+  }
+  document.getElementById('app').innerHTML = html;
+}
+
+function lagreFasit() {
+  var a = document.querySelectorAll('.fartist');
+  var l = document.querySelectorAll('.flatt');
+  var aa = document.querySelectorAll('.faar');
+  var fasit = [];
+  for (var i = 0; i < a.length; i++) {
+    fasit.push({ artist: a[i].value, latt: l[i].value, aar: aa[i].value });
+  }
+  apiGet('setFasit', { runde: gjeldendeRunde, fasit: JSON.stringify(fasit) }).then(function () {
+    document.getElementById('resultat').innerHTML = '<p>Fasit lagret.</p>';
+  }).catch(feil);
+}
+
+function beregnPoeng() {
+  document.getElementById('resultat').innerHTML = '<p>Beregner...</p>';
+  apiGet('scoreRunde', { runde: gjeldendeRunde }).then(visResultat).catch(feil);
+}
+
+function visResultat(res) {
+  var html = '<div class="card"><h3>Poeng runde ' + gjeldendeRunde + '</h3><table><tr><th>Lag</th><th>Poeng</th></tr>';
+  res.sort(function (a, b) { return b.poengDenneRunden - a.poengDenneRunden; });
+  res.forEach(function (r) {
+    html += '<tr><td>' + r.navn + '</td><td>' + r.poengDenneRunden + '</td></tr>';
+  });
+  html += '</table></div>';
+  html += '<div class="card"><button onclick="apneNeste()">Apne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+  document.getElementById('resultat').innerHTML = html;
+}
+
+function apneNeste() {
+  apiGet('apneRunde', { runde: gjeldendeRunde + 1 }).then(function () { location.reload(); }).catch(feil);
+}
+
+function lastOpprykk() {
+  apiGet('opprykkStatus').then(visOpprykk).catch(function (e) {
+    document.getElementById('opprykk').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (opprykk): ' + (e && e.message ? e.message : e) + '</p></div>';
+  });
+}
+
+function visOpprykk(o) {
+  var html = '';
+  if (o.status === 'ikke_startet') {
+    html = '<div class="card"><h2>Opp-/nedrykksspill</h2><p>Ikke startet.</p><button onclick="startOpp()">Start oppryktsspill</button></div>';
+  } else if (o.status === 'trekker') {
+    html = '<div class="card"><h2>Opp-/nedrykksspill</h2>';
+    html += '<p>Lag: ' + o.lagA.navn + ' (nest nederst div1), ' + o.lagB.navn + ' (nederst div1), ' + o.lagC.navn + ' (2. plass div2)</p>';
+    html += '<p>Apne trekningssiden (vis pa storskjerm) for a trekke 4 kategorier:</p>';
+    html += '<a href="' + baseUrl + '?page=trekning" target="_blank"><button>Apne trekningsside</button></a></div>';
+  } else if (o.status === 'velger') {
+    html = '<div class="card"><h2>Kandidatkategorier: ' + o.kandidater.join(', ') + '</h2>';
+    html += '<p>' + o.lagA.navn + ' velger kategori. Klikk hvilken kategori laget valgte:</p>';
+    o.kandidater.forEach(function (navn) {
+      html += '<button onclick="velgKat(\'' + o.lagA.id + '\',\'' + navn + '\')">' + navn + '</button> ';
+    });
+    html += '</div>';
+  } else if (o.status === 'pagar') {
+    html = '<div class="card"><h2>Kategori: ' + o.valgtKategori + '</h2>';
+    html += '<p><b>Sang ' + (o.sangIndex + 1) + '</b> av 5</p>';
+    html += '<p>Fasit: ' + o.gjeldendeSang.artist + ' - ' + o.gjeldendeSang.latt + ' (' + o.gjeldendeSang.aar + ')</p>';
+    html += '<p>Hvem svarte riktig?</p>';
+    html += '<button onclick="registrer(\'' + o.lagA.id + '\')">' + o.lagA.navn + '</button> ';
+    html += '<button onclick="registrer(\'' + o.lagB.id + '\')">' + o.lagB.navn + '</button> ';
+    html += '<button onclick="registrer(\'' + o.lagC.id + '\')">' + o.lagC.navn + '</button> ';
+    html += '<button onclick="hopp()">Ingen riktig / hopp over...</button></div>';
+  } else if (o.status === 'uavgjort') {
+    html = '<div class="card"><h2>Likt poeng - velg hvilket lag som rykker ned til 2. divisjon:</h2>';
+    html += '<button onclick="velgNed(\'' + o.lagB.id + '\')">' + o.lagB.navn + '</button> ';
+    html += '<button onclick="velgNed(\'' + o.lagC.id + '\')">' + o.lagC.navn + '</button></div>';
+  } else if (o.status === 'ferdig') {
+    var nedNavn = '';
+    if (o.resultat && String(o.resultat.nedrykket) === String(o.lagB.id)) nedNavn = o.lagB.navn;
+    else if (o.resultat && String(o.resultat.nedrykket) === String(o.lagC.id)) nedNavn = o.lagC.navn;
+    html = '<div class="card"><h2>Ferdig!</h2><p><b>' + nedNavn + '</b> rykker ned til 2. divisjon. De to andre spiller i 1. divisjon.</p></div>';
+  }
+  document.getElementById('opprykk').innerHTML = html;
+}
+
+function startOpp() {
+  apiGet('startOpprykk').then(visOpprykk).catch(feil);
+}
+
+function velgKat(lagId, navn) {
+  apiGet('velgKategori', { lagId: lagId, navn: navn }).then(visOpprykk).catch(feil);
+}
+
+function registrer(lagId) {
+  apiGet('registrerOpprykkPoeng', { lagId: lagId }).then(visOpprykk).catch(feil);
+}
+
+function hopp() {
+  apiGet('hoppOverSang').then(visOpprykk).catch(feil);
+}
+
+function velgNed(lagId) {
+  apiGet('velgNedrykk', { lagId: lagId }).then(visOpprykk).catch(feil);
+}
+
+function lastBuzzer() {
+  apiGet('buzzerStatus').then(visBuzzer).catch(function (e) {
+    document.getElementById('buzzer').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (buzzer): ' + (e && e.message ? e.message : e) + '</p></div>';
+  });
+}
+
+function visBuzzer(o) {
+  var html = '<div class="card"><h2>Buzzer</h2>';
+  if (o.status === 'ledig') {
+    html += '<p>Buzzer er lukket.</p><button onclick="apneBuzz()">Apne buzzer</button>';
+  } else if (o.status === 'apen') {
+    html += '<p style="color:#2ecc71;font-weight:bold;">Buzzer er apen - lagene kan trykke.</p><button onclick="nullstillBuzz()">Steng / nullstill</button>';
+  } else if (o.status === 'lukket') {
+    html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> var forst!</p><button onclick="apneBuzz()">Apne igjen</button> <button onclick="nullstillBuzz()">Nullstill</button>';
+  }
+  html += '</div>';
+  document.getElementById('buzzer').innerHTML = html;
+}
+
+function apneBuzz() {
+  apiGet('apneBuzzer').then(visBuzzer).catch(feil);
+}
+
+function nullstillBuzz() {
+  apiGet('lukkBuzzer').then(visBuzzer).catch(feil);
+}
+
+function lastFinale() {
+  apiGet('finaleStatus').then(visFinale).catch(feil);
+}
+
+function visFinale(o) {
+  var html = '<div class="card"><h2>Finale (topp 3 i Divisjon 1)</h2>';
+  if (o.status === 'ikke_startet') {
+    html += '<p>Finalen er ikke startet enna.</p><button onclick="startFinaleClick()">Start finale</button>';
+  } else {
+    var sortert = o.lag.slice().sort(function(a,b){return b.poeng-a.poeng;});
+    html += '<ol>';
+    sortert.forEach(function(l){ html += '<li>' + (l.navn||'(tomt)') + ': ' + l.poeng + ' poeng</li>'; });
+    html += '</ol>';
+    if (o.status === 'pagar') {
+      html += '<p style="font-size:0.9em;color:#aaa;">Bruk Buzzer-kortet over til a apne/lukke runder. Gi poeng til laget som svarte riktig:</p><div>';
+      o.lag.forEach(function(l){ if (l.id) { html += '<button onclick="giPoengClick(' + l.id + ')">+1: ' + l.navn + '</button> '; } });
+      html += '</div><button onclick="avsluttFinaleClick()">Avslutt finale</button>';
+    } else if (o.status === 'ferdig') {
+      html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> vant finalen!</p><button onclick="nullstillFinaleClick()">Nullstill finale</button>';
+    }
+  }
+  html += '</div>';
+  document.getElementById('finale').innerHTML = html;
+}
+
+function startFinaleClick() {
+  apiGet('startFinale').then(visFinale).catch(feil);
+}
+
+function giPoengClick(lagId) {
+  apiGet('giFinalePoeng', { lagId: lagId }).then(visFinale).catch(feil);
+}
+
+function avsluttFinaleClick() {
+  apiGet('avsluttFinale').then(visFinale).catch(feil);
+}
+
+function nullstillFinaleClick() {
+  apiGet('nullstillFinale').then(visFinale).catch(feil);
+}
+
+window.onerror = function(msg, src, line, col, err) {
+  var d = document.getElementById('lagDiag');
+  if (d) d.innerHTML += '<div>FEIL: ' + msg + ' (linje ' + line + ')</div>';
+  return true;
+};
+
+function lagRader() {
+  var n = parseInt(document.getElementById('lagAntall').value);
+  var html = '<div class="card"><table><tr><th>Lag</th><th>Navn</th><th>Divisjon</th><th>Bord</th></tr>';
+  for (var i = 1; i <= n; i++) {
+    var div = i <= Math.ceil(n / 2) ? 1 : 2;
+    html += '<tr><td>' + i + '</td><td><input class="navn" value="Lag ' + i + '"></td><td><select class="div"><option value="1"' + (div == 1 ? ' selected' : '') + '>1</option><option value="2"' + (div == 2 ? ' selected' : '') + '>2</option></select></td><td><input class="bord" type="number" value="' + i + '"></td></tr>';
+  }
+  html += '</table><button onclick="lagreLag()">Lagre lag og lag QR-koder</button></div>';
+  document.getElementById('lagRaderDiv').innerHTML = html;
+  document.getElementById('lagOppsettResultat').innerHTML = '';
+}
+
+function lagreLag() {
+  var navn = document.querySelectorAll('.navn');
+  var div = document.querySelectorAll('.div');
+  var bord = document.querySelectorAll('.bord');
+  var teams = [];
+  for (var i = 0; i < navn.length; i++) { teams.push({ navn: navn[i].value, divisjon: div[i].value, bord: bord[i].value }); }
+  document.getElementById('lagOppsettResultat').innerHTML = '<p>Lagrer...</p>';
+  apiGet('saveTeams', { teams: JSON.stringify(teams) }).then(lagOppsettVisResultat).catch(feil);
+}
+
+function lagOppsettVisResultat(teams) {
+  var html = '<h3>Lag og QR-koder</h3><div class="grid">';
+  teams.forEach(function (t) {
+    var link = baseUrl + '?page=lag&id=' + t.id;
+    var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(link);
+    html += '<div class="qrcard" id="qr' + t.id + '"><h3>' + t.navn + '</h3><p>Divisjon ' + t.divisjon + ' - Bord ' + t.bord + '</p><img src="' + qrUrl + '" width="150" height="150" alt="QR-kode"><p class="small">' + link + '</p></div>';
+  });
+  html += '</div><button onclick="window.print()">Skriv ut alle</button>';
+  document.getElementById('lagOppsettResultat').innerHTML = html;
+}
+
+function nullstill(action, sporsmal) {
+  if (!confirm(sporsmal)) return;
+  document.getElementById('nullstillResultat').innerHTML = '<p>Utforer...</p>';
+  apiGet(action).then(function () {
+    document.getElementById('nullstillResultat').innerHTML = '<p>Utfort. Laster siden pa nytt...</p>';
+    setTimeout(function () { location.reload(); }, 1000);
+  }).catch(feil);
+}
+
+init();
+lastOpprykk();
+setInterval(lastOpprykk, 4000);
+lastBuzzer();
+setInterval(lastBuzzer, 2000);
+lastFinale();
+setInterval(lastFinale, 3000);
+</script>
+</body>
+</html>
