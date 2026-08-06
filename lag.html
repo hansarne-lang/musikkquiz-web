@@ -102,26 +102,37 @@ function vis(data) {
   html += '<div class="card"><form id="svarForm">';
   for (var i = 1; i <= 3; i++) {
     var eks = finnSvar(data.svar, i);
-    html += '<h3>Sang ' + i + '</h3>' +
-      '<label>Artist</label><br><input class="artist" data-sang="' + i + '" value="' + (eks ? eks.artist : '') + '"><br>' +
-      '<label>Låt/tittel</label><br><input class="latt" data-sang="' + i + '" value="' + (eks ? eks.latt : '') + '"><br>' +
-      '<label>Årstall</label><br><input type="number" class="aar" data-sang="' + i + '" value="' + (eks ? eks.aar : '') + '"><br><br>';
+    var sendt = !!eks;
+    var forrigeSendt = (i === 1) || !!finnSvar(data.svar, i - 1);
+    var last = sendt || !forrigeSendt;
+    html += '<h3>Sang ' + i + (sendt ? ' <span style="color:#00ff00;">(Sendt)</span>' : '') + '</h3>' +
+      '<label>Artist</label><br><input class="artist" data-sang="' + i + '" value="' + (eks ? eks.artist : '') + '"' + (last ? ' disabled' : '') + '><br>' +
+      '<label>Låt/tittel</label><br><input class="latt" data-sang="' + i + '" value="' + (eks ? eks.latt : '') + '"' + (last ? ' disabled' : '') + '><br>' +
+      '<label>Årstall</label><br><input type="number" class="aar" data-sang="' + i + '" value="' + (eks ? eks.aar : '') + '"' + (last ? ' disabled' : '') + '><br><br>';
+    if (sendt) {
+      html += '<p style="color:#00ff00;">Svar for sang ' + i + ' er sendt inn.</p>';
+    } else if (!forrigeSendt) {
+      html += '<button type="button" disabled>Send svar sang ' + i + '</button> <span style="font-size:0.85em;opacity:0.7;">Send sang ' + (i - 1) + ' først</span>';
+    } else {
+      html += '<button type="button" onclick="sendSangInn(' + i + ')">Send svar sang ' + i + '</button>';
+    }
+    html += '<div id="statusSang' + i + '"></div><hr style="border-color:#00ffff;opacity:0.3;margin:20px 0;">';
   }
-  html += '<button type="button" onclick="sendInn()">Send inn svar</button></form><div id="status"></div></div>';
+  html += '</form></div>';
   document.getElementById('app').innerHTML = html;
 }
 
-function sendInn() {
-  var artistEl = document.querySelectorAll('.artist');
-  var lattEl = document.querySelectorAll('.latt');
-  var aarEl = document.querySelectorAll('.aar');
-  var svarListe = [];
-  for (var i = 0; i < artistEl.length; i++) {
-    svarListe.push({ sangNr: i + 1, artist: artistEl[i].value, latt: lattEl[i].value, aar: aarEl[i].value });
-  }
-  apiGet('sendSvar', { lagId: teamId, runde: currentRunde, svar: JSON.stringify(svarListe) }).then(function() {
-    document.getElementById('status').innerHTML = '<p>Svar sendt inn!</p>';
-  }).catch(feil);
+function sendSangInn(sangNr) {
+  var artistEl = document.querySelector('.artist[data-sang="' + sangNr + '"]');
+  var lattEl = document.querySelector('.latt[data-sang="' + sangNr + '"]');
+  var aarEl = document.querySelector('.aar[data-sang="' + sangNr + '"]');
+  var statusDiv = document.getElementById('statusSang' + sangNr);
+  if (statusDiv) statusDiv.innerHTML = '<p>Sender...</p>';
+  apiGet('sendSvarForSang', { lagId: teamId, runde: currentRunde, sangNr: sangNr, artist: artistEl.value, latt: lattEl.value, aar: aarEl.value }).then(function() {
+    init();
+  }).catch(function(e) {
+    if (statusDiv) statusDiv.innerHTML = '<p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p>';
+  });
 }
 
 function lastBuzzerLag() {
