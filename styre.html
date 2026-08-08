@@ -648,14 +648,24 @@ window.onerror = function(msg, src, line, col, err) {
 
 function lagRader() {
   var n = parseInt(document.getElementById('lagAntall').value);
+  document.getElementById('lagRaderDiv').innerHTML = '<p>Henter forslag til lagnavn...</p>';
+  document.getElementById('lagOppsettResultat').innerHTML = '';
+  apiGet('foreslaLagnavn', { antall: n }).then(function (navnListe) {
+    tegnLagRader(n, navnListe);
+  }).catch(function () {
+    tegnLagRader(n, []);
+  });
+}
+
+function tegnLagRader(n, navnListe) {
   var html = '<div class="card"><table><tr><th>Lag</th><th>Navn</th><th>Divisjon</th><th>Bord</th></tr>';
   for (var i = 1; i <= n; i++) {
     var div = i <= Math.ceil(n / 2) ? 1 : 2;
-    html += '<tr><td>' + i + '</td><td><input class="navn" value="Lag ' + i + '"></td><td><select class="div"><option value="1"' + (div == 1 ? ' selected' : '') + '>1</option><option value="2"' + (div == 2 ? ' selected' : '') + '>2</option></select></td><td><input class="bord" type="number" value="' + i + '"></td></tr>';
+    var forslag = (navnListe && navnListe[i - 1]) ? navnListe[i - 1] : ('Lag ' + i);
+    html += '<tr><td>' + i + '</td><td><input class="navn" value="' + forslag + '"></td><td><select class="div"><option value="1"' + (div == 1 ? ' selected' : '') + '>1</option><option value="2"' + (div == 2 ? ' selected' : '') + '>2</option></select></td><td><input class="bord" type="number" value="' + i + '"></td></tr>';
   }
   html += '</table><button onclick="lagreLag()">Lagre lag og lag QR-koder</button></div>';
   document.getElementById('lagRaderDiv').innerHTML = html;
-  document.getElementById('lagOppsettResultat').innerHTML = '';
 }
 
 function lagreLag() {
@@ -675,8 +685,17 @@ function lagOppsettVisResultat(teams) {
     var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(link);
     html += '<div class="qrcard" id="qr' + t.id + '"><h3>' + t.navn + '</h3><p>Divisjon ' + t.divisjon + ' - Bord ' + t.bord + '</p><img src="' + qrUrl + '" width="150" height="150" alt="QR-kode"><p class="small">' + link + '</p></div>';
   });
-  html += '</div><button onclick="window.print()">Skriv ut alle</button>';
+  html += '</div><button onclick="window.print()">Skriv ut alle</button> <button onclick="genererLagslides()">Generer lagslides (Google Presentasjoner)</button><div id="lagslidesResultat"></div>';
   document.getElementById('lagOppsettResultat').innerHTML = html;
+}
+
+function genererLagslides() {
+  document.getElementById('lagslidesResultat').innerHTML = '<p>Genererer lagslides, vennligst vent (kan ta litt tid)...</p>';
+  apiGet('genererLagSlides').then(function (res) {
+    document.getElementById('lagslidesResultat').innerHTML = '<p>Ferdig! <a href="' + res.url + '" target="_blank">Åpne lagslides for ' + res.antallLag + ' lag</a></p>';
+  }).catch(function (e) {
+    document.getElementById('lagslidesResultat').innerHTML = '<p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p>';
+  });
 }
 
 function nullstill(action, sporsmal) {
