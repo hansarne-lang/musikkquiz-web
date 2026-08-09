@@ -74,9 +74,19 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="buzzer"></div>
 <div id="finaleB"></div>
 <div id="finale"></div>
+<div id="bommert"></div>
+<div id="jokerPanel"></div>
+
+<div class="card" style="border-color:#ff0000;">
+<h2 style="color:#ff0000;">Avslutt kvelden</h2>
+<p style="font-size:.85em;opacity:.85;">Lagrer kveldens resultater (stilling, finalevinnere, jokerbruk, bommerter) til historikken, og nullstiller deretter alt (lag, poeng, runder/fasit, trekning, kategorier, innsendte svar, finaler) slik at appen er klar for neste kveld. Sesongtelleren for joker påvirkes IKKE av dette - bruk "Start ny sesong" i Joker-kortet over kun når en helt ny sesong faktisk starter.</p>
+<button onclick="arkiverKveld()" style="background:#ff0000;color:#fff;">Avslutt kveld og arkiver</button>
+<div id="arkiverResultat" style="margin-top:10px;"></div>
+</div>
 
 <details class="card">
 <summary>Nullstilling (forsiktig - kan ikke angres)</summary>
+<p style="font-size:.85em;opacity:.7;margin-top:8px;">Vanligvis trenger du bare knappen "Avslutt kveld og arkiver" over. Disse enkeltknappene er for finjustering underveis.</p>
 <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
 <button onclick="nullstill('resetTeams','Nullstille alle lag?')">Nullstill lag</button>
 <button onclick="nullstill('nullstillPoeng','Nullstille alle poeng?')">Nullstill poeng</button>
@@ -770,6 +780,98 @@ function nullstill(action, sporsmal) {
   }).catch(feil);
 }
 
+// ---- Beste bommert ----
+var feilsvarData = [];
+
+function lastBommertPanel() {
+  var html = '<div class="card" style="border-color:#ff00ff;"><h2>Beste bommert</h2>';
+  html += '<p style="font-size:.85em;opacity:.75;">Hent feilsvar for en runde (etter at sangene er poengberegnet) og vis de morsomste på storskjermen.</p>';
+  html += '<label>Runde</label><br><input type="number" id="bommertRunde" min="1" max="20" value="' + (gjeldendeRunde || 1) + '" style="width:80px;"> ';
+  html += '<button onclick="hentFeilsvar()">Hent feilsvar for runden</button> ';
+  html += '<button onclick="skjulBommertClick()" style="background:#666;">Skjul fra storskjerm</button>';
+  html += '<div id="feilsvarListe" style="margin-top:12px;"></div>';
+  html += '</div>';
+  document.getElementById('bommert').innerHTML = html;
+}
+
+function hentFeilsvar() {
+  var runde = document.getElementById('bommertRunde').value;
+  document.getElementById('feilsvarListe').innerHTML = '<p>Henter...</p>';
+  apiGet('feilsvarForRunde', { runde: runde }).then(function (liste) {
+    feilsvarData = liste;
+    renderFeilsvarListe();
+  }).catch(feil);
+}
+
+function renderFeilsvarListe() {
+  if (!feilsvarData.length) {
+    document.getElementById('feilsvarListe').innerHTML = '<p>Ingen feilsvar funnet for denne runden (husk å poengberegne sangene først).</p>';
+    return;
+  }
+  var html = '<table><tr><th>Lag</th><th>Sang</th><th>Svarte</th><th>Riktig</th><th></th></tr>';
+  feilsvarData.forEach(function (f, idx) {
+    var deresSvar = f.artist + ' - ' + f.latt + ' - ' + f.aar;
+    var riktigSvar = f.fasitArtist + ' - ' + f.fasitLatt + ' - ' + f.fasitAar;
+    html += '<tr><td>' + escHtml(f.lagNavn) + '</td><td>' + f.sangNr + '</td><td>' + escHtml(deresSvar) + '</td><td>' + escHtml(riktigSvar) + '</td>' +
+      '<td><button onclick="visBommert(' + idx + ')">Vis på storskjerm</button></td></tr>';
+  });
+  html += '</table>';
+  document.getElementById('feilsvarListe').innerHTML = html;
+}
+
+function visBommert(idx) {
+  var f = feilsvarData[idx];
+  var deresSvar = f.artist + ' - ' + f.latt + ' - ' + f.aar;
+  var riktigSvar = f.fasitArtist + ' - ' + f.fasitLatt + ' - ' + f.fasitAar;
+  apiGet('visBommertPaStorskjerm', { lagNavn: f.lagNavn, sangtekst: 'Runde ' + f.runde + ', sang ' + f.sangNr, deresSvar: deresSvar, riktigSvar: riktigSvar }).catch(feil);
+}
+
+function skjulBommertClick() {
+  apiGet('skjulBommert').catch(feil);
+}
+
+// ---- Joker ----
+function lastJoker() {
+  apiGet('jokerStatus').then(visJoker).catch(function (e) {
+    document.getElementById('jokerPanel').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (joker): ' + (e && e.message ? e.message : e) + '</p></div>';
+  });
+}
+
+function visJoker(o) {
+  var html = '<div class="card" style="border-color:#00ff00;"><h2>Joker (sesong ' + o.sesong + ')</h2>';
+  html += '<p style="font-size:.85em;opacity:.75;">Hvert lag kan bruke joker én gang per sesong (ikke per kveld). Alle tre felt (artist, låt og årstall) må være riktig for å vinne dobbel poengsum på sangen.</p>';
+  if (!o.brukt.length) {
+    html += '<p>Ingen har brukt joker denne sesongen ennå.</p>';
+  } else {
+    html += '<table><tr><th>Lag</th><th>Runde</th><th>Sang</th><th>Resultat</th></tr>';
+    o.brukt.forEach(function (b) {
+      var res = b.resultat === 'vunnet' ? '<span style="color:#00ff00;">Vant dobbel poeng!</span>' : (b.resultat === 'tapt' ? '<span style="color:#ff6b6b;">Tapte joker</span>' : 'Venter på poengberegning...');
+      html += '<tr><td>' + escHtml(b.lagNavn) + '</td><td>' + b.runde + '</td><td>' + b.sangNr + '</td><td>' + res + '</td></tr>';
+    });
+    html += '</table>';
+  }
+  html += '<button onclick="nySesongClick()" style="background:#ffa500;margin-top:10px;">Start ny sesong (nullstiller joker-tilgjengelighet for alle lag)</button>';
+  html += '</div>';
+  document.getElementById('jokerPanel').innerHTML = html;
+}
+
+function nySesongClick() {
+  if (!confirm('Starte ny sesong? Da kan alle lag bruke joker på nytt. Dette bør kun gjøres når en helt ny sesong faktisk starter (ikke bare en ny quizkveld).')) return;
+  apiGet('nySesong').then(lastJoker).catch(feil);
+}
+
+// ---- Avslutt kvelden ----
+function arkiverKveld() {
+  if (!confirm('Avslutte kvelden? Dette lagrer stillingen, finalevinnere, jokerbruk og bommerter til historikken, og nullstiller deretter ALT (lag, poeng, runder/fasit, trekning, innsendte svar, finaler) for neste kveld. Kan ikke angres.')) return;
+  document.getElementById('arkiverResultat').innerHTML = '<p>Arkiverer og nullstiller...</p>';
+  apiGet('arkiverKveldOgNullstill').then(function () {
+    document.getElementById('arkiverResultat').innerHTML = '<p>Kvelden er arkivert og alt er nullstilt. Laster siden på nytt...</p>';
+    setTimeout(function () { location.reload(); }, 1500);
+  }).catch(function (e) {
+    document.getElementById('arkiverResultat').innerHTML = '<p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p>';
+  });
+}
+
 init();
 lastKategorier();
 lastUavgjort();
@@ -782,6 +884,8 @@ lastFinale();
 setInterval(lastFinale, 3000);
 lastFinaleB();
 setInterval(lastFinaleB, 3000);
+lastBommertPanel();
+lastJoker();
 </script>
 </body>
 </html>
