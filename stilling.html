@@ -38,6 +38,8 @@ button:hover{background:#00ff00;filter:none;}
 table{width:100%;border-collapse:collapse;}
 th,td{padding:6px 10px;text-align:left;}
 tr:nth-child(even){background:rgba(0,255,255,0.08);}
+@keyframes poengFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-22px) scale(1.4);}}
+.poeng-anim{display:inline-block;color:#00ff00;font-weight:bold;margin-left:8px;animation:poengFloat 1.8s ease-out forwards;}
 </style>
 </head>
 <body>
@@ -76,6 +78,8 @@ function vis(data) {
   document.getElementById('app').innerHTML = html;
 }
 
+var forrigePoeng = {};
+
 function lagTabell(rader, divisjon) {
   var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th><th>Svart</th></tr>';
   rader.forEach(function(r, i) {
@@ -87,7 +91,11 @@ function lagTabell(rader, divisjon) {
     } else if (divisjon === 2 && i === 1) {
       stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
     }
-    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + r.poeng + '</td><td>' + (r.antallSvar || 0) + '</td></tr>';
+    var forrige = (r.lagId in forrigePoeng) ? forrigePoeng[r.lagId] : r.poeng;
+    var diff = r.poeng - forrige;
+    var poengHtml = r.poeng + (diff > 0 ? ' <span class="poeng-anim">+' + diff + '</span>' : '');
+    forrigePoeng[r.lagId] = r.poeng;
+    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + poengHtml + '</td><td>' + (r.antallSvar || 0) + '</td></tr>';
   });
   html += '</table>';
   return html;
