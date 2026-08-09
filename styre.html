@@ -46,6 +46,7 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <a href="stilling.html"><button>Stilling</button></a>
 <a href="styre.html"><button style="background:#00ffff;">Styre / Admin</button></a>
 <a href="veiledning.html"><button>Veiledning</button></a>
+<a href="test.html"><button style="background:#ff6b6b;color:#fff;">Testverktøy</button></a>
 </div>
 
 <details class="card" open>
@@ -478,7 +479,7 @@ function visFinale(o) {
     html += '</ol>';
     if (o.status === 'pagar') {
       html += '<p style="font-size:0.9em;color:#aaa;">Bruk Buzzer-kortet over til å åpne/lukke runder. Gi poeng til laget som svarte riktig:</p><div>';
-      o.lag.forEach(function(l){ if (l.id) { html += '<button onclick="giPoengClick(' + l.id + ')">+1: ' + l.navn + '</button> '; } });
+      o.lag.forEach(function(l){ if (l.id) { html += '<span style="display:inline-block;margin:0 10px 6px 0;">' + l.navn + ': <button onclick="giPoengClick(' + l.id + ')">+1</button> <button onclick="angrePoengClick(' + l.id + ')" style="background:#666;">-1 (angre)</button></span>'; } });
       html += '</div><button onclick="avsluttFinaleClick()">Avslutt finale</button>';
     } else if (o.status === 'ferdig') {
       html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> vant finalen!</p><button onclick="nullstillFinaleClick()">Nullstill finale</button>';
@@ -494,6 +495,10 @@ function startFinaleClick() {
 
 function giPoengClick(lagId) {
   apiGet('giFinalePoeng', { lagId: lagId }).then(visFinale).catch(feil);
+}
+
+function angrePoengClick(lagId) {
+  apiGet('angreFinalePoeng', { lagId: lagId }).then(visFinale).catch(feil);
 }
 
 function avsluttFinaleClick() {
