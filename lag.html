@@ -30,6 +30,8 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 label{display:inline-block;margin-top:10px;font-size:0.9em;color:#00ffff;}
 #buzzknapp{font-size:1.5em;padding:20px 40px;background:#2ecc71;color:#fff;border:none;}
 #buzzknapp:disabled{background:#999;color:#fff;}
+.jokerlabel{display:flex;align-items:center;gap:8px;background:#221100;border:2px solid #ffa500;padding:10px;margin:10px 0;font-size:0.95em;color:#ffcc66;}
+.jokerlabel input{width:auto;max-width:none;height:22px;}
 </style>
 </head>
 <body>
@@ -113,10 +115,13 @@ function vis(data) {
       '<label>Låt/tittel</label><br><input class="latt" data-sang="' + i + '" value="' + (eks ? eks.latt : '') + '"' + (last ? ' disabled' : '') + '><br>' +
       '<label>Årstall</label><br><input type="number" class="aar" data-sang="' + i + '" value="' + (eks ? eks.aar : '') + '"' + (last ? ' disabled' : '') + '><br><br>';
     if (sendt) {
-      html += '<p style="color:#00ff00;">Svar for sang ' + i + ' er sendt inn.</p>';
+      html += '<p style="color:#00ff00;">Svar for sang ' + i + ' er sendt inn.' + (eks.joker ? ' 🃏 Joker brukt!' : '') + '</p>';
     } else if (!forrigeSendt) {
       html += '<button type="button" disabled>Send svar sang ' + i + '</button> <span style="font-size:0.85em;opacity:0.7;">Send sang ' + (i - 1) + ' først</span>';
     } else {
+      if (!data.jokerBrukt) {
+        html += '<label class="jokerlabel"><input type="checkbox" class="joker" data-sang="' + i + '"> 🃏 Bruk joker på denne sangen (dobler poengsummen HVIS artist, låt og årstall ALLE er riktig - kun 1 gang per sesong)</label>';
+      }
       html += '<button type="button" onclick="sendSangInn(' + i + ')">Send svar sang ' + i + '</button>';
     }
     html += '<div id="statusSang' + i + '"></div><hr style="border-color:#00ffff;opacity:0.3;margin:20px 0;">';
@@ -129,9 +134,14 @@ function sendSangInn(sangNr) {
   var artistEl = document.querySelector('.artist[data-sang="' + sangNr + '"]');
   var lattEl = document.querySelector('.latt[data-sang="' + sangNr + '"]');
   var aarEl = document.querySelector('.aar[data-sang="' + sangNr + '"]');
+  var jokerEl = document.querySelector('.joker[data-sang="' + sangNr + '"]');
+  var bruktJoker = !!(jokerEl && jokerEl.checked);
   var statusDiv = document.getElementById('statusSang' + sangNr);
+  if (bruktJoker && !confirm('Sikker på at dere vil bruke jokeren nå? Dere får kun én joker per sesong, og den dobler poengsummen KUN hvis alle tre felt (artist, låt og årstall) er helt riktig.')) {
+    return;
+  }
   if (statusDiv) statusDiv.innerHTML = '<p>Sender...</p>';
-  apiGet('sendSvarForSang', { lagId: teamId, runde: currentRunde, sangNr: sangNr, artist: artistEl.value, latt: lattEl.value, aar: aarEl.value }).then(function() {
+  apiGet('sendSvarForSang', { lagId: teamId, runde: currentRunde, sangNr: sangNr, artist: artistEl.value, latt: lattEl.value, aar: aarEl.value, joker: bruktJoker }).then(function() {
     init();
   }).catch(function(e) {
     if (statusDiv) statusDiv.innerHTML = '<p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p>';
