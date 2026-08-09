@@ -72,6 +72,7 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="uavgjort"></div>
 <div id="opprykk"></div>
 <div id="buzzer"></div>
+<div id="finaleB"></div>
 <div id="finale"></div>
 
 <details class="card">
@@ -340,6 +341,8 @@ function bekreftUavgjort(kontekst) {
     if (kontekst === 'opprykk') return apiGet('startOpprykk');
     if (kontekst === 'finale') return apiGet('startFinale');
     if (kontekst === 'finale_vinner') return apiGet('avsluttFinale');
+    if (kontekst === 'finaleB') return apiGet('startFinaleB');
+    if (kontekst === 'finaleB_vinner') return apiGet('avsluttFinaleB');
     if (kontekst === 'div1_vinner') return apiGet('sjekkDivisjonsvinner', { divisjon: 1 });
     if (kontekst === 'div2_vinner') return apiGet('sjekkDivisjonsvinner', { divisjon: 2 });
     return Promise.resolve();
@@ -347,6 +350,7 @@ function bekreftUavgjort(kontekst) {
     lastUavgjort();
     lastOpprykk();
     lastFinale();
+    lastFinaleB();
   }).catch(feil);
 }
 
@@ -507,6 +511,60 @@ function avsluttFinaleClick() {
 
 function nullstillFinaleClick() {
   apiGet('nullstillFinale').then(visFinale).catch(feil);
+}
+
+function lastFinaleB() {
+  apiGet('finaleBStatus').then(visFinaleB).catch(feil);
+}
+
+function visFinaleB(o) {
+  if (o.status === 'venter_uavgjort') {
+    document.getElementById('finaleB').innerHTML = '<div class="card" style="border-color:#ff00ff;"><h2>B-finale (topp 3 i Divisjon 2)</h2><p>Uavgjort oppstod - se kortet "Uavgjort-trekning" over for å løse det med lykkehjulet.</p><button onclick="avlysFinaleBClick()" style="background:#666;">Avlys B-finale</button></div>';
+    return;
+  }
+  var html = '<div class="card" style="border-color:#ff9900;"><h2>B-finale (topp 3 i Divisjon 2)</h2>';
+  if (o.status === 'ikke_startet') {
+    html += '<p>B-finalen er ikke startet ennå. Spilles i forkant av hovedfinalen, mellom topp 3 i Divisjon 2. Kan avlyses underveis hvis det blir for lite tid.</p><button onclick="startFinaleBClick()">Start B-finale</button>';
+  } else {
+    var sortert = o.lag.slice().sort(function(a,b){return b.poeng-a.poeng;});
+    html += '<ol>';
+    sortert.forEach(function(l){ html += '<li>' + (l.navn||'(tomt)') + ': ' + l.poeng + ' poeng</li>'; });
+    html += '</ol>';
+    if (o.status === 'pagar') {
+      html += '<p style="font-size:0.9em;color:#aaa;">Gi poeng til laget som svarte riktig:</p><div>';
+      o.lag.forEach(function(l){ if (l.id) { html += '<span style="display:inline-block;margin:0 10px 6px 0;">' + l.navn + ': <button onclick="giPoengBClick(' + l.id + ')">+1</button> <button onclick="angrePoengBClick(' + l.id + ')" style="background:#666;">-1 (angre)</button></span>'; } });
+      html += '</div><button onclick="avsluttFinaleBClick()">Avslutt B-finale</button> <button onclick="avlysFinaleBClick()" style="background:#a33;color:#fff;">Avlys B-finale (for lite tid)</button>';
+    } else if (o.status === 'ferdig') {
+      html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> vant B-finalen!</p><button onclick="nullstillFinaleBClick()">Nullstill B-finale</button>';
+    }
+  }
+  html += '</div>';
+  document.getElementById('finaleB').innerHTML = html;
+}
+
+function startFinaleBClick() {
+  apiGet('startFinaleB').then(visFinaleB).catch(feil);
+}
+
+function giPoengBClick(lagId) {
+  apiGet('giFinaleBPoeng', { lagId: lagId }).then(visFinaleB).catch(feil);
+}
+
+function angrePoengBClick(lagId) {
+  apiGet('angreFinaleBPoeng', { lagId: lagId }).then(visFinaleB).catch(feil);
+}
+
+function avsluttFinaleBClick() {
+  apiGet('avsluttFinaleB').then(visFinaleB).catch(feil);
+}
+
+function nullstillFinaleBClick() {
+  apiGet('avlysFinaleB').then(visFinaleB).catch(feil);
+}
+
+function avlysFinaleBClick() {
+  if (!confirm('Avlyse B-finalen? Dette nullstiller den helt (ingen vinner kåres) - kan ikke angres.')) return;
+  apiGet('avlysFinaleB').then(visFinaleB).catch(feil);
 }
 
 var kategoriData = [];
@@ -722,6 +780,8 @@ lastBuzzer();
 setInterval(lastBuzzer, 2000);
 lastFinale();
 setInterval(lastFinale, 3000);
+lastFinaleB();
+setInterval(lastFinaleB, 3000);
 </script>
 </body>
 </html>
