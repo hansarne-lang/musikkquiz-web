@@ -45,6 +45,9 @@ label{display:inline-block;margin-top:10px;font-size:0.9em;color:#00ffff;}
 <button id="buzzknapp" onclick="buzz()">BUZZ!</button>
 <p id="buzztekst"></p>
 </div>
+<div id="opprykkdiv" class="card" style="display:none;border-color:#ffff00;">
+<div id="opprykkinnhold"></div>
+</div>
 </div>
 <script>
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
@@ -168,10 +171,46 @@ function buzz() {
   apiGet('trykkBuzzer', { lagId: teamId }).then(visBuzzerLag).catch(function(e) { console.error(e); });
 }
 
+function lastOpprykkLag() {
+  apiGet('opprykkStatus').then(visOpprykkLag).catch(function(e) { console.error(e); });
+}
+
+function visOpprykkLag(o) {
+  var div = document.getElementById('opprykkdiv');
+  var innhold = document.getElementById('opprykkinnhold');
+  if (!div) return;
+  var erA = o.lagA && String(o.lagA.id) === String(teamId);
+  var erB = o.lagB && String(o.lagB.id) === String(teamId);
+  var erC = o.lagC && String(o.lagC.id) === String(teamId);
+  if (!erA && !erB && !erC) { div.style.display = 'none'; return; }
+  if (o.status === 'trekker') {
+    div.style.display = 'block';
+    innhold.innerHTML = '<h3>Opp-/nedrykksspill</h3><p>Dere er med i opp-/nedrykksspillet! Venter på at kategoriene trekkes på storskjermen...</p>';
+  } else if (o.status === 'velger' && erA) {
+    div.style.display = 'block';
+    var html = '<h3>Velg kategori!</h3><p>Deres tur til å velge en av disse fire kategoriene:</p>';
+    o.kandidater.forEach(function(navn) {
+      html += '<button onclick="velgKategoriSelv(\'' + navn.replace(/'/g, "\\'") + '\')" style="margin:4px;">' + navn + '</button>';
+    });
+    innhold.innerHTML = html;
+  } else if (o.status === 'velger') {
+    div.style.display = 'block';
+    innhold.innerHTML = '<h3>Opp-/nedrykksspill</h3><p>' + o.lagA.navn + ' velger kategori nå. Vent litt...</p>';
+  } else {
+    div.style.display = 'none';
+  }
+}
+
+function velgKategoriSelv(navn) {
+  apiGet('velgKategori', { lagId: teamId, navn: navn }).then(visOpprykkLag).catch(function(e) { alert('Feil: ' + (e && e.message ? e.message : e)); });
+}
+
 init();
 if (teamId) {
   lastBuzzerLag();
   setInterval(lastBuzzerLag, 700);
+  lastOpprykkLag();
+  setInterval(lastOpprykkLag, 1500);
 }
 </script>
 </body>
