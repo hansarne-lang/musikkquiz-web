@@ -46,7 +46,7 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 
 <div class="warn">
 <h2>⚠️ Ikke bruk under en pågående quizkveld!</h2>
-<p>Denne siden kjører ekte API-kall mot backend for å regresjonsteste appen. Den <b>erstatter hele laglisten</b> med 6 testlag, oppretter en egen testkategori, bruker en isolert testrunde (runde 999) og trigger midlertidige finale-/opprykk-/uavgjort-tilstander - alt ryddes opp automatisk etter hver kjøring. Men fordi lag, finale, opprykk og uavgjort er global tilstand i appen, vil en kjøring slette ekte lag og forstyrre en ekte pågående finale eller opprykksspill. Hvis ingen ekte runde er åpen når testen kjøres, kan runde 999 også midlertidig bli "gjeldende runde" for alle lag helt til testen lukker den igjen. Kjør derfor kun testene mellom quizkvelder, aldri mens en skarp quiz pågår. De 50 ekte sangkategoriene og fasit for de ekte rundene røres aldri.</p>
+<p>Denne siden kjører ekte API-kall mot backend for å regresjonsteste appen. Den <b>erstatter hele laglisten</b> med 6 testlag, oppretter en egen testkategori, bruker en isolert testrunde (runde 999) og trigger midlertidige finale-/B-finale-/opprykk-/uavgjort-tilstander - alt ryddes opp automatisk etter hver kjøring. Men fordi lag, finale, opprykk og uavgjort er global tilstand i appen, vil en kjøring slette ekte lag og forstyrre en ekte pågående finale eller opprykksspill. Hvis ingen ekte runde er åpen når testen kjøres, kan runde 999 også midlertidig bli "gjeldende runde" for alle lag helt til testen lukker den igjen. Kjør derfor kun testene mellom quizkvelder, aldri mens en skarp quiz pågår. De 50 ekte sangkategoriene og fasit for de ekte rundene røres aldri.</p>
 </div>
 
 <div class="card">
@@ -258,6 +258,67 @@ async function kjorAlle() {
       assert(uavgjortEtter.status === 'ingen', "nullstillFinale ryddet ikke opp uavgjort-tilstanden (status=" + uavgjortEtter.status + ")");
     });
 
+
+    // --- Gruppe: B-finale ---
+    await kjorTest("B-finale", "Start B-finale med 3 testlag", async function () {
+      // Merk: startFinaleB plukker topp 3 i div2 automatisk
+      await apiGet('startFinaleB');
+      var status = await apiGet('finaleBStatus');
+      assert(status.status === 'pagar' || status.status === 'venter_uavgjort', "Uventet B-finalestatus: " + status.status);
+    });
+
+    await kjorTest("B-finale", "giFinaleBPoeng og angreFinaleBPoeng fungerer symmetrisk", async function () {
+      var status = await apiGet('finaleBStatus');
+      if (status.status !== 'pagar') return "hoppet over (B-finale i status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id; });
+      assert(lag, "Fant ingen lag i B-finalen");
+      var forPoeng = Number(lag.poeng) || 0;
+      var etterPluss = await apiGet('giFinaleBPoeng', { lagId: lag.id });
+      var lagEtterPluss = etterPluss.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtterPluss.poeng) === forPoeng + 1, "giFinaleBPoeng ga ikke +1 (før=" + forPoeng + ", etter=" + lagEtterPluss.poeng + ")");
+      var etterMinus = await apiGet('angreFinaleBPoeng', { lagId: lag.id });
+      var lagEtterMinus = etterMinus.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtterMinus.poeng) === forPoeng, "angreFinaleBPoeng ga ikke tilbake riktig poengsum (forventet=" + forPoeng + ", fikk=" + lagEtterMinus.poeng + ")");
+    });
+
+    await kjorTest("B-finale", "angreFinaleBPoeng går ikke under 0", async function () {
+      var status = await apiGet('finaleBStatus');
+      if (status.status !== 'pagar') return "hoppet over (B-finale i status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id && (Number(l.poeng) || 0) === 0; });
+      if (!lag) return "hoppet over (fant ikke lag med 0 poeng)";
+      var res = await apiGet('angreFinaleBPoeng', { lagId: lag.id });
+      var lagEtter = res.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtter.poeng) === 0, "Poeng gikk under 0: " + lagEtter.poeng);
+    });
+
+    await kjorTest("B-finale", "Avlys B-finale midt i - nullstiller helt (ingen vinner lagres)", async function () {
+      var status = await apiGet('finaleBStatus');
+      if (status.status !== 'pagar') { await apiGet('startFinaleB'); status = await apiGet('finaleBStatus'); }
+      if (status.status !== 'pagar') return "hoppet over (fikk ikke B-finale i gang - status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id; });
+      if (lag) await apiGet('giFinaleBPoeng', { lagId: lag.id });
+      var avlyst = await apiGet('avlysFinaleB');
+      assert(avlyst.status === 'ikke_startet', "Forventet status 'ikke_startet' etter avlysFinaleB, fikk " + avlyst.status);
+      assert(!avlyst.vinnerId, "avlysFinaleB skal ikke sette noen vinner, fant vinnerId=" + avlyst.vinnerId);
+      assert(avlyst.lag.every(function (l) { return !l.id && Number(l.poeng) === 0; }), "avlysFinaleB nullstilte ikke lagene helt");
+    });
+
+    await kjorTest("B-finale", "Fremtving uavgjort B-finalevinner og nullstill med avlys", async function () {
+      var status = await apiGet('startFinaleB');
+      if (status.status === 'pagar') {
+        var lagMedId = status.lag.filter(function (l) { return l.id; });
+        for (var i = 0; i < lagMedId.length; i++) {
+          await apiGet('giFinaleBPoeng', { lagId: lagMedId[i].id });
+        }
+        await apiGet('avsluttFinaleB');
+      }
+      var uavgjort = await apiGet('uavgjortStatus');
+      if (uavgjort.status !== 'venter') return "hoppet over (fikk ikke fremtvunget uavgjort - poengene var trolig allerede ulike)";
+      await apiGet('avlysFinaleB');
+      var uavgjortEtter = await apiGet('uavgjortStatus');
+      assert(uavgjortEtter.status === 'ingen', "avlysFinaleB ryddet ikke opp uavgjort-tilstanden (status=" + uavgjortEtter.status + ")");
+    });
+
     // --- Gruppe: Opprykk ---
     await kjorTest("Opprykk", "Fremtving uavgjort opprykk-utfordrer og reset", async function () {
       await apiGet('nullstillPoeng');
@@ -287,8 +348,9 @@ async function kjorAlle() {
 
   } finally {
     // --- Opprydding ---
-    await kjorTest("Opprydding", "Nullstiller finale, opprykk, svar og poeng", async function () {
+    await kjorTest("Opprydding", "Nullstiller finale, B-finale, opprykk, svar og poeng", async function () {
       await apiGet('nullstillFinale').catch(function(){});
+      await apiGet('avlysFinaleB').catch(function(){});
       await apiGet('resetOpprykk').catch(function(){});
       await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function(){});
       await apiGet('nullstillPoeng').catch(function(){});
@@ -326,6 +388,7 @@ async function ryddOppManuelt() {
   document.getElementById('sammendrag').innerHTML = 'Rydder opp...';
   try {
     await apiGet('nullstillFinale').catch(function(){});
+    await apiGet('avlysFinaleB').catch(function(){});
     await apiGet('resetOpprykk').catch(function(){});
     await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function(){});
     await apiGet('nullstillPoeng').catch(function(){});
