@@ -254,7 +254,7 @@ function eksporterSangTilClaude(sangNr) {
     svarListe.forEach(function (sv) {
       tekst += '[' + sv.lagId + '] ' + sv.navn + ': Artist="' + sv.artist + '", Låt/tittel="' + sv.latt + '"\n';
     });
-    tekst += '\nSvar med NØYAKTIG dette formatet, en linje per lag+felt (kun artist og låt/tittel - årstall vurderes automatisk separat med toleranse ±1 år fra 2000, ±2 år 1980-1999, ±3 år før 1980), ingen annen tekst før eller etter:\n';
+    tekst += '\nSvar med NØYAKTIG dette formatet, en linje per lag+felt (kun artist og låt/tittel - årstall vurderes automatisk separat med toleranse: eksakt år for sanger fra 2001+, ±1 år for 1981-2000, ±2 år til og med 1980), ingen annen tekst før eller etter:\n';
     tekst += 'LAGID|FELT|OK\n\n';
     tekst += 'FELT skal være enten "artist" eller "latt". OK skal være "true" eller "false".\n';
     tekst += 'Eksempel: 3|artist|true';
