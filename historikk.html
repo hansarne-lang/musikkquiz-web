@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Historikk</title>
+<style>
+:root{
+  --bg:#000000;
+  --bg2:#000000;
+  --bg3:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gold:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:6px 10px;text-align:left;}
+th{background:#0000aa;color:#ffff00;text-transform:uppercase;font-size:0.85em;}
+tr:nth-child(even){background:rgba(0,255,255,0.08);}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+.small{font-size:11px;word-break:break-all;color:#00ff00;}
+summary{cursor:pointer;font-weight:800;font-size:1.05em;padding:4px 0;}
+summary .sub{display:block;font-weight:400;font-size:0.75em;opacity:0.75;text-transform:none;margin-top:4px;letter-spacing:normal;}
+details{border-top:1px solid rgba(0,255,255,0.3);padding-top:12px;margin-top:12px;}
+details:first-of-type{border-top:none;margin-top:0;padding-top:0;}
+details>div{margin-top:14px;}
+h4{color:#ffff00;margin:16px 0 8px;text-transform:uppercase;font-size:0.9em;letter-spacing:1px;}
+.bommertkort{background:rgba(255,0,255,0.08);border-left:4px solid #ff00ff;padding:10px 14px;margin:8px 0;}
+.bommertkort .lag{color:#ffff00;font-weight:bold;}
+.bommertkort .sang{color:#00ffff;font-style:italic;font-size:0.9em;}
+.bommertkort .svar{color:#ff6b6b;}
+.bommertkort .fasit{color:#00ff00;}
+.tomt{opacity:0.6;font-style:italic;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Historikk</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="stilling.html"><button>Stilling</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="historikk.html"><button style="background:#00ffff;">Historikk</button></a>
+<a href="hovedskjerm.html"><button>Hovedskjerm</button></a>
+<a href="veiledning.html"><button>Veiledning</button></a>
+</div>
+
+<div id="sesongApp"><div class="card"><p>Laster sesongoversikt...</p></div></div>
+<div id="kveldApp"><div class="card"><p>Laster kvelder...</p></div></div>
+
+</div>
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function(k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function normNavn(s) {
+  return String(s || '').trim().toLowerCase();
+}
+
+function formatDato(d) {
+  try {
+    var dt = new Date(d);
+    if (isNaN(dt.getTime())) return String(d || '');
+    var dager = ['søn', 'man', 'tir', 'ons', 'tor', 'fre', 'lør'];
+    var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+    return dager[dt.getDay()] + ' ' + pad(dt.getDate()) + '.' + pad(dt.getMonth() + 1) + '.' + dt.getFullYear() + ' kl. ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+  } catch (e) { return String(d || ''); }
+}
+
+function last() {
+  apiGet('historikk').then(function(data) {
+    vis(data || []);
+  }).catch(function(err) {
+    document.getElementById('sesongApp').innerHTML = '<div class="card"><p style="color:#ff6b6b">Klarte ikke å hente historikk: ' + (err && err.message ? err.message : err) + '</p></div>';
+    document.getElementById('kveldApp').innerHTML = '';
+  });
+}
+
+function vis(kvelder) {
+  visSesongoversikt(kvelder);
+  visKveldsliste(kvelder);
+}
+
+// ---- Kveldsliste ----
+
+function lagTabellHistorikk(rader, divisjon) {
+  if (!rader || !rader.length) return '<p class="tomt">Ingen lag registrert.</p>';
+  var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th></tr>';
+  rader.forEach(function(r, i) {
+    var stil = '';
+    if (i === 0) {
+      stil = ' style="background:#00cc00;color:#000000;font-weight:bold;"';
+    } else if (divisjon === 1 && rader.length >= 2 && (i === rader.length - 2 || i === rader.length - 1)) {
+      stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
+    } else if (divisjon === 2 && i === 1) {
+      stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
+    }
+    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + escHtml(r.navn) + '</td><td>' + escHtml(r.bord) + '</td><td>' + r.poeng + '</td></tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+function visJokerTabellHistorikk(jokerBruk) {
+  if (!jokerBruk || !jokerBruk.length) return '<p class="tomt">Ingen brukte joker denne kvelden.</p>';
+  var html = '<table><tr><th>Lag</th><th>Runde</th><th>Sang</th><th>Resultat</th></tr>';
+  jokerBruk.forEach(function(b) {
+    var res = b.resultat === 'vunnet' ? '<span style="color:#00ff00;">Vant dobbel poeng!</span>' : (b.resultat === 'tapt' ? '<span style="color:#ff6b6b;">Tapte joker</span>' : escHtml(b.resultat));
+    html += '<tr><td>' + escHtml(b.lagNavn) + '</td><td>' + escHtml(b.runde) + '</td><td>' + escHtml(b.sangNr) + '</td><td>' + res + '</td></tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+function visBommerterHistorikk(bommerter) {
+  if (!bommerter || !bommerter.length) return '<p class="tomt">Ingen bommerter registrert denne kvelden.</p>';
+  var html = '';
+  bommerter.forEach(function(b) {
+    html += '<div class="bommertkort">' +
+      '<div class="lag">' + escHtml(b.lagNavn) + '</div>' +
+      (b.sangtekst ? '<div class="sang">' + escHtml(b.sangtekst) + '</div>' : '') +
+      '<div class="svar">Svarte: <b>' + escHtml(b.deresSvar) + '</b></div>' +
+      '<div class="fasit">Riktig: <b>' + escHtml(b.riktigSvar) + '</b></div>' +
+      '</div>';
+  });
+  return html;
+}
+
+function visKveldsliste(kvelder) {
+  var wrap = document.getElementById('kveldApp');
+  if (!kvelder.length) {
+    wrap.innerHTML = '<div class="card"><h2>Tidligere kvelder</h2><p class="tomt">Ingen kvelder er arkivert ennå. Bruk "Avslutt kveld og arkiver" på Styre-siden etter en quizkveld.</p></div>';
+    return;
+  }
+  var sortert = kvelder.slice().reverse();
+  var html = '<div class="card"><h2>Tidligere kvelder (' + sortert.length + ')</h2>';
+  sortert.forEach(function(k, idx) {
+    var div1Vinner = (k.div1 && k.div1[0]) ? k.div1[0].navn : '-';
+    var div2Vinner = (k.div2 && k.div2[0]) ? k.div2[0].navn : '-';
+    var finaleTekst = k.finaleVinner ? ' · Finale: <b>' + escHtml(k.finaleVinner) + '</b>' : '';
+    var finaleBTekst = k.finaleBVinner ? ' · B-finale: <b>' + escHtml(k.finaleBVinner) + '</b>' : '';
+    html += '<details' + (idx === 0 ? ' open' : '') + '>';
+    html += '<summary>' + formatDato(k.dato) + ' &mdash; ' + (k.antallLag || 0) + ' lag' +
+      '<span class="sub">Div1-vinner: ' + escHtml(div1Vinner) + ' · Div2-vinner: ' + escHtml(div2Vinner) + finaleTekst + finaleBTekst + ' · Sesong ' + escHtml(k.sesong) + '</span></summary>';
+    html += '<div>';
+    html += '<h4>1. divisjon</h4>' + lagTabellHistorikk(k.div1, 1);
+    html += '<h4>2. divisjon</h4>' + lagTabellHistorikk(k.div2, 2);
+    html += '<h4>Finale</h4><p>' + (k.finaleVinner ? '🏆 <b>' + escHtml(k.finaleVinner) + '</b> vant finalen.' : '<span class="tomt">Finale ikke spilt denne kvelden.</span>') + '</p>';
+    html += '<h4>B-finale</h4><p>' + (k.finaleBVinner ? '🏆 <b>' + escHtml(k.finaleBVinner) + '</b> vant B-finalen.' : '<span class="tomt">B-finale ikke spilt denne kvelden.</span>') + '</p>';
+    html += '<h4>Jokerbruk</h4>' + visJokerTabellHistorikk(k.jokerBruk);
+    html += '<h4>🤦 Beste bommert - høydepunkter</h4>' + visBommerterHistorikk(k.bommerter);
+    html += '</div></details>';
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+// ---- Sesongoversikt ----
+
+var PLASSPOENG = [3, 2, 1];
+
+function tomStatistikk(navn) {
+  return { navn: navn, kveldsseire: 0, finaleseire: 0, finaleBseire: 0, jokerVunnet: 0, jokerBrukt: 0, plasseringspoeng: 0 };
+}
+
+function leggTilRangering(map, rader) {
+  if (!rader) return;
+  rader.forEach(function(r, i) {
+    var key = normNavn(r.navn);
+    if (!key) return;
+    if (!map[key]) map[key] = tomStatistikk(r.navn);
+    if (i === 0) map[key].kveldsseire++;
+    if (i < PLASSPOENG.length) map[key].plasseringspoeng += PLASSPOENG[i];
+  });
+}
+
+function byggSesongStatistikk(kvelderISesong) {
+  var map = {};
+  kvelderISesong.forEach(function(k) {
+    leggTilRangering(map, k.div1);
+    leggTilRangering(map, k.div2);
+    if (k.finaleVinner) {
+      var fk = normNavn(k.finaleVinner);
+      if (!map[fk]) map[fk] = tomStatistikk(k.finaleVinner);
+      map[fk].finaleseire++;
+    }
+    if (k.finaleBVinner) {
+      var fbk = normNavn(k.finaleBVinner);
+      if (!map[fbk]) map[fbk] = tomStatistikk(k.finaleBVinner);
+      map[fbk].finaleBseire++;
+    }
+    (k.jokerBruk || []).forEach(function(b) {
+      var jk = normNavn(b.lagNavn);
+      if (!jk) return;
+      if (!map[jk]) map[jk] = tomStatistikk(b.lagNavn);
+      if (b.resultat === 'vunnet' || b.resultat === 'tapt') {
+        map[jk].jokerBrukt++;
+        if (b.resultat === 'vunnet') map[jk].jokerVunnet++;
+      }
+    });
+  });
+  return Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) { return b.plasseringspoeng - a.plasseringspoeng; });
+}
+
+function visSesongoversikt(kvelder) {
+  var wrap = document.getElementById('sesongApp');
+  if (!kvelder.length) { wrap.innerHTML = ''; return; }
+  var sesonger = {};
+  kvelder.forEach(function(k) {
+    var s = k.sesong || 1;
+    if (!sesonger[s]) sesonger[s] = [];
+    sesonger[s].push(k);
+  });
+  var sesongNr = Object.keys(sesonger).map(Number).sort(function(a, b) { return b - a; });
+  var html = '<div class="card"><h2>Sesongoversikt</h2>' +
+    '<p style="font-size:.85em;opacity:.75;">Sammenlagt på tvers av alle arkiverte kvelder i samme sesong. Plasseringspoeng: 1. plass i egen divisjon gir 3 poeng, 2. plass gir 2, 3. plass gir 1 - lagt sammen for begge divisjoner over alle kveldene i sesongen.</p>';
+  sesongNr.forEach(function(s) {
+    var stats = byggSesongStatistikk(sesonger[s]);
+    html += '<h3>Sesong ' + s + ' (' + sesonger[s].length + ' kveld' + (sesonger[s].length === 1 ? '' : 'er') + ')</h3>';
+    if (!stats.length) {
+      html += '<p class="tomt">Ingen data for denne sesongen ennå.</p>';
+    } else {
+      html += '<table><tr><th>Lag</th><th>Kveldsseire</th><th>Finaleseire</th><th>B-finaleseire</th><th>Joker (vunnet/brukt)</th><th>Plasseringspoeng</th></tr>';
+      stats.forEach(function(t, i) {
+        var stil = i === 0 ? ' style="background:#00cc00;color:#000000;font-weight:bold;"' : '';
+        html += '<tr' + stil + '><td>' + escHtml(t.navn) + '</td><td>' + t.kveldsseire + '</td><td>' + t.finaleseire + '</td><td>' + t.finaleBseire + '</td><td>' + t.jokerVunnet + '/' + t.jokerBrukt + '</td><td>' + t.plasseringspoeng + '</td></tr>';
+      });
+      html += '</table>';
+    }
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+last();
+</script>
+</body>
+</html>
