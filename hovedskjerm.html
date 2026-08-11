@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Hovedskjerm</title>
+<style>
+:root{
+  --bg:#000000;
+  --bg2:#000000;
+  --bg3:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gold:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+.small{font-size:11px;word-break:break-all;color:#00ff00;}
+.grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:28px 0;}
+.tile{background:rgba(0,255,255,0.15);border-radius:0;padding:14px 18px;font-size:1.05em;font-weight:bold;transition:all .45s ease;}
+.tile.pending{animation:pulse 1.1s infinite;}
+.tile.eliminated{opacity:.12;transform:scale(.8);text-decoration:line-through;filter:grayscale(1);animation:none;}
+.tile.winner{background:linear-gradient(135deg,#00ff00,#ffff00);transform:scale(1.18);box-shadow:none;animation:none;}
+@keyframes pulse{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
+.confetti{position:fixed;top:-12px;width:8px;height:8px;border-radius:0;animation:fall linear forwards;z-index:999;}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3;}}
+#final{font-size:1.6em;text-align:center;margin-top:20px;}
+#wheelStage{position:relative;width:360px;height:360px;margin:20px auto;}
+#wheelPointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:32px solid #ffff00;z-index:5;filter:drop-shadow(0 0 4px #000);}
+#wheelSvg{width:360px;height:360px;border-radius:50%;border:6px solid #00ffff;background:#000;transform:rotate(0deg);}
+#wheelHub{position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#ffff00;border:3px solid #000;z-index:4;}
+#uavgjortResultat div{margin:6px 0;color:#00ff00;}
+.fullOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.94);z-index:1500;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;}
+.vinnerBoks h1{color:#ffff00;font-size:2.2em;margin-bottom:20px;}
+.vinnerBoks h2{color:#00ff00;font-size:3.2em;margin:0;}
+.bommertBoks{background:#110022;border:4px solid #ff00ff;padding:40px 60px;max-width:85%;}
+.bommertBoks h2{color:#ff00ff;font-size:2em;}
+.bommertLag{font-size:1.9em;color:#ffff00;font-weight:bold;margin:10px 0;}
+.bommertSang{font-size:1.2em;color:#00ffff;font-style:italic;margin:6px 0;}
+.bommertSvar{font-size:1.4em;color:#ff6b6b;margin:6px 0;}
+.bommertFasit{font-size:1.4em;color:#00ff00;margin:6px 0;}
+
+table{width:100%;border-collapse:collapse;}
+th,td{padding:6px 10px;text-align:left;}
+tr:nth-child(even){background:rgba(0,255,255,0.08);}
+th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
+@keyframes poengFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-22px) scale(1.4);}}
+.poeng-anim{display:inline-block;color:#00ff00;font-weight:bold;margin-left:8px;animation:poengFloat 1.8s ease-out forwards;}
+.stortekst{text-align:center;padding:80px 20px;}
+.stortekst h1{font-size:2.4em;background:none;border:none;display:block;color:#ffff00;}
+.stortekst p{font-size:1.6em;margin-top:20px;}
+</style>
+</head>
+<body>
+<div id="vinnerOverlay" class="fullOverlay" style="display:none;"></div>
+<div id="bommertOverlay" class="fullOverlay" style="display:none;"></div>
+<div class="wrap">
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="stilling.html"><button>Stilling</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="historikk.html"><button>Historikk</button></a>
+<a href="hovedskjerm.html"><button style="background:#00ffff;">Hovedskjerm</button></a>
+<a href="veiledning.html"><button>Veiledning</button></a>
+</div>
+
+<div id="trekningWrap" style="display:none;">
+<h1>Kategori-trekning</h1>
+<div class="card" id="trekkKontroll">
+<button id="startBtn" onclick="start()" disabled>Start trekning</button>
+<p class="small" id="trekkInfo"></p>
+</div>
+<div id="app"><p>Laster...</p></div>
+</div>
+
+<div id="buzzerWrap" style="display:none;text-align:center;">
+<div id="buzzerLedig" class="card" style="padding:60px 20px;"><h1 style="font-size:2.5em;color:#888;">Venter...</h1></div>
+<div id="buzzerApen" class="card" style="display:none;padding:60px 20px;background:#2ecc71;"><h1 style="font-size:4em;color:#fff;">BUZZER ÅPEN!</h1></div>
+<div id="buzzerLukket" class="card" style="display:none;padding:60px 20px;background:#ff0000;">
+<h2 style="font-size:2em;color:#fff;margin-bottom:10px;">Først til å trykke:</h2>
+<h1 id="buzzerVinnernavn" style="font-size:4.5em;color:#fff;"></h1>
+</div>
+</div>
+
+<div id="uavgjortWrap" style="display:none;text-align:center;">
+<div class="card">
+<h1 style="color:#ff00ff;">LYKKEHJULET</h1>
+<p id="uavgjortLabel" style="font-size:1.2em;"></p>
+</div>
+<div class="card" style="padding:40px 20px;">
+<div id="wheelStage">
+<div id="wheelPointer"></div>
+<div id="wheelHub"></div>
+<svg id="wheelSvg" viewBox="0 0 300 300"></svg>
+</div>
+<div style="margin-top:10px;">
+<button id="spinBtn" onclick="spinWheel()">Drei hjulet!</button>
+</div>
+<div id="uavgjortResultat" style="margin-top:20px;font-size:1.6em;"></div>
+</div>
+</div>
+
+<div id="stillingWrap" style="display:none;">
+<h1>Stilling</h1>
+<div id="stillingInnhold"><p>Laster...</p></div>
+<div class="card" style="font-size:0.85em;">
+<span style="background:#00cc00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> 1. plass &nbsp;&nbsp;
+<span style="background:#ffff00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> Med i opp-/nedrykk-trekning
+</div>
+</div>
+
+<div id="velkomstWrap" style="display:none;" class="stortekst">
+<h1>Musikkquiz</h1>
+<p>Velkommen til quizkvelden!</p>
+</div>
+
+<div id="pauseWrap" style="display:none;" class="stortekst">
+<h1>Pause</h1>
+<p id="pauseTekst"></p>
+</div>
+
+<div id="sluttresultatWrap" style="display:none;">
+<h1>Kveldens resultat</h1>
+<div id="sluttresultatInnhold"><p>Laster...</p></div>
+</div>
+
+<div id="skjulWrap" style="display:none;"></div>
+
+</div>
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function(k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ==== Kategori-trekning (gjenbruk fra trekning.html) ====
+var allNames = [];
+var tileEls = {};
+
+function initTrekning() {
+  apiGet('opprykkStatus').then(visStatus).catch(function(e) { console.error(e); });
+  apiGet('alleKategoriNavn').then(function(n) { allNames = n; }).catch(function(e) { console.error(e); });
+}
+
+function visStatus(o) {
+  var startBtn = document.getElementById('startBtn');
+  var info = document.getElementById('trekkInfo');
+  if (o.status === 'trekker') {
+    startBtn.disabled = false;
+    info.innerHTML = 'Lag som trekker kategori: <b>' + escHtml(o.lagA.navn) + '</b>';
+    document.getElementById('app').innerHTML = '<div class="grid" id="grid"></div><div id="final"></div>';
+    renderGrid();
+  } else if (o.status === 'velger') {
+    startBtn.disabled = true;
+    info.innerHTML = '';
+    var html = '<div class="card"><h2>Kategoriene er trukket</h2><ul style="font-size:1.4em">';
+    o.kandidater.forEach(function(k) { html += '<li>' + escHtml(k) + '</li>'; });
+    html += '</ul><p>Venter på at Styre-siden velger kategori.</p></div>';
+    document.getElementById('app').innerHTML = html;
+  } else {
+    startBtn.disabled = true;
+    info.innerHTML = '';
+    document.getElementById('app').innerHTML = '<div class="card"><p>Ingen trekning pågår akkurat nå.</p></div>';
+  }
+}
+
+function renderGrid() {
+  var grid = document.getElementById('grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  tileEls = {};
+  allNames.forEach(function(name) {
+    var d = document.createElement('div');
+    d.className = 'tile pending';
+    d.textContent = name;
+    grid.appendChild(d);
+    tileEls[name] = d;
+  });
+}
+
+function start() {
+  var btn = document.getElementById('startBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Trekker...'; }
+  apiGet('trekkKategorier').then(function(o) { eliminate(o.kandidater); }).catch(function(e) { console.error(e); });
+}
+
+var actx = null;
+function actxGet() { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); return actx; }
+function beep(freq, dur, type, vol) {
+  try {
+    var a = actxGet();
+    var o = a.createOscillator();
+    var g = a.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.value = vol || .2;
+    o.connect(g); g.connect(a.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(.001, a.currentTime + dur);
+    o.stop(a.currentTime + dur + .03);
+  } catch (e) {}
+}
+
+function eliminate(winners) {
+  if (!allNames.length) { setTimeout(function() { eliminate(winners); }, 200); return; }
+  var losers = allNames.filter(function(n) { return winners.indexOf(n) === -1; });
+  for (var i = losers.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = losers[i]; losers[i] = losers[j]; losers[j] = t; }
+  var totalMs = 9000; var stepMs = Math.max(220, Math.floor(totalMs / Math.max(losers.length, 1)));
+  var idx = 0;
+  function step() {
+    if (idx < losers.length) {
+      var el = tileEls[losers[idx]];
+      if (el) { el.classList.remove('pending'); el.classList.add('eliminated'); }
+      beep(170, .1, 'square', .12);
+      idx++;
+      setTimeout(step, stepMs);
+    } else {
+      setTimeout(function() { revealWinners(winners); }, 600);
+    }
+  }
+  step();
+}
+
+function revealWinners(winners) {
+  var notes = [523, 659, 784, 988];
+  winners.forEach(function(name, i) {
+    setTimeout(function() {
+      var el = tileEls[name];
+      if (el) { el.classList.remove('pending'); el.classList.add('winner'); }
+      beep(notes[i % 4], .28, 'sine', .28);
+      if (i === winners.length - 1) {
+        setTimeout(function() {
+          [523, 659, 784, 1046].forEach(function(f, k) { setTimeout(function() { beep(f, .3, 'triangle', .3); }, k * 150); });
+          confetti();
+          var f = document.getElementById('final');
+          if (f) f.innerHTML = '<p><b>Kategoriene er trukket!</b> Venter på at Styre-siden velger kategori.</p>';
+        }, 400);
+      }
+    }, i * 550);
+  });
+}
+
+function confetti() {
+  var colors = ['#00ff00', '#ffff00', '#ffd23f', '#3a86ff', '#ffffff'];
+  for (var i = 0; i < 50; i++) {
+    (function() {
+      var d = document.createElement('div');
+      d.className = 'confetti';
+      d.style.left = (Math.random() * 100) + 'vw';
+      d.style.background = colors[Math.floor(Math.random() * colors.length)];
+      d.style.animationDuration = (2 + Math.random() * 2) + 's';
+      document.body.appendChild(d);
+      setTimeout(function() { d.remove(); }, 4200);
+    })();
+  }
+}
+
+// ==== Buzzer ====
+var buzzerIntervalId = null;
+function initBuzzer() {
+  lastBuzzerDisplay();
+  if (buzzerIntervalId) clearInterval(buzzerIntervalId);
+  buzzerIntervalId = setInterval(lastBuzzerDisplay, 700);
+}
+function lastBuzzerDisplay() {
+  apiGet('buzzerStatus').then(visBuzzerDisplay).catch(function(e) { console.error(e); });
+}
+function visBuzzerDisplay(o) {
+  document.getElementById('buzzerLedig').style.display = (o.status === 'ledig') ? 'block' : 'none';
+  document.getElementById('buzzerApen').style.display = (o.status === 'apen') ? 'block' : 'none';
+  document.getElementById('buzzerLukket').style.display = (o.status === 'lukket') ? 'block' : 'none';
+  if (o.status === 'lukket') { document.getElementById('buzzerVinnernavn').textContent = o.vinnerNavn || ''; }
+}
+
+// ==== Stilling ====
+var stillingIntervalId = null;
+var forrigePoeng = {};
+function initStilling() {
+  lastStilling();
+  if (stillingIntervalId) clearInterval(stillingIntervalId);
+  stillingIntervalId = setInterval(lastStilling, 4000);
+}
+function lastStilling() {
+  apiGet('stilling').then(visStilling).catch(function(e) { console.error(e); });
+}
+function visStilling(data) {
+  var html = '<div class="card"><h2>1. divisjon</h2>' + lagTabell(data.div1, 1) + '</div>' +
+    '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2, 2) + '</div>';
+  document.getElementById('stillingInnhold').innerHTML = html;
+}
+function lagTabell(rader, divisjon) {
+  var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th></tr>';
+  rader.forEach(function(r, i) {
+    var stil = '';
+    if (i === 0) {
+      stil = ' style="background:#00cc00;color:#000000;font-weight:bold;"';
+    } else if (divisjon === 1 && rader.length >= 2 && (i === rader.length - 2 || i === rader.length - 1)) {
+      stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
+    } else if (divisjon === 2 && i === 1) {
+      stil = ' style="background:#ffff00;color:#000000;font-weight:bold;"';
+    }
+    var forrige = (r.lagId in forrigePoeng) ? forrigePoeng[r.lagId] : r.poeng;
+    var diff = r.poeng - forrige;
+    var poengHtml = r.poeng + (diff > 0 ? ' <span class="poeng-anim">+' + diff + '</span>' : '');
+    forrigePoeng[r.lagId] = r.poeng;
+    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + escHtml(r.navn) + '</td><td>' + escHtml(r.bord) + '</td><td>' + poengHtml + '</td></tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+// ==== Sluttresultat (manuell visning) ====
+var sluttresultatIntervalId = null;
+function initSluttresultat() {
+  lastSluttresultat();
+  if (sluttresultatIntervalId) clearInterval(sluttresultatIntervalId);
+  sluttresultatIntervalId = setInterval(lastSluttresultat, 6000);
+}
+function lastSluttresultat() {
+  Promise.all([apiGet('stilling'), apiGet('finaleStatus'), apiGet('finaleBStatus')]).then(function(res) {
+    visSluttresultat(res[0], res[1], res[2]);
+  }).catch(function(e) { console.error(e); });
+}
+function visSluttresultat(stilling, finale, finaleB) {
+  var html = '<div class="card"><h2>1. divisjon</h2>' + lagTabell(stilling.div1, 1) + '</div>';
+  html += '<div class="card"><h2>2. divisjon</h2>' + lagTabell(stilling.div2, 2) + '</div>';
+  html += '<div class="card"><h2>Finale</h2><p style="font-size:1.3em;">' + (finale && finale.vinnerNavn ? '🏆 <b>' + escHtml(finale.vinnerNavn) + '</b> vant finalen!' : 'Ikke avgjort ennå.') + '</p></div>';
+  html += '<div class="card"><h2>B-finale</h2><p style="font-size:1.3em;">' + (finaleB && finaleB.vinnerNavn ? '🏆 <b>' + escHtml(finaleB.vinnerNavn) + '</b> vant B-finalen!' : 'Ikke avgjort ennå.') + '</p></div>';
+  document.getElementById('sluttresultatInnhold').innerHTML = html;
+}
+
+// ==== Modus-styring (auto + manuell overstyring fra Styre-siden) ====
+var gjeldendeModus = null;
+var lastUavgjortKey = '';
+var wheelSpinning = false;
+
+function alleWrapsSkjul() {
+  ['trekningWrap', 'buzzerWrap', 'uavgjortWrap', 'stillingWrap', 'velkomstWrap', 'pauseWrap', 'sluttresultatWrap', 'skjulWrap'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+function stoppIntervaller() {
+  if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
+  if (stillingIntervalId) { clearInterval(stillingIntervalId); stillingIntervalId = null; }
+  if (sluttresultatIntervalId) { clearInterval(sluttresultatIntervalId); sluttresultatIntervalId = null; }
+}
+
+function sjekkModus() {
+  apiGet('skjermOverride').then(function(ov) {
+    var modus = (ov && ov.modus) ? ov.modus : 'auto';
+    if (modus === 'auto') { autoModus(); return; }
+    var nyModus = 'override:' + modus;
+    if (nyModus === gjeldendeModus) {
+      if (modus === 'pause') { var pt = document.getElementById('pauseTekst'); if (pt) pt.textContent = ov.tekst || ''; }
+      return;
+    }
+    gjeldendeModus = nyModus;
+    stoppIntervaller();
+    alleWrapsSkjul();
+    if (modus === 'velkomst') {
+      document.getElementById('velkomstWrap').style.display = 'block';
+    } else if (modus === 'pause') {
+      document.getElementById('pauseWrap').style.display = 'block';
+      document.getElementById('pauseTekst').textContent = ov.tekst || '';
+    } else if (modus === 'sluttresultat') {
+      document.getElementById('sluttresultatWrap').style.display = 'block';
+      initSluttresultat();
+    } else if (modus === 'skjul') {
+      document.getElementById('skjulWrap').style.display = 'block';
+    } else {
+      gjeldendeModus = null;
+      autoModus();
+    }
+  }).catch(function(e) { console.error(e); autoModus(); });
+}
+
+function autoModus() {
+  apiGet('uavgjortStatus').then(function(u) {
+    if (u.status === 'venter' || u.status === 'trukket') {
+      var key = u.kontekst + '|' + u.type + '|' + u.status;
+      if (gjeldendeModus !== 'auto:uavgjort') {
+        gjeldendeModus = 'auto:uavgjort';
+        stoppIntervaller();
+        alleWrapsSkjul();
+        document.getElementById('uavgjortWrap').style.display = 'block';
+        lastUavgjortKey = key;
+        initUavgjort(u);
+      } else if (key !== lastUavgjortKey && !wheelSpinning) {
+        lastUavgjortKey = key;
+        initUavgjort(u);
+      }
+      return;
+    }
+    apiGet('opprykkStatus').then(function(o) {
+      if (o.status === 'trekker' || o.status === 'velger') {
+        if (gjeldendeModus !== 'auto:trekning') {
+          gjeldendeModus = 'auto:trekning';
+          stoppIntervaller();
+          alleWrapsSkjul();
+          document.getElementById('trekningWrap').style.display = 'block';
+          initTrekning();
+        }
+        return;
+      }
+      apiGet('buzzerStatus').then(function(b) {
+        if (b.status === 'apen' || b.status === 'lukket') {
+          if (gjeldendeModus !== 'auto:buzzer') {
+            gjeldendeModus = 'auto:buzzer';
+            stoppIntervaller();
+            alleWrapsSkjul();
+            document.getElementById('buzzerWrap').style.display = 'block';
+            initBuzzer();
+          }
+        } else if (gjeldendeModus !== 'auto:stilling') {
+          gjeldendeModus = 'auto:stilling';
+          stoppIntervaller();
+          alleWrapsSkjul();
+          document.getElementById('stillingWrap').style.display = 'block';
+          initStilling();
+        }
+      }).catch(function(e) { console.error(e); });
+    }).catch(function(e) { console.error(e); });
+  }).catch(function(e) { console.error(e); });
+}
+
+// ==== Lykkehjul (uavgjort-trekning) ====
+var WHEEL_COLORS = ['#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6b6b', '#3a86ff', '#ffa500', '#ff1493'];
+var wheelKandidater = [];
+var wheelRotation = 0;
+var uavgjortWinnersQueue = [];
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  var rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeSlice(cx, cy, r, startAngle, endAngle) {
+  var start = polarToCartesian(cx, cy, r, endAngle);
+  var end = polarToCartesian(cx, cy, r, startAngle);
+  var largeArc = (endAngle - startAngle) <= 180 ? '0' : '1';
+  return ['M', cx, cy, 'L', start.x, start.y, 'A', r, r, 0, largeArc, 0, end.x, end.y, 'Z'].join(' ');
+}
+
+function buildWheel(kandidater) {
+  var svg = document.getElementById('wheelSvg');
+  svg.innerHTML = '';
+  svg.style.transition = 'none';
+  svg.style.transform = 'rotate(0deg)';
+  var n = kandidater.length;
+  if (!n) return;
+  var cx = 150, cy = 150, r = 148;
+  var sliceAngle = 360 / n;
+  for (var i = 0; i < n; i++) {
+    var start = i * sliceAngle;
+    var end = start + sliceAngle;
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', describeSlice(cx, cy, r, start, end));
+    path.setAttribute('fill', WHEEL_COLORS[i % WHEEL_COLORS.length]);
+    path.setAttribute('stroke', '#000');
+    path.setAttribute('stroke-width', '2');
+    svg.appendChild(path);
+    var midAngle = start + sliceAngle / 2;
+    var labelPos = polarToCartesian(cx, cy, r * 0.62, midAngle);
+    var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', labelPos.x);
+    text.setAttribute('y', labelPos.y);
+    text.setAttribute('fill', '#000');
+    text.setAttribute('font-family', 'Courier New, monospace');
+    text.setAttribute('font-weight', 'bold');
+    text.setAttribute('font-size', n > 8 ? '9' : '13');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('transform', 'rotate(' + midAngle + ' ' + labelPos.x + ' ' + labelPos.y + ')');
+    text.textContent = kandidater[i].navn;
+    svg.appendChild(text);
+  }
+  void svg.offsetWidth;
+  svg.style.transition = 'transform 5s cubic-bezier(0.12,0.67,0.1,1)';
+}
+
+function initUavgjort(u) {
+  document.getElementById('uavgjortLabel').textContent = u.label || '';
+  document.getElementById('uavgjortResultat').innerHTML = '';
+  wheelKandidater = (u.kandidater || []).slice();
+  wheelRotation = 0;
+  wheelSpinning = false;
+  buildWheel(wheelKandidater);
+  var spinBtn = document.getElementById('spinBtn');
+  if (u.status === 'trukket') {
+    spinBtn.style.display = 'none';
+    var resHtml = '';
+    (u.valgt || []).forEach(function(v) { resHtml += '<div>Vinner: ' + escHtml(v.navn) + '</div>'; });
+    resHtml += '<p style="font-size:.5em;opacity:.7;margin-top:10px;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
+    document.getElementById('uavgjortResultat').innerHTML = resHtml;
+  } else {
+    spinBtn.style.display = 'inline-block';
+    spinBtn.disabled = false;
+  }
+}
+
+function tickSoundsDuring(durationMs) {
+  var elapsed = 0;
+  var interval = 80;
+  function tick() {
+    if (elapsed >= durationMs - 300) return;
+    beep(300 + Math.random() * 80, .05, 'square', .1);
+    elapsed += interval;
+    interval = interval * 1.06;
+    setTimeout(tick, interval);
+  }
+  tick();
+}
+
+function beepWinFanfare() {
+  [523, 659, 784, 1046].forEach(function(f, k) { setTimeout(function() { beep(f, .3, 'triangle', .3); }, k * 150); });
+}
+
+function spinWheel() {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  apiGet('trekkUavgjort').then(function(rad) {
+    uavgjortWinnersQueue = (rad.valgt || []).slice();
+    spinToNextWinner(rad.kandidater ? rad.kandidater.slice() : wheelKandidater.slice());
+  }).catch(function(e) { console.error(e); wheelSpinning = false; document.getElementById('spinBtn').disabled = false; });
+}
+
+function spinToNextWinner(pool) {
+  if (!uavgjortWinnersQueue.length) { finishSpin(); return; }
+  var winner = uavgjortWinnersQueue.shift();
+  var idx = -1;
+  for (var i = 0; i < pool.length; i++) {
+    if (String(pool[i].id) === String(winner.id)) { idx = i; break; }
+  }
+  if (idx === -1) { spinToNextWinner(pool); return; }
+  var n = pool.length;
+  var sliceAngle = 360 / n;
+  var winnerMid = idx * sliceAngle + sliceAngle / 2;
+  var fullSpins = 6 + Math.floor(Math.random() * 3);
+  wheelRotation = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var svg = document.getElementById('wheelSvg');
+  svg.style.transform = 'rotate(' + wheelRotation + 'deg)';
+  tickSoundsDuring(5000);
+  setTimeout(function() {
+    var el = document.getElementById('uavgjortResultat');
+    el.innerHTML += '<div>Vinner: ' + escHtml(winner.navn) + '</div>';
+    beepWinFanfare();
+    if (uavgjortWinnersQueue.length) {
+      pool = pool.slice();
+      pool.splice(idx, 1);
+      setTimeout(function() {
+        buildWheel(pool);
+        wheelRotation = 0;
+        spinToNextWinner(pool);
+      }, 1200);
+    } else {
+      finishSpin();
+    }
+  }, 5200);
+}
+
+function finishSpin() {
+  wheelSpinning = false;
+  confetti();
+  var spinBtn = document.getElementById('spinBtn');
+  if (spinBtn) spinBtn.style.display = 'none';
+  var el = document.getElementById('uavgjortResultat');
+  el.innerHTML += '<p style="font-size:.5em;opacity:.7;margin-top:10px;">Venter på Styre-siden.</p>';
+}
+
+// ---- Finalevinner-konfetti og beste bommert (overlegg, uavhengig av modus) ----
+var sisteFinaleStatus = null;
+var sisteFinaleBStatus = null;
+var sisteBommertTid = null;
+
+function visVinnerOverlay(navn, hva) {
+  var ov = document.getElementById('vinnerOverlay');
+  ov.innerHTML = '<div class="vinnerBoks"><h1>🏆 ' + hva + ' er avgjort!</h1><h2>' + escHtml(navn || '') + ' vant!</h2></div>';
+  ov.style.display = 'flex';
+  confetti();
+  beepWinFanfare();
+  setTimeout(function() { ov.style.display = 'none'; }, 7000);
+}
+
+function visBommertOverlay(o) {
+  var ov = document.getElementById('bommertOverlay');
+  ov.innerHTML = '<div class="bommertBoks"><h2>🤦 Beste bommert</h2>' +
+    '<p class="bommertLag">' + escHtml(o.lagNavn || '') + '</p>' +
+    (o.sangtekst ? '<p class="bommertSang">' + escHtml(o.sangtekst) + '</p>' : '') +
+    '<p class="bommertSvar">Svarte: <b>' + escHtml(o.deresSvar || '') + '</b></p>' +
+    '<p class="bommertFasit">Riktig: <b>' + escHtml(o.riktigSvar || '') + '</b></p></div>';
+  ov.style.display = 'flex';
+}
+
+function skjulBommertOverlay() {
+  var ov = document.getElementById('bommertOverlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function sjekkFinaleOgBommert() {
+  apiGet('finaleStatus').then(function(o) {
+    if (o.status === 'ferdig' && sisteFinaleStatus !== 'ferdig') {
+      visVinnerOverlay(o.vinnerNavn, 'Finalen');
+    }
+    sisteFinaleStatus = o.status;
+  }).catch(function(e) { console.error(e); });
+  apiGet('finaleBStatus').then(function(o) {
+    if (o.status === 'ferdig' && sisteFinaleBStatus !== 'ferdig') {
+      visVinnerOverlay(o.vinnerNavn, 'B-finalen');
+    }
+    sisteFinaleBStatus = o.status;
+  }).catch(function(e) { console.error(e); });
+  apiGet('bommertVisning').then(function(o) {
+    if (o && o.tid && o.tid !== sisteBommertTid) {
+      sisteBommertTid = o.tid;
+      visBommertOverlay(o);
+    } else if (!o || !o.tid) {
+      sisteBommertTid = null;
+      skjulBommertOverlay();
+    }
+  }).catch(function(e) { console.error(e); });
+}
+
+sjekkModus();
+setInterval(sjekkModus, 3000);
+sjekkFinaleOgBommert();
+setInterval(sjekkFinaleOgBommert, 3000);
+</script>
+</body>
+</html>
