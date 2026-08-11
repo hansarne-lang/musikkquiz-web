@@ -76,7 +76,7 @@ code{color:#ffff00;}
 
 <h2>Diagram: hele quizkvelden</h2>
 <div class="card">
-<svg viewBox="0 0 460 648" xmlns="http://www.w3.org/2000/svg" role="img" style="width:100%;max-width:460px;height:auto;display:block;margin:20px auto;">
+<svg viewBox="0 0 460 754" xmlns="http://www.w3.org/2000/svg" role="img" style="width:100%;max-width:460px;height:auto;display:block;margin:20px auto;">
 <defs>
 <marker id="arrowC1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#00ffff"/></marker>
 </defs>
@@ -98,11 +98,15 @@ code{color:#ffff00;}
 <text x="230.0" y="399" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Siste ordinære runde</text>
 <line x1="230.0" y1="429" x2="230.0" y2="465" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
 <rect x="30" y="465" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
-<text x="230.0" y="487" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. FINALE</text>
-<text x="230.0" y="505" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Buzzer-duell, topp 3 lag i 1. divisjon</text>
+<text x="230.0" y="487" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">5. B-FINALE</text>
+<text x="230.0" y="505" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Buzzer-duell, topp 3 lag i 2. divisjon</text>
 <line x1="230.0" y1="535" x2="230.0" y2="571" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
-<rect x="30" y="571" width="400" height="53" fill="#000000" stroke="#ffff00" stroke-width="2"/>
-<text x="230.0" y="593" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">6. VINNER KÅRES</text>
+<rect x="30" y="571" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
+<text x="230.0" y="593" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">6. FINALE</text>
+<text x="230.0" y="611" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Buzzer-duell, topp 3 lag i 1. divisjon</text>
+<line x1="230.0" y1="641" x2="230.0" y2="677" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC1)"/>
+<rect x="30" y="677" width="400" height="53" fill="#000000" stroke="#ffff00" stroke-width="2"/>
+<text x="230.0" y="699" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">7. VINNER KÅRES</text>
 </svg>
 <p class="diagram-caption">Gul boks = kveldens høydepunkt</p>
 </div>
@@ -166,6 +170,28 @@ code{color:#ffff00;}
 <li><b>Claude vurderer</b> hvert svar og svarer med én linje per lag/felt i formatet <code>LAGID|FELT|OK</code>.</li>
 <li><b>Lim inn Claude sitt svar</b> i feltet under på det samme sang-kortet og trykk "Bruk vurdering og beregn poeng". Poeng for akkurat den sangen beregnes da med Claude sin vurdering av artist og låt, mens årstall fortsatt sjekkes automatisk (pluss/minus 1 år) - og stillingen oppdateres umiddelbart.</li>
 <li><b>Alt lagres til gjennomgang:</b> for hvert innsendte svar lagrer systemet i <b>Svar-arket</b> i regnearket om artist, låt og årstall ble godkjent, poengsummen for svaret, og om Claude overstyrte den automatiske vurderingen - slik at du alltid kan ettergå avgjørelsen i etterkant.</li>
+</ol>
+</div>
+
+<h2 id="joker">Jokeren</h2>
+<div class="card">
+<p>Hvert lag har <b>én joker per sesong</b> (ikke per kveld) som de kan velge å bruke på én valgfri sang. Bruker de jokeren og får <b>alle tre felt</b> (artist, låt og årstall) helt riktig på akkurat den sangen, <b>dobles poengsummen</b> for sangen. Er ett av feltene feil, gir jokeren ingen bonus - laget "taper" jokeren for resten av sesongen uansett.</p>
+<ol>
+<li><b>Laget krysser selv av</b> for "Bruk joker på denne sangen" på sin egen svarside før de sender inn svaret for sangen de vil bruke den på. Siden ber om bekreftelse, og avkrysningen forsvinner automatisk fra laget sin side når jokeren er brukt.</li>
+<li><b>Poengberegningen</b> (automatisk eller med Claude-kvalitetssikring) avgjør om jokeren "vant" (dobbel poengsum) eller "tapte" (ingen bonus) - dette skjer helt av seg selv, ingen egen admin-handling kreves.</li>
+<li><b>Joker-kortet på Styre-siden</b> viser hvilke lag som har brukt joker denne sesongen, og om den vant eller tapte.</li>
+<li><b>Ny sesong.</b> Når en helt ny sesong starter (ikke bare en ny quizkveld), trykk "Start ny sesong" i Joker-kortet for å gi alle lag en ny joker tilgjengelig. "Avslutt kveld og arkiver" nullstiller <i>ikke</i> jokertilgjengeligheten - det er kun sesongknappen som gjør det.</li>
+</ol>
+</div>
+
+<h2 id="bommert">Beste bommert</h2>
+<div class="card">
+<p>En liten underholdningsfunksjon for å løfte frem de morsomste feilsvarene på storskjermen mellom rundene.</p>
+<ol>
+<li><b>Poengberegn sangene</b> i runden som normalt - "Beste bommert" kan først hente feilsvar etter at en sang er scoret.</li>
+<li><b>Velg runde og trykk "Hent feilsvar for runden"</b> i Beste bommert-kortet på Styre-siden. Du får en liste med alle feilsvarene i runden: hvilket lag, hvilken sang, hva de svarte og hva som var riktig.</li>
+<li><b>Trykk "Vis på storskjerm"</b> på den morsomste bommerten. Den dukker da opp som et overlegg på <a href="hovedskjerm.html" target="_blank">Hovedskjerm</a>, uansett hva som vises der fra før.</li>
+<li><b>Trykk "Skjul fra storskjerm"</b> for å fjerne overlegget igjen når dere er klare til å gå videre.</li>
 </ol>
 </div>
 
@@ -260,16 +286,29 @@ code{color:#ffff00;}
 <p class="diagram-caption">Den stiplede gule pilen viser at buzzer-runden gjentas for hvert spørsmål</p>
 </div>
 
+<h2 id="bfinaledetaljer">Slik gjennomføres B-finalen</h2>
+<div class="card">
+<p>En egen finale for <b>topp 3 lag i 2. divisjon</b>, spilt i forkant av hovedfinalen. Fungerer på nøyaktig samme måte som finalen over (samme buzzer-mekanikk, +1/-1 poeng), bare med et eget kort ("B-finale") på Styre-siden og en egen tre-lags-liste for divisjon 2.</p>
+<ol>
+<li><b>Hvem kvalifiserer.</b> De tre lagene med høyest poengsum i 2. divisjon etter siste runde. Er det uavgjort om 3. plassen der, avgjøres det med lykkehjulet på samme måte som for hovedfinalen.</li>
+<li><b>Start B-finalen.</b> Trykk "Start B-finale" på B-finale-kortet. Spilles normalt <i>før</i> hovedfinalen, siden begge bruker samme buzzer-oppsett.</li>
+<li><b>Buzzer-runde og poeng</b> fungerer akkurat som i hovedfinalen: åpne buzzeren, gi "+1" til laget som svarer riktig, gjenta.</li>
+<li><b>Avslutt</b> B-finalen for å kåre vinneren, eller <b>avlys</b> den underveis ("Avlys B-finale") hvis det blir for lite tid igjen av kvelden - da kåres ingen vinner.</li>
+</ol>
+</div>
+
 <h2 id="lykkehjuldetaljer">Slik avgjøres uavgjort med lykkehjulet</h2>
 <div class="card">
-<p>Fire situasjoner i løpet av kvelden kan ende med poenglikhet der systemet selv ikke kan avgjøre hvem som skal videre. I stedet for at admin må gjette eller diskutere, avgjøres disse med et fysisk lykkehjul som spinnes på storskjermen:</p>
+<p>Flere situasjoner i løpet av kvelden kan ende med poenglikhet der systemet selv ikke kan avgjøre hvem som skal videre. I stedet for at admin må gjette eller diskutere, avgjøres disse med et fysisk lykkehjul som spinnes på storskjermen:</p>
 <ol>
 <li><b>1. plass i en divisjon</b> (kun for kåring/dramatikk - påvirker ikke hvem som går videre til opp-/nedrykk eller finale).</li>
 <li><b>Hvem som skal med i opp-/nedrykk-trekningen</b> fra 1. eller 2. divisjon, hvis flere lag deler plassen på vippepunktet.</li>
 <li><b>Hvem som får den siste finaleplassen</b> (3. plass i 1. divisjon), hvis flere lag deler poengsum der.</li>
 <li><b>Hvem som vinner finalen</b>, hvis flere lag deler høyeste poengsum når finalen avsluttes.</li>
+<li><b>Hvem som får den siste B-finaleplassen</b> (3. plass i 2. divisjon), hvis flere lag deler poengsum der.</li>
+<li><b>Hvem som vinner B-finalen</b>, hvis flere lag deler høyeste poengsum når B-finalen avsluttes.</li>
 </ol>
-<p>De tre siste (opp-/nedrykk, finaleplass, finalevinner) oppdages <b>automatisk</b> av systemet når du trykker "Start opprykksspill", "Start finale" eller "Avslutt finale" - spillet stopper da opp av seg selv til uavgjort er løst. Den første (1. plass) er kun kosmetisk og sjekkes manuelt når du ønsker det.</p>
+<p>Alle situasjoner utenom den første (opp-/nedrykk, finaleplass/-vinner og B-finaleplass/-vinner) oppdages <b>automatisk</b> av systemet når du trykker "Start opprykksspill", "Start finale", "Avslutt finale", "Start B-finale" eller "Avslutt B-finale" - spillet stopper da opp av seg selv til uavgjort er løst. 1. plass-kåringen er kun kosmetisk og sjekkes manuelt når du ønsker det.</p>
 <ol>
 <li><b>Systemet oppdager uavgjort.</b> På <a href="styre.html">Styre-siden</a> dukker det opp et lyserosa kort "Uavgjort-trekning" med hvem som er involvert og hva trekningen gjelder. For 1. plass-kåring: trykk "Sjekk divisjonsvinner (Div 1/2)" i samme kort for å sjekke manuelt, f.eks. rett etter runde 6.</li>
 <li><b>Åpne lykkehjulet på storskjermen.</b> Trykk "Åpne lykkehjulet (storskjerm)" i kortet, eller gå direkte til <a href="trekning.html" target="_blank">Trekningssiden</a> - den bytter automatisk til hjul-visning så lenge en uavgjort-trekning venter.</li>
@@ -309,9 +348,11 @@ code{color:#ffff00;}
 <h2>Hurtiglenker</h2>
 <div class="card">
 <a class="linkbox" href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank"><b>Regneark</b><span>Databasen bak quizzen</span></a>
-<a class="linkbox" href="styre.html"><b>Styre / Admin</b><span>Lag-oppsett, fasit, poeng, opprykk, buzzer og finale</span></a>
+<a class="linkbox" href="styre.html"><b>Styre / Admin</b><span>Lag-oppsett, fasit, poeng, opprykk, buzzer, finale og B-finale</span></a>
+<a class="linkbox" href="hovedskjerm.html" target="_blank"><b>Hovedskjerm</b><span>Publikumsskjermen til prosjektoren - stilling, trekning, buzzer, lykkehjul og bommert</span></a>
 <a class="linkbox" href="stilling.html"><b>Stilling</b><span>Divisjonstabeller for storskjerm</span></a>
-<a class="linkbox" href="trekning.html" target="_blank"><b>Storskjerm (trekning + buzzer + lykkehjul)</b><span>Vis på prosjektor under opp-/nedrykk, finale og eventuelle uavgjort-trekninger</span></a>
+<a class="linkbox" href="trekning.html" target="_blank"><b>Trekningsside</b><span>Åpnes fra Styre-siden under opp-/nedrykk og uavgjort-trekninger</span></a>
+<a class="linkbox" href="historikk.html"><b>Historikk</b><span>Tidligere kvelder og sesongoversikt</span></a>
 <a class="linkbox" href="index.html"><b>Oversikt</b><span>Tilbake til forsiden med alle lenker</span></a>
 </div>
 
