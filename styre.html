@@ -45,6 +45,8 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <a href="index.html"><button>Oversikt</button></a>
 <a href="stilling.html"><button>Stilling</button></a>
 <a href="styre.html"><button style="background:#00ffff;">Styre / Admin</button></a>
+<a href="historikk.html"><button>Historikk</button></a>
+<a href="hovedskjerm.html"><button>Hovedskjerm</button></a>
 <a href="veiledning.html"><button>Veiledning</button></a>
 <a href="test.html"><button style="background:#ff6b6b;color:#fff;">Testverktøy</button></a>
 </div>
@@ -76,6 +78,7 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="finale"></div>
 <div id="bommert"></div>
 <div id="jokerPanel"></div>
+<div id="skjermOverride"></div>
 
 <div class="card" style="border-color:#ff0000;">
 <h2 style="color:#ff0000;">Avslutt kvelden</h2>
@@ -584,6 +587,43 @@ function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ---- Hovedskjerm-styring ----
+var SKJERM_NAVN = { auto: 'Automatisk (følger quizen)', velkomst: 'Velkomstskjerm', pause: 'Pausemelding', sluttresultat: 'Sluttresultat / kveldens resultat', skjul: 'Skjult (svart skjerm)' };
+
+function lastSkjermOverride() {
+  apiGet('skjermOverride').then(visSkjermOverride).catch(function (e) {
+    document.getElementById('skjermOverride').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (hovedskjerm): ' + (e && e.message ? e.message : e) + '</p></div>';
+  });
+}
+
+function visSkjermOverride(o) {
+  var modus = (o && o.modus) ? o.modus : 'auto';
+  var html = '<div class="card"><h2>Hovedskjerm</h2>';
+  html += '<p style="font-size:.85em;opacity:.75;">Styrer hva som vises på hovedskjerm.html (publikumsskjermen/prosjektoren). "Auto" følger quizen automatisk (trekning, buzzer, lykkehjul, ellers stilling) - bruk knappene under kun for pauser, velkomst eller sluttresultat.</p>';
+  html += '<p>Viser nå: <b>' + (SKJERM_NAVN[modus] || modus) + '</b>' + (modus === 'pause' && o.tekst ? ' - &quot;' + escHtml(o.tekst) + '&quot;' : '') + '</p>';
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">';
+  html += '<button onclick="settSkjerm(\'auto\')" style="' + (modus === 'auto' ? 'background:#00ff00;' : '') + '">Auto</button>';
+  html += '<button onclick="settSkjerm(\'velkomst\')" style="' + (modus === 'velkomst' ? 'background:#00ff00;' : '') + '">Velkomstskjerm</button>';
+  html += '<button onclick="settSkjerm(\'sluttresultat\')" style="' + (modus === 'sluttresultat' ? 'background:#00ff00;' : '') + '">Sluttresultat</button>';
+  html += '<button onclick="settSkjerm(\'skjul\')" style="' + (modus === 'skjul' ? 'background:#00ff00;' : 'background:#666;') + '">Skjul skjerm</button>';
+  html += '</div>';
+  html += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">';
+  html += '<input type="text" id="pauseTekstInput" placeholder="Pausemelding, f.eks. Vi er straks tilbake!" style="flex:1;min-width:220px;" value="' + (modus === 'pause' ? escHtml(o.tekst) : '') + '">';
+  html += '<button onclick="settSkjermPause()">Vis pausemelding</button>';
+  html += '</div>';
+  html += '</div>';
+  document.getElementById('skjermOverride').innerHTML = html;
+}
+
+function settSkjerm(modus) {
+  apiGet('setSkjermOverride', { modus: modus, tekst: '' }).then(visSkjermOverride).catch(feil);
+}
+
+function settSkjermPause() {
+  var tekst = document.getElementById('pauseTekstInput').value || '';
+  apiGet('setSkjermOverride', { modus: 'pause', tekst: tekst }).then(visSkjermOverride).catch(feil);
+}
+
 function lastKategorier() {
   apiGet('kategorier').then(function (data) {
     kategoriData = data;
@@ -886,6 +926,8 @@ lastFinaleB();
 setInterval(lastFinaleB, 3000);
 lastBommertPanel();
 lastJoker();
+lastSkjermOverride();
+setInterval(lastSkjermOverride, 4000);
 </script>
 </body>
 </html>
