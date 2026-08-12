@@ -59,11 +59,11 @@ Denne siden er trygg å bruke når som helst - den rører ikke lag, poeng, kateg
 
 <div class="card">
 <h2>1. Bekreft at knappene sender riktig tegn</h2>
-<p style="font-size:.9em;opacity:.8;">Buzzeren er antatt koblet slik: Knapp 1 = venstre pil, Knapp 2 = høyre pil, Knapp 3 = venstre Ctrl. Trykk hver knapp én om gangen og se om riktig boks blir grønn.</p>
+<p style="font-size:.9em;opacity:.8;">Buzzeren er bekreftet koblet slik: Knapp 1 = venstre Ctrl, Knapp 2 = mellomrom, Knapp 3 = venstre Alt. Trykk hver knapp én om gangen og se om riktig boks blir grønn.</p>
 <div class="knappgrid">
-<div class="knappboks" id="boksArrowLeft"><h3>Knapp 1</h3><div class="kode">Forventer: venstre pil (ArrowLeft)</div><div class="resultat" id="resArrowLeft">Venter ...</div></div>
-<div class="knappboks" id="boksArrowRight"><h3>Knapp 2</h3><div class="kode">Forventer: høyre pil (ArrowRight)</div><div class="resultat" id="resArrowRight">Venter ...</div></div>
-<div class="knappboks" id="boksControlLeft"><h3>Knapp 3</h3><div class="kode">Forventer: venstre Ctrl (ControlLeft)</div><div class="resultat" id="resControlLeft">Venter ...</div></div>
+<div class="knappboks" id="boksControlLeft"><h3>Knapp 1</h3><div class="kode">Forventer: venstre Ctrl (ControlLeft)</div><div class="resultat" id="resControlLeft">Venter ...</div></div>
+<div class="knappboks" id="boksSpace"><h3>Knapp 2</h3><div class="kode">Forventer: mellomrom (Space)</div><div class="resultat" id="resSpace">Venter ...</div></div>
+<div class="knappboks" id="boksAltLeft"><h3>Knapp 3</h3><div class="kode">Forventer: venstre Alt (AltLeft)</div><div class="resultat" id="resAltLeft">Venter ...</div></div>
 </div>
 <p style="font-size:.85em;opacity:.7;">Hvis en boks ikke blir grønn når du trykker riktig knapp, se rå-loggen under for å finne ut hva knappen faktisk sender.</p>
 <div id="tastelogg"></div>
@@ -73,9 +73,9 @@ Denne siden er trygg å bruke når som helst - den rører ikke lag, poeng, kateg
 <h2>2. Sett hvilket lag hver knapp styrer</h2>
 <p style="font-size:.9em;opacity:.8;">Velg hvilket lag Knapp 1, 2 og 3 skal styre i denne duellen (f.eks. utfordrer/forsvarer i opprykk, eller de tre finalistene).</p>
 <div class="knappgrid">
-<div class="tildeling"><label>Knapp 1 (venstre pil) styrer:</label><select id="lagArrowLeft"><option value="">- ikke i bruk -</option></select></div>
-<div class="tildeling"><label>Knapp 2 (høyre pil) styrer:</label><select id="lagArrowRight"><option value="">- ikke i bruk -</option></select></div>
-<div class="tildeling"><label>Knapp 3 (venstre Ctrl) styrer:</label><select id="lagControlLeft"><option value="">- ikke i bruk -</option></select></div>
+<div class="tildeling"><label>Knapp 1 (venstre Ctrl) styrer:</label><select id="lagControlLeft"><option value="">- ikke i bruk -</option></select></div>
+<div class="tildeling"><label>Knapp 2 (mellomrom) styrer:</label><select id="lagSpace"><option value="">- ikke i bruk -</option></select></div>
+<div class="tildeling"><label>Knapp 3 (venstre Alt) styrer:</label><select id="lagAltLeft"><option value="">- ikke i bruk -</option></select></div>
 </div>
 </div>
 
@@ -91,7 +91,7 @@ Denne siden er trygg å bruke når som helst - den rører ikke lag, poeng, kateg
 
 <script>
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
-var KNAPP_KODER = ["ArrowLeft", "ArrowRight", "ControlLeft"];
+var KNAPP_KODER = ["ControlLeft", "Space", "AltLeft"];
 
 function apiGet(action, extraParams) {
   var url = API_BASE + "?api=" + action;
@@ -174,6 +174,7 @@ setInterval(pollBuzzerStatus, 1000);
 document.addEventListener('keydown', function (e) {
   loggTast(e);
   if (KNAPP_KODER.indexOf(e.code) !== -1) {
+    e.preventDefault();
     visKnappTreff(e.code);
     var sel = document.getElementById('lag' + e.code);
     var lagId = sel ? sel.value : '';
