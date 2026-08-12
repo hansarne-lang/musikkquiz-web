@@ -490,7 +490,9 @@ function nullstillBuzz() {
 }
 
 function lastFinale() {
-  apiGet('finaleStatus').then(visFinale).catch(feil);
+  apiGet('finaleStatus').then(visFinale).catch(function (e) {
+    document.getElementById('finale').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (finale): ' + (e && e.message ? e.message : e) + '</p></div>';
+  });
 }
 
 function visFinale(o) {
@@ -539,7 +541,9 @@ function nullstillFinaleClick() {
 }
 
 function lastFinaleB() {
-  apiGet('finaleBStatus').then(visFinaleB).catch(feil);
+  apiGet('finaleBStatus').then(visFinaleB).catch(function (e) {
+    document.getElementById('finaleB').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (B-finale): ' + (e && e.message ? e.message : e) + '</p></div>';
+  });
 }
 
 function visFinaleB(o) {
