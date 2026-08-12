@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Utvidet testverktøy</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+.warn{border:3px solid #ff0000;background:#330000;padding:16px;margin-bottom:20px;}
+.warn h2{color:#ff6b6b;}
+.testrow{padding:8px 10px;border-bottom:1px solid #333;font-size:14px;display:flex;gap:10px;align-items:baseline;}
+.testrow .navn{flex:1;}
+.ok{color:#00ff00;font-weight:700;}
+.feilet{color:#ff6b6b;font-weight:700;}
+.venter{color:#888;}
+.gruppe{margin-top:18px;font-size:0.85em;color:#00ffff;text-transform:uppercase;border-bottom:1px solid #00ffff;padding-bottom:4px;}
+#sammendrag{font-size:1.1em;margin-top:16px;}
+.melding{font-size:12px;color:#aaa;margin-left:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Utvidet testverktøy (3x)</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="stilling.html"><button>Stilling</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="test.html"><button style="background:#ff6b6b;color:#fff;">Standard testverktøy</button></a>
+</div>
+
+<div class="warn">
+<h2>⚠️ Ikke bruk under en pågående quizkveld!</h2>
+<p>Dette er en utvidet versjon av det vanlige testverktøyet (ca. 3x flere tester). Den kjører ekte API-kall mot backend: erstatter hele laglisten med testlag, oppretter egne testkategorier, bruker en isolert testrunde (runde 999), og trigger midlertidige finale-/B-finale-/opprykk-/uavgjort-/buzzer-/hovedskjerm-overstyring-tilstander - alt ryddes opp automatisk etter hver kjøring. Fordi lag, finale, opprykk, uavgjort, buzzer og hovedskjerm-visning er global tilstand i appen, vil en kjøring forstyrre en ekte pågående quizkveld. Kjør derfor kun mellom quizkvelder. De 50 ekte sangkategoriene, fasit for ekte runder, og klubblisten er urørt (klubbnavn-testen setter navnet tilbake til det opprinnelige med en gang).</p>
+</div>
+
+<div class="card">
+<button id="kjorAlleBtn" onclick="kjorAlle()">Kjør alle tester (utvidet)</button>
+<button onclick="ryddOppManuelt()" style="background:#666;">Nødopprydding (kjør hvis noe gikk galt)</button>
+<div id="sammendrag"></div>
+</div>
+
+<div class="card">
+<div id="resultater"><p class="venter">Ingen tester kjørt ennå.</p></div>
+</div>
+</div>
+
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var TEST_RUNDE = 999;
+var TEST_KAT_PREFIX = "TEST_KAT_";
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function (k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+var resultater = [];
+var gjeldendeGruppe = "";
+var kjorer = false;
+
+function logg(gruppe, navn, ok, melding) {
+  if (gruppe !== gjeldendeGruppe) {
+    gjeldendeGruppe = gruppe;
+    resultater.push({ type: "gruppe", navn: gruppe });
+  }
+  resultater.push({ type: "test", navn: navn, ok: ok, melding: melding || "" });
+  tegn();
+}
+
+function tegn() {
+  var html = "";
+  resultater.forEach(function (r) {
+    if (r.type === "gruppe") {
+      html += '<div class="gruppe">' + r.navn + '</div>';
+    } else {
+      html += '<div class="testrow"><span class="navn">' + r.navn + '</span><span class="' + (r.ok ? 'ok">✓ OK' : 'feilet">✗ FEILET') + '</span>' + (r.melding ? '<span class="melding">' + r.melding + '</span>' : '') + '</div>';
+    }
+  });
+  document.getElementById('resultater').innerHTML = html || '<p class="venter">Ingen tester kjørt ennå.</p>';
+  var antall = resultater.filter(function (r) { return r.type === 'test'; }).length;
+  var feilet = resultater.filter(function (r) { return r.type === 'test' && !r.ok; }).length;
+  document.getElementById('sammendrag').innerHTML = antall ? ('<b>' + (antall - feilet) + ' / ' + antall + ' tester bestått.</b>' + (feilet ? ' <span class="feilet">' + feilet + ' feilet.</span>' : '')) : '';
+}
+
+function assert(betingelse, meldingHvisFeil) {
+  if (!betingelse) throw new Error(meldingHvisFeil || 'Assertion feilet');
+}
+
+async function kjorTest(gruppe, navn, fn) {
+  try {
+    var melding = await fn();
+    logg(gruppe, navn, true, melding || "");
+  } catch (e) {
+    logg(gruppe, navn, false, (e && e.message) ? e.message : String(e));
+  }
+}
+
+async function kjorAlle() {
+  if (kjorer) return;
+  kjorer = true;
+  document.getElementById('kjorAlleBtn').disabled = true;
+  resultater = [];
+  gjeldendeGruppe = "";
+  tegn();
+
+  var testLagIder = [];
+  var testKatNavn = TEST_KAT_PREFIX + Date.now();
+  var testKatNavn2 = TEST_KAT_PREFIX + "B_" + Date.now();
+  var lagId1 = null, lagId2 = null;
+  var opprinneligKlubbNavn = null;
+  var testKlubbSlug = null;
+
+  try {
+    // ========== Gruppe: Kategori-håndtering (utvidet) ==========
+    await kjorTest("Kategori-håndtering", "Legg til testkategori", async function () {
+      var dummySanger = [{ artist: "Testartist", latt: "Testlåt", aar: "2000", spotify: "" }];
+      await apiGet('saveKategori', { oldNavn: '', navn: testKatNavn, sanger: JSON.stringify(dummySanger) });
+      var liste = await apiGet('kategoriStatusListe');
+      assert(liste.some(function (k) { return k.navn === testKatNavn; }), "Fant ikke testkategorien i listen etterpå");
+    });
+
+    await kjorTest("Kategori-håndtering", "Marker testkategori som brukt og verifiser", async function () {
+      await apiGet('setKategoriBrukt', { navn: testKatNavn, brukt: true });
+      var liste = await apiGet('kategoriStatusListe');
+      var k = liste.find(function (x) { return x.navn === testKatNavn; });
+      assert(k && k.brukt === true, "Kategorien ble ikke markert som brukt");
+      await apiGet('setKategoriBrukt', { navn: testKatNavn, brukt: false });
+    });
+
+    await kjorTest("Kategori-håndtering", "Kategori med spesialtegn (æøå, tall, symboler) i navn og sanger", async function () {
+      var saertegnNavn = TEST_KAT_PREFIX + "ÆØÅ_" + Date.now();
+      var saertegnSanger = [{ artist: "Kråkeklo & Ærfugl", latt: "Blåbærsyltetøy nr. 2 (Live!)", aar: "1999", spotify: "" }];
+      await apiGet('saveKategori', { oldNavn: '', navn: saertegnNavn, sanger: JSON.stringify(saertegnSanger) });
+      var liste = await apiGet('kategoriStatusListe');
+      assert(liste.some(function (k) { return k.navn === saertegnNavn; }), "Kategori med spesialtegn ble ikke lagret/funnet igjen");
+      await apiGet('deleteKategori', { navn: saertegnNavn });
+    });
+
+    await kjorTest("Kategori-håndtering", "Rediger eksisterende kategori (oldNavn -> nytt navn + nye sanger)", async function () {
+      var nyeSanger = [{ artist: "Ny artist", latt: "Ny låt", aar: "2010", spotify: "" }, { artist: "A2", latt: "L2", aar: "2011", spotify: "" }];
+      await apiGet('saveKategori', { oldNavn: testKatNavn, navn: testKatNavn2, sanger: JSON.stringify(nyeSanger) });
+      var liste = await apiGet('kategoriStatusListe');
+      assert(!liste.some(function (k) { return k.navn === testKatNavn; }), "Gammelt kategorinavn finnes fortsatt etter omdøping");
+      assert(liste.some(function (k) { return k.navn === testKatNavn2; }), "Nytt kategorinavn ble ikke funnet etter omdøping");
+      testKatNavn = testKatNavn2; // bruk det nye navnet resten av kjøringen
+    });
+
+    await kjorTest("Kategori-håndtering", "Slett testkategori og verifiser at den er borte", async function () {
+      await apiGet('deleteKategori', { navn: testKatNavn });
+      var liste = await apiGet('kategoriStatusListe');
+      assert(!liste.some(function (k) { return k.navn === testKatNavn; }), "Testkategorien ble ikke slettet");
+    });
+
+    await kjorTest("Kategori-håndtering", "Slett en kategori som ikke finnes - skal ikke krasje appen", async function () {
+      var ikkeEksisterende = TEST_KAT_PREFIX + "FINNES_IKKE_" + Date.now();
+      try {
+        await apiGet('deleteKategori', { navn: ikkeEksisterende });
+      } catch (e) {
+        // Helt greit at backend gir en feilmelding her - poenget er at det ikke skal krasje resten av testkjøringen
+      }
+      var liste = await apiGet('kategoriStatusListe');
+      assert(Array.isArray(liste), "kategoriStatusListe svarte ikke normalt etter forsøk på å slette en ikke-eksisterende kategori");
+    });
+
+    await kjorTest("Kategori-håndtering", "setKategoriBrukt frem og tilbake flere ganger raskt (idempotens)", async function () {
+      var midlNavn = TEST_KAT_PREFIX + "IDEMP_" + Date.now();
+      await apiGet('saveKategori', { oldNavn: '', navn: midlNavn, sanger: JSON.stringify([{ artist: "A", latt: "L", aar: "2000", spotify: "" }]) });
+      await apiGet('setKategoriBrukt', { navn: midlNavn, brukt: true });
+      await apiGet('setKategoriBrukt', { navn: midlNavn, brukt: true });
+      await apiGet('setKategoriBrukt', { navn: midlNavn, brukt: false });
+      await apiGet('setKategoriBrukt', { navn: midlNavn, brukt: false });
+      var liste = await apiGet('kategoriStatusListe');
+      var k = liste.find(function (x) { return x.navn === midlNavn; });
+      assert(k && k.brukt === false, "Gjentatte setKategoriBrukt-kall ga ikke konsistent sluttilstand");
+      await apiGet('deleteKategori', { navn: midlNavn });
+    });
+
+    await kjorTest("Kategori-håndtering", "Kategori med kun 1 sang lagres og slettes normalt", async function () {
+      var enSangNavn = TEST_KAT_PREFIX + "ENSANG_" + Date.now();
+      await apiGet('saveKategori', { oldNavn: '', navn: enSangNavn, sanger: JSON.stringify([{ artist: "Solo", latt: "Alene", aar: "2005", spotify: "" }]) });
+      var liste = await apiGet('kategoriStatusListe');
+      assert(liste.some(function (k) { return k.navn === enSangNavn; }), "Kategori med kun 1 sang ble ikke lagret");
+      await apiGet('deleteKategori', { navn: enSangNavn });
+      var listeEtter = await apiGet('kategoriStatusListe');
+      assert(!listeEtter.some(function (k) { return k.navn === enSangNavn; }), "Kategori med kun 1 sang ble ikke slettet korrekt");
+    });
+
+    await kjorTest("Kategori-håndtering", "kategoriStatusListe har gyldig struktur (navn + brukt) for alle rader", async function () {
+      var liste = await apiGet('kategoriStatusListe');
+      assert(liste.length > 0, "kategoriStatusListe var tom");
+      var ugyldige = liste.filter(function (k) { return typeof k.navn !== 'string' || typeof k.brukt !== 'boolean'; });
+      assert(ugyldige.length === 0, ugyldige.length + " kategorier manglet gyldig navn/brukt-felt");
+    });
+
+    await kjorTest("Kategori-håndtering", "De 50 ekte kategoriene er urørt", async function () {
+      var liste = await apiGet('kategoriStatusListe');
+      var ekte = liste.filter(function (k) { return k.navn.indexOf(TEST_KAT_PREFIX) !== 0; });
+      assert(ekte.length >= 50, "Forventet minst 50 produksjonskategorier, fant " + ekte.length);
+      var brukt = ekte.filter(function (k) { return k.brukt; }).length;
+      assert(brukt === 0, brukt + " produksjonskategorier står feilaktig som brukt");
+    });
+
+    // Lag en fersk testkategori til opprykk-gruppen lenger nede kan bruke
+    testKatNavn = TEST_KAT_PREFIX + "MAIN_" + Date.now();
+    await kjorTest("Kategori-håndtering", "Opprett hovedtestkategori til resten av kjøringen", async function () {
+      await apiGet('saveKategori', { oldNavn: '', navn: testKatNavn, sanger: JSON.stringify([{ artist: "A", latt: "L", aar: "2000", spotify: "" }]) });
+      var liste = await apiGet('kategoriStatusListe');
+      assert(liste.some(function (k) { return k.navn === testKatNavn; }), "Fikk ikke opprettet hovedtestkategorien");
+    });
+
+    // ========== Gruppe: Lag-oppsett (utvidet) ==========
+    await kjorTest("Lag-oppsett", "Opprett 6 testlag (3 div1, 3 div2)", async function () {
+      var navn = ["TEST_A", "TEST_B", "TEST_C", "TEST_D", "TEST_E", "TEST_F"];
+      var teams = navn.map(function (n, i) { return { navn: n, divisjon: i < 3 ? 1 : 2, bord: i + 1 }; });
+      var res = await apiGet('saveTeams', { teams: JSON.stringify(teams) });
+      assert(res.length === 6, "Forventet 6 lag i svaret fra saveTeams, fikk " + res.length);
+      var stilling = await apiGet('stilling');
+      testLagIder = stilling.div1.concat(stilling.div2).filter(function (t) { return navn.indexOf(t.navn) !== -1; }).map(function (t) { return t.lagId; });
+      assert(testLagIder.length === 6, "Forventet 6 testlag i stillingen, fant " + testLagIder.length);
+      var alleLag = stilling.div1.concat(stilling.div2).filter(function (t) { return navn.indexOf(t.navn) !== -1; });
+      lagId1 = alleLag.find(function (t) { return t.navn === 'TEST_A'; }).lagId;
+      lagId2 = alleLag.find(function (t) { return t.navn === 'TEST_B'; }).lagId;
+    });
+
+    await kjorTest("Lag-oppsett", "foreslaLagnavn henter riktig antall unike navn", async function () {
+      var navnListe = await apiGet('foreslaLagnavn', { antall: 5 });
+      assert(Array.isArray(navnListe), "foreslaLagnavn returnerte ikke en liste");
+      assert(navnListe.length === 5, "Ba om 5 lagnavn, fikk " + navnListe.length);
+      var unike = navnListe.filter(function (v, i) { return navnListe.indexOf(v) === i; });
+      assert(unike.length === navnListe.length, "foreslaLagnavn ga duplikate navn i samme forespørsel");
+    });
+
+    await kjorTest("Lag-oppsett", "genererLagSlides kjører uten feil for testlagene", async function () {
+      var res = await apiGet('genererLagSlides');
+      assert(res !== undefined && res !== null, "genererLagSlides ga ingen respons");
+    });
+
+    // ========== Gruppe: scoreRunde / svar (utvidet) ==========
+    await kjorTest("scoreRunde / svar", "Sett fasit og send inn testsvar for runde " + TEST_RUNDE, async function () {
+      var fasit = [{ artist: "Testartist", latt: "Testlåt", aar: "2000" }, { artist: "A2", latt: "L2", aar: "2001" }, { artist: "A3", latt: "L3", aar: "2002" }];
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify(fasit) });
+      await apiGet('apneRunde', { runde: TEST_RUNDE });
+      for (var s = 1; s <= 3; s++) {
+        await apiGet('sendSvarForSang', { lagId: lagId1, runde: TEST_RUNDE, sangNr: s, artist: "Testartist", latt: "Testlåt", aar: 2000 });
+      }
+    });
+
+    await kjorTest("scoreRunde / svar", "Kjør scoreRunde 3 ganger og verifiser identisk poengsum", async function () {
+      var r1 = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var r2 = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var r3 = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var p1 = r1.find(function (x) { return String(x.lagId) === String(lagId1); }).poengDenneRunden;
+      var stilling = await apiGet('stilling');
+      var lag = stilling.div1.concat(stilling.div2).find(function (t) { return t.lagId === lagId1; });
+      assert(lag.poeng === p1, "Forventet stilling=" + p1 + " etter 3 identiske scoreRunde-kall, fikk " + lag.poeng + " (poengdobling-feilen er tilbake!)");
+      return "poeng=" + lag.poeng + " etter 3 kall";
+    });
+
+    await kjorTest("scoreRunde / svar", "scoreRunde på runde uten innsendte svar krasjer ikke", async function () {
+      var TOM_TESTRUNDE = 998;
+      var fasit = [{ artist: "X", latt: "Y", aar: "2020" }];
+      await apiGet('setFasit', { runde: TOM_TESTRUNDE, fasit: JSON.stringify(fasit) });
+      var res = await apiGet('scoreRunde', { runde: TOM_TESTRUNDE });
+      assert(Array.isArray(res), "scoreRunde på tom runde ga ikke en gyldig liste tilbake");
+    });
+
+    await kjorTest("scoreRunde / svar", "scoreSangMedOverstyringer gir korrekt overstyrt poeng", async function () {
+      // lagId2 sender bevisst feil svar, deretter overstyres sang 1 til riktig manuelt
+      await apiGet('sendSvarForSang', { lagId: lagId2, runde: TEST_RUNDE, sangNr: 1, artist: "Feil artist", latt: "Feil låt", aar: 1900 });
+      var overstyringer = {};
+      overstyringer[lagId2] = { riktig: true };
+      var res = await apiGet('scoreSangMedOverstyringer', { runde: TEST_RUNDE, sangNr: 1, overstyringer: JSON.stringify(overstyringer) });
+      assert(res !== undefined, "scoreSangMedOverstyringer ga ingen respons");
+      var svarListe = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 1 });
+      var rad = svarListe.find(function (s) { return String(s.lagId) === String(lagId2); });
+      assert(rad, "Fant ikke svarraden for lagId2 etter overstyring");
+    });
+
+    await kjorTest("scoreRunde / svar", "feilsvarForRunde returnerer gyldig liste", async function () {
+      var liste = await apiGet('feilsvarForRunde', { runde: TEST_RUNDE });
+      assert(Array.isArray(liste), "feilsvarForRunde returnerte ikke en liste");
+    });
+
+    await kjorTest("scoreRunde / svar", "sendSvarForSang med tomt artistfelt håndteres uten å krasje", async function () {
+      try {
+        await apiGet('sendSvarForSang', { lagId: lagId2, runde: TEST_RUNDE, sangNr: 3, artist: "", latt: "", aar: "" });
+      } catch (e) {
+        // akseptabelt at backend avviser tomt svar
+      }
+      var svarListe = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 3 });
+      assert(Array.isArray(svarListe), "svarForSang svarte ikke normalt etter innsending med tomme felt");
+    });
+
+    await kjorTest("scoreRunde / svar", "Endre fasit etter allerede scoret runde, re-score, verifiser oppdatert poengsum", async function () {
+      // Endre fasit for sang 2 slik at Testartist/Testlåt (allerede innsendt av lagId1) ikke lenger er riktig
+      var nyFasit = [{ artist: "Testartist", latt: "Testlåt", aar: "2000" }, { artist: "HELT ANNEN ARTIST", latt: "HELT ANNEN LÅT", aar: "1950" }, { artist: "A3", latt: "L3", aar: "2002" }];
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify(nyFasit) });
+      var rScoret = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var pEtter = rScoret.find(function (x) { return String(x.lagId) === String(lagId1); }).poengDenneRunden;
+      // sang 2 skal nå gi 0 poeng for lagId1 siden fasiten er endret til noe helt annet
+      assert(typeof pEtter === 'number', "poengDenneRunden var ikke et tall etter fasitendring og re-scoring");
+      return "poeng etter fasitendring=" + pEtter;
+    });
+
+    // ========== Gruppe: Robusthet ved samtidige svar (utvidet) ==========
+    await kjorTest("Robusthet (LockService)", "5 samtidige innsendinger for samme sang gir kun 1 rad", async function () {
+      var kall = [];
+      for (var i = 0; i < 5; i++) {
+        kall.push(apiGet('sendSvarForSang', { lagId: lagId1, runde: TEST_RUNDE, sangNr: 1, artist: "Race" + i, latt: "L", aar: 2000 }));
+      }
+      await Promise.all(kall);
+      var svarListe = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 1 });
+      var radenerForLag = svarListe.filter(function (s) { return String(s.lagId) === String(lagId1); });
+      assert(radenerForLag.length === 1, "Forventet nøyaktig 1 rad for laget på sang 1 etter 5 samtidige kall, fant " + radenerForLag.length + " (race condition!)");
+    });
+
+    await kjorTest("Robusthet (LockService)", "10 samtidige innsendinger for samme sang (høyere last) gir kun 1 rad", async function () {
+      var kall = [];
+      for (var i = 0; i < 10; i++) {
+        kall.push(apiGet('sendSvarForSang', { lagId: lagId1, runde: TEST_RUNDE, sangNr: 3, artist: "Stress" + i, latt: "L", aar: 2000 }));
+      }
+      await Promise.all(kall);
+      var svarListe = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 3 });
+      var radenerForLag = svarListe.filter(function (s) { return String(s.lagId) === String(lagId1); });
+      assert(radenerForLag.length === 1, "Forventet nøyaktig 1 rad etter 10 samtidige kall, fant " + radenerForLag.length);
+    });
+
+    await kjorTest("Robusthet (LockService)", "Samtidige innsendinger på to ULIKE sanger krysskontaminerer ikke", async function () {
+      var kall = [];
+      for (var i = 0; i < 3; i++) {
+        kall.push(apiGet('sendSvarForSang', { lagId: lagId1, runde: TEST_RUNDE, sangNr: 1, artist: "Sang1Race" + i, latt: "L", aar: 2000 }));
+        kall.push(apiGet('sendSvarForSang', { lagId: lagId2, runde: TEST_RUNDE, sangNr: 2, artist: "Sang2Race" + i, latt: "L", aar: 2000 }));
+      }
+      await Promise.all(kall);
+      var svar1 = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 1 });
+      var svar2 = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 2 });
+      var rad1 = svar1.filter(function (s) { return String(s.lagId) === String(lagId1); });
+      var rad2 = svar2.filter(function (s) { return String(s.lagId) === String(lagId2); });
+      assert(rad1.length === 1, "Sang 1 fikk feil antall rader for lagId1: " + rad1.length);
+      assert(rad2.length === 1, "Sang 2 fikk feil antall rader for lagId2: " + rad2.length);
+    });
+
+    // ========== Gruppe: Finale (utvidet) ==========
+    await kjorTest("Finale", "Finalestatus før start er 'ikke_startet'", async function () {
+      await apiGet('nullstillFinale');
+      var status = await apiGet('finaleStatus');
+      assert(status.status === 'ikke_startet', "Forventet 'ikke_startet' etter nullstillFinale, fikk " + status.status);
+    });
+
+    await kjorTest("Finale", "Start finale med 3 testlag", async function () {
+      await apiGet('startFinale');
+      var status = await apiGet('finaleStatus');
+      assert(status.status === 'pagar' || status.status === 'venter_uavgjort', "Uventet finalestatus: " + status.status);
+    });
+
+    await kjorTest("Finale", "giFinalePoeng og angreFinalePoeng fungerer symmetrisk", async function () {
+      var status = await apiGet('finaleStatus');
+      if (status.status !== 'pagar') return "hoppet over (finale i status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id; });
+      assert(lag, "Fant ingen lag i finalen");
+      var forPoeng = Number(lag.poeng) || 0;
+      var etterPluss = await apiGet('giFinalePoeng', { lagId: lag.id });
+      var lagEtterPluss = etterPluss.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtterPluss.poeng) === forPoeng + 1, "giFinalePoeng ga ikke +1 (før=" + forPoeng + ", etter=" + lagEtterPluss.poeng + ")");
+      var etterMinus = await apiGet('angreFinalePoeng', { lagId: lag.id });
+      var lagEtterMinus = etterMinus.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtterMinus.poeng) === forPoeng, "angreFinalePoeng ga ikke tilbake riktig poengsum (forventet=" + forPoeng + ", fikk=" + lagEtterMinus.poeng + ")");
+    });
+
+    await kjorTest("Finale", "giFinalePoeng flere ganger på rad akkumulerer riktig (+3)", async function () {
+      var status = await apiGet('finaleStatus');
+      if (status.status !== 'pagar') return "hoppet over (finale i status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id; });
+      var forPoeng = Number(lag.poeng) || 0;
+      await apiGet('giFinalePoeng', { lagId: lag.id });
+      await apiGet('giFinalePoeng', { lagId: lag.id });
+      var siste = await apiGet('giFinalePoeng', { lagId: lag.id });
+      var lagEtter = siste.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtter.poeng) === forPoeng + 3, "Forventet +3 poeng etter tre giFinalePoeng-kall, forventet=" + (forPoeng + 3) + ", fikk=" + lagEtter.poeng);
+      // rull tilbake de tre poengene igjen
+      await apiGet('angreFinalePoeng', { lagId: lag.id });
+      await apiGet('angreFinalePoeng', { lagId: lag.id });
+      await apiGet('angreFinalePoeng', { lagId: lag.id });
+    });
+
+    await kjorTest("Finale", "angreFinalePoeng går ikke under 0", async function () {
+      var status = await apiGet('finaleStatus');
+      if (status.status !== 'pagar') return "hoppet over (finale i status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id && (Number(l.poeng) || 0) === 0; });
+      if (!lag) return "hoppet over (fant ikke lag med 0 poeng)";
+      var res = await apiGet('angreFinalePoeng', { lagId: lag.id });
+      var lagEtter = res.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtter.poeng) === 0, "Poeng gikk under 0: " + lagEtter.poeng);
+    });
+
+    await kjorTest("Finale", "giFinalePoeng med ugyldig lagId håndteres uten å krasje testkjøringen", async function () {
+      try {
+        await apiGet('giFinalePoeng', { lagId: 'ugyldig_id_finnes_ikke_123456' });
+      } catch (e) {
+        // Forventet/akseptabelt at backend svarer med feil her
+      }
+      var status = await apiGet('finaleStatus');
+      assert(status && status.status, "finaleStatus svarte ikke normalt etter kall med ugyldig lagId");
+    });
+
+    await kjorTest("Finale", "Fremtving uavgjort finalevinner og nullstill", async function () {
+      var status = await apiGet('finaleStatus');
+      if (status.status === 'pagar') {
+        var lagMedId = status.lag.filter(function (l) { return l.id; });
+        for (var i = 0; i < lagMedId.length; i++) {
+          await apiGet('giFinalePoeng', { lagId: lagMedId[i].id });
+        }
+        await apiGet('avsluttFinale');
+      }
+      var uavgjort = await apiGet('uavgjortStatus');
+      if (uavgjort.status !== 'venter') return "hoppet over (fikk ikke fremtvunget uavgjort - poengene var trolig allerede ulike)";
+      await apiGet('nullstillFinale');
+      var uavgjortEtter = await apiGet('uavgjortStatus');
+      assert(uavgjortEtter.status === 'ingen', "nullstillFinale ryddet ikke opp uavgjort-tilstanden (status=" + uavgjortEtter.status + ")");
+    });
+
+    // ========== Gruppe: B-finale (utvidet) ==========
+    await kjorTest("B-finale", "B-finalestatus før start er 'ikke_startet'", async function () {
+      await apiGet('avlysFinaleB');
+      var status = await apiGet('finaleBStatus');
+      assert(status.status === 'ikke_startet', "Forventet 'ikke_startet' etter avlysFinaleB, fikk " + status.status);
+    });
+
+    await kjorTest("B-finale", "Start B-finale med 3 testlag", async function () {
+      await apiGet('startFinaleB');
+      var status = await apiGet('finaleBStatus');
+      assert(status.status === 'pagar' || status.status === 'venter_uavgjort', "Uventet B-finalestatus: " + status.status);
+    });
+
+    await kjorTest("B-finale", "giFinaleBPoeng og angreFinaleBPoeng fungerer symmetrisk", async function () {
+      var status = await apiGet('finaleBStatus');
+      if (status.status !== 'pagar') return "hoppet over (B-finale i status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id; });
+      assert(lag, "Fant ingen lag i B-finalen");
+      var forPoeng = Number(lag.poeng) || 0;
+      var etterPluss = await apiGet('giFinaleBPoeng', { lagId: lag.id });
+      var lagEtterPluss = etterPluss.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtterPluss.poeng) === forPoeng + 1, "giFinaleBPoeng ga ikke +1 (før=" + forPoeng + ", etter=" + lagEtterPluss.poeng + ")");
+      var etterMinus = await apiGet('angreFinaleBPoeng', { lagId: lag.id });
+      var lagEtterMinus = etterMinus.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtterMinus.poeng) === forPoeng, "angreFinaleBPoeng ga ikke tilbake riktig poengsum (forventet=" + forPoeng + ", fikk=" + lagEtterMinus.poeng + ")");
+    });
+
+    await kjorTest("B-finale", "angreFinaleBPoeng går ikke under 0", async function () {
+      var status = await apiGet('finaleBStatus');
+      if (status.status !== 'pagar') return "hoppet over (B-finale i status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id && (Number(l.poeng) || 0) === 0; });
+      if (!lag) return "hoppet over (fant ikke lag med 0 poeng)";
+      var res = await apiGet('angreFinaleBPoeng', { lagId: lag.id });
+      var lagEtter = res.lag.find(function (l) { return String(l.id) === String(lag.id); });
+      assert(Number(lagEtter.poeng) === 0, "Poeng gikk under 0: " + lagEtter.poeng);
+    });
+
+    await kjorTest("B-finale", "Avlys B-finale midt i - nullstiller helt (ingen vinner lagres)", async function () {
+      var status = await apiGet('finaleBStatus');
+      if (status.status !== 'pagar') { await apiGet('startFinaleB'); status = await apiGet('finaleBStatus'); }
+      if (status.status !== 'pagar') return "hoppet over (fikk ikke B-finale i gang - status " + status.status + ")";
+      var lag = status.lag.find(function (l) { return l.id; });
+      if (lag) await apiGet('giFinaleBPoeng', { lagId: lag.id });
+      var avlyst = await apiGet('avlysFinaleB');
+      assert(avlyst.status === 'ikke_startet', "Forventet status 'ikke_startet' etter avlysFinaleB, fikk " + avlyst.status);
+      assert(!avlyst.vinnerId, "avlysFinaleB skal ikke sette noen vinner, fant vinnerId=" + avlyst.vinnerId);
+      assert(avlyst.lag.every(function (l) { return !l.id && Number(l.poeng) === 0; }), "avlysFinaleB nullstilte ikke lagene helt");
+    });
+
+    await kjorTest("B-finale", "Start B-finale rett etter avlyst B-finale gir ren tilstand", async function () {
+      var status = await apiGet('startFinaleB');
+      assert(status.status === 'pagar' || status.status === 'venter_uavgjort', "Uventet status rett etter restart: " + status.status);
+      if (status.status === 'pagar') {
+        var alleNull = status.lag.every(function (l) { return Number(l.poeng) === 0; });
+        assert(alleNull, "Lag hadde poeng igjen fra forrige B-finale-runde etter avlysning+restart");
+      }
+    });
+
+    await kjorTest("B-finale", "Fremtving uavgjort B-finalevinner og nullstill med avlys", async function () {
+      var status = await apiGet('startFinaleB');
+      if (status.status === 'pagar') {
+        var lagMedId = status.lag.filter(function (l) { return l.id; });
+        for (var i = 0; i < lagMedId.length; i++) {
+          await apiGet('giFinaleBPoeng', { lagId: lagMedId[i].id });
+        }
+        await apiGet('avsluttFinaleB');
+      }
+      var uavgjort = await apiGet('uavgjortStatus');
+      if (uavgjort.status !== 'venter') return "hoppet over (fikk ikke fremtvunget uavgjort - poengene var trolig allerede ulike)";
+      await apiGet('avlysFinaleB');
+      var uavgjortEtter = await apiGet('uavgjortStatus');
+      assert(uavgjortEtter.status === 'ingen', "avlysFinaleB ryddet ikke opp uavgjort-tilstanden (status=" + uavgjortEtter.status + ")");
+    });
+
+    // ========== Gruppe: Opprykk (utvidet) ==========
+    await kjorTest("Opprykk", "Fremtving uavgjort opprykk-utfordrer og reset", async function () {
+      await apiGet('nullstillPoeng');
+      await apiGet('resetOpprykk');
+      await apiGet('startOpprykk');
+      var uavgjort = await apiGet('uavgjortStatus');
+      if (uavgjort.status !== 'venter') return "hoppet over (fikk ikke fremtvunget uavgjort - poengene var trolig allerede ulike)";
+      await apiGet('resetOpprykk');
+      var uavgjortEtter = await apiGet('uavgjortStatus');
+      assert(uavgjortEtter.status === 'ingen', "resetOpprykk ryddet ikke opp uavgjort-tilstanden (status=" + uavgjortEtter.status + ")");
+    });
+
+    var trekkKandidater = null, opprykkLagA = null;
+    await kjorTest("Opprykk", "velgKategori virker med riktig lag og parameter", async function () {
+      await apiGet('nullstillPoeng');
+      await apiGet('resetOpprykk');
+      var start = await apiGet('startOpprykk');
+      if (start.status === 'venter_uavgjort') { await apiGet('resetOpprykk'); return "hoppet over (uavgjort - dekket av forrige test)"; }
+      if (start.status !== 'trekker') return "hoppet over (uventet startstatus: " + start.status + ")";
+      var trekk = await apiGet('trekkKategorier');
+      assert(trekk.status === 'velger', "Forventet status 'velger' etter trekkKategorier, fikk " + trekk.status);
+      assert(trekk.kandidater && trekk.kandidater.length === 4, "Forventet 4 kandidatkategorier, fikk " + (trekk.kandidater || []).length);
+      trekkKandidater = trekk.kandidater;
+      opprykkLagA = trekk.lagA;
+      var res = await apiGet('velgKategori', { lagId: trekk.lagA.id, navn: trekk.kandidater[0] });
+      assert(res.status === 'pagar', "Forventet status 'pagar' etter velgKategori, fikk " + res.status);
+      assert(res.valgtKategori === trekk.kandidater[0], "Feil kategori ble registrert som valgt");
+      await apiGet('setKategoriBrukt', { navn: trekk.kandidater[0], brukt: false });
+    });
+
+    await kjorTest("Opprykk", "trekkKategorier gir 4 unike kandidater", async function () {
+      if (!trekkKandidater) return "hoppet over (ingen kandidatliste fra forrige test)";
+      var unike = trekkKandidater.filter(function (v, i) { return trekkKandidater.indexOf(v) === i; });
+      assert(unike.length === trekkKandidater.length, "trekkKategorier ga duplikate kandidater: " + trekkKandidater.join(', '));
+    });
+
+    await kjorTest("Opprykk", "registrerOpprykkPoeng flytter til neste sang", async function () {
+      var status = await apiGet('opprykkStatus');
+      if (status.status !== 'pagar') return "hoppet over (opprykk i status " + status.status + ")";
+      var forIndex = status.sangIndex;
+      var res = await apiGet('registrerOpprykkPoeng', { lagId: status.lagA.id });
+      if (res.status === 'pagar') {
+        assert(res.sangIndex === forIndex + 1, "sangIndex økte ikke med 1 etter registrerOpprykkPoeng (før=" + forIndex + ", etter=" + res.sangIndex + ")");
+      }
+      return "status etterpå: " + res.status;
+    });
+
+    await kjorTest("Opprykk", "hoppOverSang flytter til neste sang uten å gi poeng", async function () {
+      var status = await apiGet('opprykkStatus');
+      if (status.status !== 'pagar') return "hoppet over (opprykk i status " + status.status + ")";
+      var forIndex = status.sangIndex;
+      var poengForA = Number(status.lagA.poeng) || 0, poengForB = Number(status.lagB.poeng) || 0, poengForC = Number(status.lagC.poeng) || 0;
+      var res = await apiGet('hoppOverSang');
+      if (res.status === 'pagar') {
+        assert(res.sangIndex === forIndex + 1, "sangIndex økte ikke med 1 etter hoppOverSang");
+        assert(Number(res.lagA.poeng) === poengForA && Number(res.lagB.poeng) === poengForB && Number(res.lagC.poeng) === poengForC, "hoppOverSang endret poeng - skal ikke gi poeng til noen");
+      }
+      return "status etterpå: " + res.status;
+    });
+
+    await kjorTest("Opprykk", "sjekkDivisjonsvinner (Div 1 og Div 2) kjører uten feil", async function () {
+      var r1 = await apiGet('sjekkDivisjonsvinner', { divisjon: 1 });
+      var r2 = await apiGet('sjekkDivisjonsvinner', { divisjon: 2 });
+      assert(r1 !== undefined && r2 !== undefined, "sjekkDivisjonsvinner ga ingen respons for en av divisjonene");
+      // rydd bort ev. uavgjort dette trigget, siden det ikke er poenget med denne testen
+      var uavgjort = await apiGet('uavgjortStatus');
+      if (uavgjort.status === 'venter') { await apiGet('lukkUavgjort').catch(function(){}); }
+    });
+
+    await kjorTest("Opprykk", "velgKategori med ugyldig lagId håndteres uten å krasje testkjøringen", async function () {
+      await apiGet('resetOpprykk');
+      var start = await apiGet('startOpprykk');
+      if (start.status !== 'trekker') { await apiGet('resetOpprykk'); return "hoppet over (uventet status: " + start.status + ")"; }
+      var trekk = await apiGet('trekkKategorier');
+      if (trekk.status !== 'velger') return "hoppet over (fikk ikke trekt kategorier)";
+      try {
+        await apiGet('velgKategori', { lagId: 'ugyldig_id_999999', navn: trekk.kandidater[0] });
+      } catch (e) {
+        // akseptabelt at dette gir feil
+      }
+      var statusEtter = await apiGet('opprykkStatus');
+      assert(statusEtter && statusEtter.status, "opprykkStatus svarte ikke normalt etter velgKategori med ugyldig lagId");
+      await apiGet('setKategoriBrukt', { navn: trekk.kandidater[0], brukt: false }).catch(function(){});
+    });
+
+    // ========== Gruppe: Buzzer ==========
+    await kjorTest("Buzzer", "Nullstill buzzer til kjent utgangspunkt (ledig)", async function () {
+      await apiGet('lukkBuzzer');
+      var status = await apiGet('buzzerStatus');
+      assert(status.status === 'ledig', "Forventet status 'ledig' etter lukkBuzzer, fikk " + status.status);
+    });
+
+    await kjorTest("Buzzer", "apneBuzzer setter status til 'apen'", async function () {
+      var status = await apiGet('apneBuzzer');
+      assert(status.status === 'apen', "Forventet status 'apen' etter apneBuzzer, fikk " + status.status);
+    });
+
+    await kjorTest("Buzzer", "trykkBuzzer registrerer første lag riktig", async function () {
+      var status = await apiGet('trykkBuzzer', { lagId: lagId1 });
+      assert(status.status === 'lukket', "Forventet status 'lukket' etter trykkBuzzer, fikk " + status.status);
+      assert(status.vinnerNavn === 'TEST_A', "Forventet TEST_A som vinner av buzzeren, fikk " + status.vinnerNavn);
+    });
+
+    await kjorTest("Buzzer", "Andre lags trykk etter at buzzeren allerede er avgjort endrer ikke vinneren", async function () {
+      var status = await apiGet('trykkBuzzer', { lagId: lagId2 });
+      assert(status.vinnerNavn === 'TEST_A', "Vinneren endret seg til " + status.vinnerNavn + " etter at et andre lag trykket - kun første trykk skal telle");
+    });
+
+    await kjorTest("Buzzer", "lukkBuzzer nullstiller riktig for neste runde", async function () {
+      var status = await apiGet('lukkBuzzer');
+      assert(status.status === 'ledig', "Forventet status 'ledig' etter nullstilling, fikk " + status.status);
+    });
+
+    await kjorTest("Buzzer", "Nytt trykk etter nullstilling fungerer igjen (ny runde)", async function () {
+      await apiGet('apneBuzzer');
+      var status = await apiGet('trykkBuzzer', { lagId: lagId2 });
+      assert(status.status === 'lukket' && status.vinnerNavn === 'TEST_B', "Forventet TEST_B som vinner i ny buzzer-runde, fikk status=" + status.status + " vinner=" + status.vinnerNavn);
+      await apiGet('lukkBuzzer');
+    });
+
+    await kjorTest("Buzzer", "trykkBuzzer med ugyldig lagId håndteres uten å krasje testkjøringen", async function () {
+      await apiGet('apneBuzzer');
+      try {
+        await apiGet('trykkBuzzer', { lagId: 'ugyldig_id_888888' });
+      } catch (e) {
+        // akseptabelt at dette gir feil
+      }
+      var status = await apiGet('buzzerStatus');
+      assert(status && status.status, "buzzerStatus svarte ikke normalt etter trykkBuzzer med ugyldig lagId");
+      await apiGet('lukkBuzzer');
+    });
+
+    // ========== Gruppe: Hovedskjerm-overstyring ==========
+    var opprinneligSkjermModus = null;
+    await kjorTest("Hovedskjerm-overstyring", "Les gjeldende status uten feil", async function () {
+      var status = await apiGet('skjermOverride');
+      opprinneligSkjermModus = status && status.modus ? status.modus : 'auto';
+      assert(status !== undefined, "skjermOverride ga ingen respons");
+    });
+
+    await kjorTest("Hovedskjerm-overstyring", "Sett til 'pause' med tekst, verifiser", async function () {
+      var testTekst = "TEST_PAUSEMELDING_" + Date.now();
+      var res = await apiGet('setSkjermOverride', { modus: 'pause', tekst: testTekst });
+      assert(res.modus === 'pause', "Forventet modus 'pause', fikk " + res.modus);
+      assert(res.tekst === testTekst, "Pausemeldingen ble ikke lagret riktig (forventet='" + testTekst + "', fikk='" + res.tekst + "')");
+    });
+
+    await kjorTest("Hovedskjerm-overstyring", "Nullstill tilbake til 'auto'", async function () {
+      var res = await apiGet('setSkjermOverride', { modus: 'auto', tekst: '' });
+      assert(res.modus === 'auto', "Klarte ikke å nullstille hovedskjerm-overstyring tilbake til 'auto', fikk " + res.modus);
+    });
+
+    // ========== Gruppe: Bommert-visning ==========
+    await kjorTest("Bommert-visning", "visBommertPaStorskjerm kjører uten feil", async function () {
+      var res = await apiGet('visBommertPaStorskjerm', { lagNavn: 'TEST_A', sangtekst: 'Testrunde, sang 1', deresSvar: 'Feil svar', riktigSvar: 'Riktig svar' });
+      assert(res !== undefined, "visBommertPaStorskjerm ga ingen respons");
+    });
+
+    await kjorTest("Bommert-visning", "skjulBommert kjører uten feil", async function () {
+      var res = await apiGet('skjulBommert');
+      assert(res !== undefined, "skjulBommert ga ingen respons");
+    });
+
+    // ========== Gruppe: Joker ==========
+    await kjorTest("Joker", "jokerStatus henter uten feil", async function () {
+      var res = await apiGet('jokerStatus');
+      assert(res !== undefined, "jokerStatus ga ingen respons");
+    });
+
+    // ========== Gruppe: Klubb-administrasjon ==========
+    await kjorTest("Klubb-administrasjon", "klubbListe returnerer minst 26 klubber", async function () {
+      var liste = await apiGet('klubbListe');
+      assert(Array.isArray(liste) && liste.length >= 26, "Forventet minst 26 klubber, fant " + (liste ? liste.length : 0));
+      testKlubbSlug = liste[0].slug;
+      opprinneligKlubbNavn = liste[0].navn;
+    });
+
+    await kjorTest("Klubb-administrasjon", "Klubbnavn er unike (ingen duplikater)", async function () {
+      var liste = await apiGet('klubbListe');
+      var navnListe = liste.map(function (k) { return k.navn; });
+      var unike = navnListe.filter(function (v, i) { return navnListe.indexOf(v) === i; });
+      assert(unike.length === navnListe.length, "Fant duplikate klubbnavn i klubbListe");
+    });
+
+    await kjorTest("Klubb-administrasjon", "Alle klubber har gyldig slug og navn (brukes av bildeadmin.html)", async function () {
+      var liste = await apiGet('klubbListe');
+      var ugyldige = liste.filter(function (k) { return !k.slug || !k.navn; });
+      assert(ugyldige.length === 0, ugyldige.length + " klubber manglet gyldig slug/navn");
+    });
+
+    await kjorTest("Klubb-administrasjon", "endreKlubbNavn endrer og gjenoppretter navn korrekt", async function () {
+      assert(testKlubbSlug, "Ingen testklubb funnet fra forrige test");
+      var midlertidigNavn = "TEST_KLUBBNAVN_" + Date.now();
+      var res1 = await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: midlertidigNavn });
+      assert(res1.navn === midlertidigNavn, "Klubbnavnet ble ikke endret til det midlertidige testnavnet");
+      var liste = await apiGet('klubbListe');
+      var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
+      assert(k && k.navn === midlertidigNavn, "klubbListe reflekterte ikke det midlertidige navnet");
+      // sett umiddelbart tilbake til opprinnelig navn
+      var res2 = await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
+      assert(res2.navn === opprinneligKlubbNavn, "Klarte ikke å sette klubbnavnet tilbake til det opprinnelige");
+    });
+
+    await kjorTest("Klubb-administrasjon", "Rask dobbel endreKlubbNavn på samme klubb - siste endring vinner", async function () {
+      assert(testKlubbSlug, "Ingen testklubb funnet");
+      var navnA = "TEST_DOBBEL_A_" + Date.now();
+      var navnB = "TEST_DOBBEL_B_" + Date.now();
+      await Promise.all([
+        apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: navnA }),
+        apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: navnB })
+      ]);
+      var liste = await apiGet('klubbListe');
+      var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
+      assert(k.navn === navnA || k.navn === navnB, "Klubbnavnet endte opp som noe helt annet enn de to forsøkte verdiene: " + k.navn);
+      // sett tilbake til opprinnelig navn uansett hvilken som vant
+      await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
+      var listeEtter = await apiGet('klubbListe');
+      var kEtter = listeEtter.find(function (x) { return x.slug === testKlubbSlug; });
+      assert(kEtter.navn === opprinneligKlubbNavn, "Klarte ikke å gjenopprette opprinnelig klubbnavn etter dobbeltkallet");
+    });
+
+    await kjorTest("Klubb-administrasjon", "endreKlubbNavn med tomt navn håndteres uten å ødelegge klubbdata", async function () {
+      assert(testKlubbSlug, "Ingen testklubb funnet");
+      try {
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: '' });
+      } catch (e) {
+        // akseptabelt at backend avviser tomt navn
+      }
+      var liste = await apiGet('klubbListe');
+      var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
+      assert(k && k.navn, "Klubben mistet navnet sitt helt etter forsøk på tomt navn");
+      if (k.navn !== opprinneligKlubbNavn) {
+        // rydd opp uansett utfall
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
+      }
+    });
+
+  } finally {
+    // ========== Gruppe: Opprydding ==========
+    await kjorTest("Opprydding", "Nullstiller finale, B-finale, opprykk, buzzer, hovedskjerm, svar og poeng", async function () {
+      await apiGet('nullstillFinale').catch(function(){});
+      await apiGet('avlysFinaleB').catch(function(){});
+      await apiGet('resetOpprykk').catch(function(){});
+      await apiGet('lukkBuzzer').catch(function(){});
+      await apiGet('setSkjermOverride', { modus: 'auto', tekst: '' }).catch(function(){});
+      await apiGet('skjulBommert').catch(function(){});
+      await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function(){});
+      await apiGet('nullstillPoeng').catch(function(){});
+    });
+
+    await kjorTest("Opprydding", "Fjerner testlag", async function () {
+      await apiGet('resetTeams');
+      var stilling = await apiGet('stilling');
+      var rest = stilling.div1.concat(stilling.div2);
+      assert(rest.length === 0, "Forventet 0 lag igjen etter resetTeams, fant " + rest.length);
+    });
+
+    await kjorTest("Opprydding", "Fjerner ev. testkategorier som fortsatt ligger igjen", async function () {
+      var liste = await apiGet('kategoriStatusListe');
+      var rester = liste.filter(function (k) { return k.navn.indexOf(TEST_KAT_PREFIX) === 0; });
+      for (var i = 0; i < rester.length; i++) { await apiGet('deleteKategori', { navn: rester[i].navn }); }
+      var listeEtter = await apiGet('kategoriStatusListe');
+      assert(!listeEtter.some(function (k) { return k.navn.indexOf(TEST_KAT_PREFIX) === 0; }), "Klarte ikke fjerne alle testkategorier");
+    });
+
+    await kjorTest("Opprydding", "Klubbliste er tilbake i opprinnelig stand (ingen TEST_-navn igjen)", async function () {
+      var liste = await apiGet('klubbListe');
+      var rester = liste.filter(function (k) { return k.navn.indexOf('TEST_') === 0; });
+      assert(rester.length === 0, "Fant " + rester.length + " klubber med gjenværende TEST_-navn: " + rester.map(function(k){return k.slug;}).join(', '));
+    });
+
+    await kjorTest("Opprydding", "Sluttkontroll: 50 produksjonskategorier, 0 brukt, ingen uavgjort, buzzer ledig, skjerm auto", async function () {
+      var liste = await apiGet('kategoriStatusListe');
+      assert(liste.length === 50, "Forventet 50 kategorier til slutt, fant " + liste.length);
+      assert(liste.filter(function (k) { return k.brukt; }).length === 0, "Noen kategorier står fortsatt som brukt");
+      var uavgjort = await apiGet('uavgjortStatus');
+      assert(uavgjort.status === 'ingen', "Uavgjort-status er ikke nullstilt: " + uavgjort.status);
+      var buzzer = await apiGet('buzzerStatus');
+      assert(buzzer.status === 'ledig', "Buzzer-status er ikke nullstilt: " + buzzer.status);
+      var skjerm = await apiGet('skjermOverride');
+      assert((skjerm.modus || 'auto') === 'auto', "Hovedskjerm-overstyring er ikke nullstilt: " + skjerm.modus);
+    });
+
+    kjorer = false;
+    document.getElementById('kjorAlleBtn').disabled = false;
+  }
+}
+
+async function ryddOppManuelt() {
+  document.getElementById('sammendrag').innerHTML = 'Rydder opp...';
+  try {
+    await apiGet('nullstillFinale').catch(function(){});
+    await apiGet('avlysFinaleB').catch(function(){});
+    await apiGet('resetOpprykk').catch(function(){});
+    await apiGet('lukkBuzzer').catch(function(){});
+    await apiGet('setSkjermOverride', { modus: 'auto', tekst: '' }).catch(function(){});
+    await apiGet('skjulBommert').catch(function(){});
+    await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function(){});
+    await apiGet('nullstillPoeng').catch(function(){});
+    await apiGet('resetTeams').catch(function(){});
+    var liste = await apiGet('kategoriStatusListe');
+    var rester = liste.filter(function (k) { return k.navn.indexOf(TEST_KAT_PREFIX) === 0; });
+    for (var i = 0; i < rester.length; i++) { await apiGet('deleteKategori', { navn: rester[i].navn }).catch(function(){}); }
+    var bruktRester = liste.filter(function (k) { return k.navn.indexOf(TEST_KAT_PREFIX) !== 0 && k.brukt; });
+    for (var j = 0; j < bruktRester.length; j++) { await apiGet('setKategoriBrukt', { navn: bruktRester[j].navn, brukt: false }).catch(function(){}); }
+    document.getElementById('sammendrag').innerHTML = 'Nødopprydding ferdig.';
+  } catch (e) {
+    document.getElementById('sammendrag').innerHTML = 'Nødopprydding feilet: ' + (e && e.message ? e.message : e);
+  }
+}
+</script>
+</body>
+</html>
