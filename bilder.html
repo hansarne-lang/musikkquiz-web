@@ -33,6 +33,12 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 .searchbar input{width:100%;max-width:400px;}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
 .klubb{border:2px dashed #555;padding:14px;}
+.navnrad{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #444;}
+.navnrad input[type=text]{flex:1;min-width:120px;}
+.navnrad button{font-size:.75em;padding:8px 10px;}
+.navnstatus{font-size:.72em;min-height:1.2em;width:100%;}
+.navnstatus.ok{color:#00ff00;}
+.navnstatus.feil{color:#ff6b6b;}
 .imgrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
 .imgbox{flex:1;min-width:120px;text-align:center;}
 .imgbox img,.imgbox canvas{max-width:100%;max-height:140px;border:1px solid #444;background:#111;display:block;margin:0 auto 6px;}
@@ -54,7 +60,7 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 </div>
 
 <div class="info">
-<b>Slik virker denne siden:</b> Den henter og viser dagens logo/drakt-bilder for hvert lag direkte fra GitHub, slik at du kan se hva som brukes i dag. Du kan velge et eget bilde per lag og per type (logo/drakt) - bildet skaleres automatisk ned lokalt i nettleseren (ingen opplasting skjer her). Trykk deretter "Last ned" for å få filen med riktig filnavn, og dra den inn på GitHub-opplastingssiden (lenke under) - den vil da erstatte det gamle bildet med samme filnavn når du committer.<br><br>
+<b>Slik virker denne siden:</b> Den henter klubblisten (navn og bilder) direkte fra systemet, slik at du ser hva som brukes i dag. Du kan endre lagnavnet for hver klubb (lagres med en gang du trykker "Lagre navn"), og du kan velge et eget bilde per lag og per type (logo/drakt) - bildet skaleres automatisk ned lokalt i nettleseren (ingen bildeopplasting skjer her). Trykk deretter "Last ned" for å få bildefilen med riktig filnavn, og dra den inn på GitHub-opplastingssiden (lenke under) - den vil da erstatte det gamle bildet med samme filnavn når du committer.<br><br>
 <b>Viktig:</b> Denne siden henter, genererer eller foreslår ingen ekte klubbmerker/drakter automatisk - du velger selv hvilket bilde som skal brukes for hvert lag, og du er selv ansvarlig for at du har rettigheter til å bruke bildet.<br><br>
 <a class="linkbox" href="https://github.com/hansarne-lang/musikkquiz-web/upload/main/klubbdata" target="_blank">Åpne GitHub-opplasting for klubbdata-mappen &rarr;</a>
 </div>
@@ -70,46 +76,37 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 
 </div>
 <script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
 var BILDE_BASE = "https://raw.githubusercontent.com/hansarne-lang/musikkquiz-web/main/klubbdata/";
-
-// Speilbilde av KLUBBER_-listen i Kode.gs - kun navn+slug, kun for visning/nedlasting her.
-var KLUBBER = [
-  { navn: 'Blackburn Rovers', slug: 'blackburn_rovers' },
-  { navn: 'Bolton Wanderers', slug: 'bolton_wanderers' },
-  { navn: 'Bristol City', slug: 'bristol_city' },
-  { navn: 'Chesterfield', slug: 'chesterfield' },
-  { navn: 'Coventry City', slug: 'coventry_city' },
-  { navn: 'Crewe Alexandra', slug: 'crewe_alexandra' },
-  { navn: 'Darlington', slug: 'darlington' },
-  { navn: 'Grimsby Town', slug: 'grimsby_town' },
-  { navn: 'Hartlepool United', slug: 'hartlepool_united' },
-  { navn: 'Luton Town', slug: 'luton_town' },
-  { navn: 'Millwall', slug: 'millwall' },
-  { navn: 'Notts County', slug: 'notts_county' },
-  { navn: 'Oldham Athletic', slug: 'oldham_athletic' },
-  { navn: 'Plymouth Argyle', slug: 'plymouth_argyle' },
-  { navn: 'Port Vale', slug: 'port_vale' },
-  { navn: 'Portsmouth', slug: 'portsmouth' },
-  { navn: 'Queens Park Rangers', slug: 'queens_park_rangers' },
-  { navn: 'Rotherham United', slug: 'rotherham_united' },
-  { navn: 'Shrewsbury Town', slug: 'shrewsbury_town' },
-  { navn: 'Stockport County', slug: 'stockport_county' },
-  { navn: 'Stoke City', slug: 'stoke_city' },
-  { navn: 'Swindon Town', slug: 'swindon_town' },
-  { navn: 'Torquay United', slug: 'torquay_united' },
-  { navn: 'Tranmere Rovers', slug: 'tranmere_rovers' },
-  { navn: 'Walsall', slug: 'walsall' },
-  { navn: 'Wrexham', slug: 'wrexham' }
-];
-
 var MAKS_PIKSLER = 500; // lengste side på nedskalert bilde
+
+var KLUBBER = []; // fylles fra API (klubbListe) ved oppstart
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function(k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
 
 function lagKort(klubb) {
   var div = document.createElement('div');
   div.className = 'klubb';
   div.setAttribute('data-navn', klubb.navn.toLowerCase());
+  div.setAttribute('data-slug', klubb.slug);
   div.innerHTML =
-    '<h3>' + klubb.navn + '</h3>' +
+    '<h3 id="tittel_' + klubb.slug + '">' + klubb.navn + '</h3>' +
+    '<div class="navnrad">' +
+      '<input type="text" id="navninput_' + klubb.slug + '" value="' + klubb.navn.replace(/"/g, '&quot;') + '">' +
+      '<button type="button" onclick="lagreNavn(\'' + klubb.slug + '\')">Lagre navn</button>' +
+      '<span class="navnstatus" id="navnstatus_' + klubb.slug + '"></span>' +
+    '</div>' +
     '<div class="imgrow">' +
       lagImgboks(klubb, 'logo') +
       lagImgboks(klubb, 'drakt') +
@@ -127,6 +124,32 @@ function lagImgboks(klubb, type) {
     '<a class="dlbtn" id="dl_' + id + '"><button style="width:100%;">Last ned ' + klubb.slug + '_' + type + '.jpg</button></a>' +
     '<div class="status" id="status_' + id + '"></div>' +
   '</div>';
+}
+
+function lagreNavn(slug) {
+  var input = document.getElementById('navninput_' + slug);
+  var status = document.getElementById('navnstatus_' + slug);
+  var nyttNavn = input.value.trim();
+  if (!nyttNavn) {
+    status.textContent = 'Navn kan ikke være tomt.';
+    status.className = 'navnstatus feil';
+    return;
+  }
+  status.textContent = 'Lagrer...';
+  status.className = 'navnstatus';
+  apiGet('endreKlubbNavn', { slug: slug, navn: nyttNavn }).then(function(res) {
+    status.textContent = 'Lagret!';
+    status.className = 'navnstatus ok';
+    var tittel = document.getElementById('tittel_' + slug);
+    if (tittel) tittel.textContent = res.navn;
+    var kort = document.querySelector('.klubb[data-slug="' + slug + '"]');
+    if (kort) kort.setAttribute('data-navn', res.navn.toLowerCase());
+    var k = KLUBBER.find(function(x) { return x.slug === slug; });
+    if (k) k.navn = res.navn;
+  }).catch(function(e) {
+    status.textContent = 'Feil: ' + (e && e.message ? e.message : e);
+    status.className = 'navnstatus feil';
+  });
 }
 
 function handleFil(input, slug, type) {
@@ -173,10 +196,16 @@ function filtrer() {
 }
 
 function init() {
-  var sortert = KLUBBER.slice().sort(function(a, b) { return a.navn.localeCompare(b.navn, 'no'); });
   var grid = document.getElementById('klubbGrid');
-  grid.innerHTML = '';
-  sortert.forEach(function(k) { grid.appendChild(lagKort(k)); });
+  grid.innerHTML = '<p>Laster klubbliste...</p>';
+  apiGet('klubbListe').then(function(data) {
+    KLUBBER = data || [];
+    var sortert = KLUBBER.slice().sort(function(a, b) { return a.navn.localeCompare(b.navn, 'no'); });
+    grid.innerHTML = '';
+    sortert.forEach(function(k) { grid.appendChild(lagKort(k)); });
+  }).catch(function(e) {
+    grid.innerHTML = '<p style="color:#ff6b6b">Klarte ikke å hente klubbliste: ' + (e && e.message ? e.message : e) + '</p>';
+  });
 }
 
 init();
