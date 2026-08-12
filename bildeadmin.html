@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Bildeadministrasjon</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+  --ok:#00ff00;
+  --feil:#ff6b6b;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;margin-bottom:6px;}
+.wrap{max-width:1300px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+input,select,button{background:#000000;border:2px solid var(--accent2);color:var(--text);border-radius:0;padding:8px 10px;font-size:14px;font-family:'Courier New',Courier,monospace;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:9px 14px;border-radius:0;cursor:pointer;font-size:13px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+button.sekundaer{background:#000;color:var(--accent2);}
+button.sekundaer:hover{background:#111;}
+button.avbryt{background:#666;color:#fff;}
+.info{border:2px solid #00ffff;background:#001a1a;padding:14px;margin-bottom:20px;font-size:.85em;opacity:.95;line-height:1.5;}
+.info b{color:#ffff00;}
+.toolbar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.toolbar input[type=text]{width:260px;max-width:100%;}
+.toolbar label{font-size:.8em;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.sammendrag{font-size:.85em;margin-bottom:16px;display:flex;gap:18px;flex-wrap:wrap;}
+.sammendrag .tall{color:#ffff00;font-weight:700;}
+.sammendrag .ok{color:var(--ok);}
+.sammendrag .feil{color:var(--feil);}
+table{width:100%;border-collapse:collapse;font-size:.85em;}
+thead th{text-align:left;color:#00ffff;text-transform:uppercase;font-size:.85em;border-bottom:2px solid var(--accent);padding:8px 10px;position:sticky;top:0;background:#000;}
+tbody tr{border-bottom:1px dashed #333;}
+tbody tr:hover{background:#0a0a0a;}
+tbody tr.mangler-rad{background:#1a0000;}
+tbody tr.mangler-rad:hover{background:#220000;}
+td{padding:10px;vertical-align:middle;}
+.klubbcelle{min-width:230px;}
+.navninput{width:190px;}
+.navnrad{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.navnstatus{font-size:.72em;width:100%;min-height:1.1em;}
+.navnstatus.ok{color:var(--ok);}
+.navnstatus.feil{color:var(--feil);}
+.bildecelle{min-width:170px;}
+.bilderad{display:flex;gap:10px;align-items:center;}
+.thumbwrap{position:relative;width:64px;height:64px;border:1px solid #444;background:#111;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.thumbwrap img{max-width:100%;max-height:100%;display:block;}
+.badge{position:absolute;bottom:-1px;right:-1px;font-size:.6em;padding:2px 4px;font-weight:700;text-transform:uppercase;}
+.badge.mangler{background:var(--feil);color:#000;}
+.badge.har{background:var(--ok);color:#000;}
+.bildeknapper{display:flex;flex-direction:column;gap:5px;}
+.bildeknapper button{font-size:.68em;padding:6px 8px;white-space:nowrap;}
+.filstatus{font-size:.68em;color:var(--ok);max-width:140px;}
+.statusdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;}
+.statusdot.gronn{background:var(--ok);}
+.statusdot.rod{background:var(--feil);}
+.statusdot.gul{background:var(--accent2);}
+input[type=file]{display:none;}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal{background:#000;border:2px solid var(--accent2);max-width:700px;width:100%;max-height:92vh;overflow:auto;padding:20px;}
+.modal h3{color:#ffff00;}
+.cropstage{width:100%;height:360px;background:#111;margin-bottom:14px;}
+.cropstage img{max-width:100%;display:block;}
+.croptools{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px;font-size:.8em;}
+.croptools label{display:flex;align-items:center;gap:8px;}
+.croptools input[type=range]{width:150px;}
+.modalbtnrad{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+.resultatrad{display:flex;gap:16px;align-items:center;margin-top:16px;border-top:1px dashed #444;padding-top:16px;}
+.resultatrad img{width:90px;height:90px;object-fit:contain;border:1px solid #444;background:#111;}
+.linkbox{display:inline-block;background:rgba(0,255,255,0.15);padding:10px 14px;margin:4px 0;text-decoration:none;color:inherit;border:1px solid var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Musikkquiz - Bildeadministrasjon</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+</div>
+
+<div class="info">
+<b>Slik virker denne siden:</b> Den henter klubblisten direkte fra systemet. Du kan endre lagnavnet for hvert lag (lagres med en gang du trykker "Lagre"), og du kan velge et nytt bilde for logo og/eller drakt per klubb. Når du velger et bilde åpnes et beskjæringsvindu hvor du kan dra, zoome og rotere bildet før det skaleres ned automatisk (ingen opplasting skjer i selve nettleseren). Trykk "Last ned" for å få bildefilen med riktig filnavn, og dra den inn på GitHub-opplastingssiden (lenke under) - den erstatter da det gamle bildet når du committer.<br><br>
+<b>Viktig:</b> Denne siden genererer eller foreslår ingen ekte klubbmerker/drakter automatisk - du velger selv bildet, og er selv ansvarlig for at du har rettigheter til å bruke det.<br><br>
+<a class="linkbox" href="https://github.com/hansarne-lang/musikkquiz-web/upload/main/klubbdata" target="_blank">Åpne GitHub-opplasting for klubbdata-mappen &rarr;</a>
+</div>
+
+<div class="card">
+<div class="toolbar">
+  <input type="text" id="sok" placeholder="Søk lagnavn..." oninput="filtrer()">
+  <label><input type="checkbox" id="kunMangler" onchange="filtrer()"> Vis kun klubber som mangler bilde</label>
+</div>
+<div class="sammendrag" id="sammendrag">Laster klubbliste...</div>
+<div style="overflow-x:auto;">
+<table id="klubbTabell">
+  <thead>
+    <tr><th>Klubb</th><th>Logo</th><th>Drakt</th></tr>
+  </thead>
+  <tbody id="klubbBody"><tr><td colspan="3">Laster...</td></tr></tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<!-- Beskjaeringsmodal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTittel">Beskjær bilde</h3>
+    <div class="cropstage"><img id="cropImg"></div>
+    <div class="croptools">
+      <label>Zoom <input type="range" id="zoomSlider" min="0" max="3" step="0.01" value="0"></label>
+      <button type="button" class="sekundaer" id="roterVenstre">↶ Roter</button>
+      <button type="button" class="sekundaer" id="roterHoyre">↷ Roter</button>
+      <button type="button" class="sekundaer" id="nullstillCrop">Nullstill</button>
+    </div>
+    <div class="modalbtnrad">
+      <button type="button" class="avbryt" id="lukkModal">Avbryt</button>
+      <button type="button" id="bekreftCrop">Beskjær og forhåndsvis</button>
+    </div>
+    <div class="resultatrad" id="resultatRad" style="display:none;">
+      <img id="resultatImg" alt="Resultat">
+      <div>
+        <div class="filstatus" id="resultatStatus">Klar</div>
+        <a id="lastNedLink"><button type="button">Last ned</button></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var BILDE_BASE = "https://raw.githubusercontent.com/hansarne-lang/musikkquiz-web/main/klubbdata/";
+var MAKS_PIKSLER = 500;
+
+var KLUBBER = [];
+var billedStatus = {}; // "<slug>_<type>": true/false (finnes bilde)
+var aktivCrop = null;  // {slug, type, cropper}
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function(k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+function sjekkBildeFinnes(url) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() { resolve(true); };
+    img.onerror = function() { resolve(false); };
+    img.src = url;
+  });
+}
+
+function bildecelleHtml(klubb, type) {
+  var id = klubb.slug + '_' + type;
+  var label = type === 'logo' ? 'Logo' : 'Drakt';
+  return (
+    '<div class="bilderad" id="bilderad_' + id + '">' +
+      '<div class="thumbwrap" id="thumbwrap_' + id + '">' +
+        '<img id="img_' + id + '" src="' + BILDE_BASE + id + '.jpg" alt="' + label + '">' +
+      '</div>' +
+      '<div class="bildeknapper">' +
+        '<button type="button" onclick="apneFilvelger(\'' + klubb.slug + '\',\'' + type + '\')">Velg bilde</button>' +
+        '<div class="filstatus" id="filstatus_' + id + '"></div>' +
+      '</div>' +
+      '<input type="file" id="filinput_' + id + '" accept="image/*" onchange="filValgt(this,\'' + klubb.slug + '\',\'' + type + '\')">' +
+    '</div>'
+  );
+}
+
+function lagRad(klubb) {
+  var tr = document.createElement('tr');
+  tr.setAttribute('data-slug', klubb.slug);
+  tr.setAttribute('data-navn', klubb.navn.toLowerCase());
+  tr.innerHTML =
+    '<td class="klubbcelle">' +
+      '<div class="navnrad">' +
+        '<input type="text" class="navninput" id="navninput_' + klubb.slug + '" value="' + klubb.navn.replace(/"/g, '&quot;') + '">' +
+        '<button type="button" onclick="lagreNavn(\'' + klubb.slug + '\')">Lagre</button>' +
+        '<span class="navnstatus" id="navnstatus_' + klubb.slug + '"></span>' +
+      '</div>' +
+    '</td>' +
+    '<td class="bildecelle">' + bildecelleHtml(klubb, 'logo') + '</td>' +
+    '<td class="bildecelle">' + bildecelleHtml(klubb, 'drakt') + '</td>';
+  return tr;
+}
+
+function oppdaterBadge(slug, type, finnes) {
+  var id = slug + '_' + type;
+  billedStatus[id] = finnes;
+  var wrap = document.getElementById('thumbwrap_' + id);
+  if (!wrap) return;
+  var gammelBadge = wrap.querySelector('.badge');
+  if (gammelBadge) gammelBadge.remove();
+  var badge = document.createElement('span');
+  badge.className = 'badge ' + (finnes ? 'har' : 'mangler');
+  badge.textContent = finnes ? 'OK' : 'Mangler';
+  wrap.appendChild(badge);
+  if (!finnes) {
+    var imgEl = document.getElementById('img_' + id);
+    if (imgEl) imgEl.style.display = 'none';
+  }
+  var tr = wrap.closest('tr');
+  if (tr) {
+    var slugAlt = type === 'logo' ? 'drakt' : 'logo';
+    var andreFinnes = billedStatus[slug + '_' + slugAlt];
+    if (finnes === false || andreFinnes === false) {
+      tr.classList.add('mangler-rad');
+    } else if (finnes === true && andreFinnes === true) {
+      tr.classList.remove('mangler-rad');
+    }
+  }
+  oppdaterSammendrag();
+}
+
+function oppdaterSammendrag() {
+  var totalt = KLUBBER.length;
+  var manglerLogo = 0, manglerDrakt = 0, ferdigSjekket = 0;
+  KLUBBER.forEach(function(k) {
+    var lStatus = billedStatus[k.slug + '_logo'];
+    var dStatus = billedStatus[k.slug + '_drakt'];
+    if (lStatus !== undefined) ferdigSjekket++;
+    if (dStatus !== undefined) ferdigSjekket++;
+    if (lStatus === false) manglerLogo++;
+    if (dStatus === false) manglerDrakt++;
+  });
+  var el = document.getElementById('sammendrag');
+  if (!el) return;
+  if (ferdigSjekket < totalt * 2) {
+    el.innerHTML = 'Sjekker bilder... (' + ferdigSjekket + ' / ' + (totalt * 2) + ')';
+  } else {
+    el.innerHTML =
+      '<span><span class="tall">' + totalt + '</span> klubber totalt</span>' +
+      '<span class="' + (manglerLogo ? 'feil' : 'ok') + '"><span class="tall">' + manglerLogo + '</span> mangler logo</span>' +
+      '<span class="' + (manglerDrakt ? 'feil' : 'ok') + '"><span class="tall">' + manglerDrakt + '</span> mangler drakt</span>';
+  }
+}
+
+function lagreNavn(slug) {
+  var input = document.getElementById('navninput_' + slug);
+  var status = document.getElementById('navnstatus_' + slug);
+  var nyttNavn = input.value.trim();
+  if (!nyttNavn) {
+    status.textContent = 'Navn kan ikke være tomt.';
+    status.className = 'navnstatus feil';
+    return;
+  }
+  status.textContent = 'Lagrer...';
+  status.className = 'navnstatus';
+  apiGet('endreKlubbNavn', { slug: slug, navn: nyttNavn }).then(function(res) {
+    status.textContent = 'Lagret!';
+    status.className = 'navnstatus ok';
+    var tr = input.closest('tr');
+    if (tr) tr.setAttribute('data-navn', res.navn.toLowerCase());
+    var k = KLUBBER.find(function(x) { return x.slug === slug; });
+    if (k) k.navn = res.navn;
+  }).catch(function(e) {
+    status.textContent = 'Feil: ' + (e && e.message ? e.message : e);
+    status.className = 'navnstatus feil';
+  });
+}
+
+function apneFilvelger(slug, type) {
+  document.getElementById('filinput_' + slug + '_' + type).click();
+}
+
+function filValgt(input, slug, type) {
+  var fil = input.files && input.files[0];
+  if (!fil) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    aktivCrop = { slug: slug, type: type, cropper: null };
+    document.getElementById('modalTittel').textContent =
+      'Beskjær bilde - ' + slug + ' (' + (type === 'logo' ? 'logo' : 'drakt') + ')';
+    document.getElementById('resultatRad').style.display = 'none';
+    var img = document.getElementById('cropImg');
+    img.src = e.target.result;
+    document.getElementById('modalBg').classList.add('open');
+    img.onload = function() {
+      if (aktivCrop.cropper) aktivCrop.cropper.destroy();
+      aktivCrop.cropper = new Cropper(img, {
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.9,
+        background: false,
+        responsive: true,
+        zoomOnWheel: true,
+        ready: function() {
+          document.getElementById('zoomSlider').value = 0;
+        }
+      });
+    };
+  };
+  reader.readAsDataURL(fil);
+  input.value = '';
+}
+
+function lukkModalFn() {
+  document.getElementById('modalBg').classList.remove('open');
+  if (aktivCrop && aktivCrop.cropper) {
+    aktivCrop.cropper.destroy();
+  }
+  aktivCrop = null;
+}
+
+document.getElementById('lukkModal').addEventListener('click', lukkModalFn);
+
+document.getElementById('zoomSlider').addEventListener('input', function() {
+  if (aktivCrop && aktivCrop.cropper) {
+    aktivCrop.cropper.zoomTo(parseFloat(this.value));
+  }
+});
+
+document.getElementById('roterVenstre').addEventListener('click', function() {
+  if (aktivCrop && aktivCrop.cropper) aktivCrop.cropper.rotate(-90);
+});
+document.getElementById('roterHoyre').addEventListener('click', function() {
+  if (aktivCrop && aktivCrop.cropper) aktivCrop.cropper.rotate(90);
+});
+document.getElementById('nullstillCrop').addEventListener('click', function() {
+  if (aktivCrop && aktivCrop.cropper) {
+    aktivCrop.cropper.reset();
+    document.getElementById('zoomSlider').value = 0;
+  }
+});
+
+document.getElementById('bekreftCrop').addEventListener('click', function() {
+  if (!aktivCrop || !aktivCrop.cropper) return;
+  var canvas = aktivCrop.cropper.getCroppedCanvas({
+    maxWidth: MAKS_PIKSLER,
+    maxHeight: MAKS_PIKSLER,
+    fillColor: '#ffffff',
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high'
+  });
+  if (!canvas) return;
+  var dataUrl = canvas.toDataURL('image/jpeg', 0.87);
+  var id = aktivCrop.slug + '_' + aktivCrop.type;
+  document.getElementById('resultatImg').src = dataUrl;
+  document.getElementById('resultatStatus').textContent =
+    'Klar (' + canvas.width + 'x' + canvas.height + 'px)';
+  var link = document.getElementById('lastNedLink');
+  link.href = dataUrl;
+  link.download = id + '.jpg';
+  document.getElementById('resultatRad').style.display = 'flex';
+
+  // Oppdater miniatyrbilde og status-badge i tabellen med det nye beskaarne bildet
+  var tabellImg = document.getElementById('img_' + id);
+  if (tabellImg) {
+    tabellImg.src = dataUrl;
+    tabellImg.style.display = 'block';
+  }
+  var fs = document.getElementById('filstatus_' + id);
+  if (fs) fs.textContent = 'Nytt bilde klart - last ned og last opp til GitHub.';
+  oppdaterBadge(aktivCrop.slug, aktivCrop.type, true);
+});
+
+function filtrer() {
+  var s = document.getElementById('sok').value.toLowerCase();
+  var kunMangler = document.getElementById('kunMangler').checked;
+  document.querySelectorAll('#klubbBody tr').forEach(function(tr) {
+    var navnMatch = tr.getAttribute('data-navn').indexOf(s) !== -1;
+    var manglerMatch = !kunMangler || tr.classList.contains('mangler-rad');
+    tr.style.display = (navnMatch && manglerMatch) ? '' : 'none';
+  });
+}
+
+function init() {
+  var body = document.getElementById('klubbBody');
+  body.innerHTML = '<tr><td colspan="3">Laster klubbliste...</td></tr>';
+  apiGet('klubbListe').then(function(data) {
+    KLUBBER = data || [];
+    var sortert = KLUBBER.slice().sort(function(a, b) { return a.navn.localeCompare(b.navn, 'no'); });
+    body.innerHTML = '';
+    sortert.forEach(function(k) { body.appendChild(lagRad(k)); });
+    oppdaterSammendrag();
+    // Sjekk hvilke bilder som faktisk finnes (async, oppdaterer badges fortløpende)
+    sortert.forEach(function(k) {
+      ['logo', 'drakt'].forEach(function(type) {
+        sjekkBildeFinnes(BILDE_BASE + k.slug + '_' + type + '.jpg').then(function(finnes) {
+          oppdaterBadge(k.slug, type, finnes);
+        });
+      });
+    });
+  }).catch(function(e) {
+    body.innerHTML = '<tr><td colspan="3" style="color:#ff6b6b">Klarte ikke å hente klubbliste: ' + (e && e.message ? e.message : e) + '</td></tr>';
+  });
+}
+
+init();
+</script>
+</body>
+</html>
