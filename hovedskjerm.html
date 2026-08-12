@@ -36,10 +36,25 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 .confetti{position:fixed;top:-12px;width:8px;height:8px;border-radius:0;animation:fall linear forwards;z-index:999;}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3;}}
 #final{font-size:1.6em;text-align:center;margin-top:20px;}
-#wheelStage{position:relative;width:360px;height:360px;margin:20px auto;}
-#wheelPointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:32px solid #ffff00;z-index:5;filter:drop-shadow(0 0 4px #000);}
-#wheelSvg{width:360px;height:360px;border-radius:50%;border:6px solid #00ffff;background:#000;transform:rotate(0deg);}
-#wheelHub{position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#ffff00;border:3px solid #000;z-index:4;}
+#wheelStage{position:relative;width:clamp(420px, 58vmin, 680px);height:clamp(420px, 58vmin, 680px);margin:30px auto;}
+#wheelBulbRing{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;}
+.bulb{position:absolute;width:12px;height:12px;border-radius:50%;background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;transform:translate(-50%,-50%);}
+.bulb.lit{background:#fff6c8;box-shadow:0 0 10px 3px #ffe066,0 0 3px #fff;}
+@keyframes bulbChase{0%,100%{background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;}15%{background:#fff6c8;box-shadow:0 0 10px 3px #ffe066,0 0 3px #fff;}30%{background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;}}
+.bulb.chase{animation:bulbChase 1s linear infinite;}
+@keyframes bulbStrobe{0%,100%{background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;}50%{background:#ffffff;box-shadow:0 0 18px 6px #ffffff;}}
+.bulb.strobe{animation:bulbStrobe .18s steps(1) 6;}
+#wheelPointer{position:absolute;top:-22px;left:50%;width:0;height:0;transform-origin:50% 10px;transform:translateX(-50%);border-left:34px solid transparent;border-right:34px solid transparent;border-top:58px solid #ffff00;z-index:6;filter:drop-shadow(0 0 10px #ffff00) drop-shadow(0 2px 6px #000);animation:pointerIdle 1.6s ease-in-out infinite;}
+@keyframes pointerIdle{0%,100%{transform:translateX(-50%) rotate(0deg);}50%{transform:translateX(-50%) rotate(-6deg);}}
+#wheelPointer.bump{animation:pointerBump .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pointerBump{0%{transform:translateX(-50%) rotate(0deg);}30%{transform:translateX(-50%) rotate(20deg);}60%{transform:translateX(-50%) rotate(-12deg);}100%{transform:translateX(-50%) rotate(0deg);}}
+#wheelFlash{position:absolute;top:-10px;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,0) 70%);opacity:0;pointer-events:none;z-index:5;}
+#wheelFlash.go{animation:flashPop .6s ease-out;}
+@keyframes flashPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3);}25%{opacity:1;transform:translate(-50%,-50%) scale(1.5);}100%{opacity:0;transform:translate(-50%,-50%) scale(2.4);}}
+#wheelSvg{width:100%;height:100%;border-radius:50%;border:6px solid #00ffff;background:#000;transform:rotate(0deg);box-shadow:0 0 0 4px #000,0 0 40px rgba(0,255,255,.4);}
+#wheelStage.landed{animation:stagePulse .5s ease-out;}
+@keyframes stagePulse{0%{transform:scale(1);}30%{transform:scale(1.045);}100%{transform:scale(1);}}
+#wheelHub{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,#ffff00 60%,#c9a600 100%);border:3px solid #000;z-index:4;box-shadow:0 0 14px #ffff00;}
 #uavgjortResultat div{margin:6px 0;color:#00ff00;}
 .fullOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.94);z-index:1500;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;}
 .vinnerBoks h1{color:#ffff00;font-size:2.2em;margin-bottom:20px;}
@@ -100,7 +115,9 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 </div>
 <div class="card" style="padding:40px 20px;">
 <div id="wheelStage">
+<div id="wheelBulbRing"></div>
 <div id="wheelPointer"></div>
+<div id="wheelFlash"></div>
 <div id="wheelHub"></div>
 <svg id="wheelSvg" viewBox="0 0 300 300"></svg>
 </div>
@@ -452,9 +469,24 @@ function autoModus() {
 
 // ==== Lykkehjul (uavgjort-trekning) ====
 var WHEEL_COLORS = ['#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6b6b', '#3a86ff', '#ffa500', '#ff1493'];
+var WHEEL_SPIN_MS = 7000;
+var WHEEL_OVERSHOOT_DEG = 7;
+var WHEEL_BOUNCE_MS = 420;
 var wheelKandidater = [];
 var wheelRotation = 0;
 var uavgjortWinnersQueue = [];
+var KLUBB_LOGO_MAP = null;
+var KLUBB_LOGO_BASE = "https://raw.githubusercontent.com/hansarne-lang/musikkquiz-web/main/klubbdata/";
+
+function lastKlubbLogoMap() {
+  if (KLUBB_LOGO_MAP) return Promise.resolve(KLUBB_LOGO_MAP);
+  return apiGet('klubbListe').then(function(liste) {
+    var map = {};
+    (liste || []).forEach(function(k) { map[String(k.navn).toLowerCase().trim()] = k.slug; });
+    KLUBB_LOGO_MAP = map;
+    return map;
+  }).catch(function(e) { console.error(e); KLUBB_LOGO_MAP = {}; return KLUBB_LOGO_MAP; });
+}
 
 function polarToCartesian(cx, cy, r, angleDeg) {
   var rad = (angleDeg - 90) * Math.PI / 180;
@@ -477,6 +509,10 @@ function buildWheel(kandidater) {
   if (!n) return;
   var cx = 150, cy = 150, r = 148;
   var sliceAngle = 360 / n;
+  var logoMap = KLUBB_LOGO_MAP || {};
+  var logoR = n <= 4 ? 30 : n <= 6 ? 24 : n <= 10 ? 18 : 13;
+  var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  svg.appendChild(defs);
   for (var i = 0; i < n; i++) {
     var start = i * sliceAngle;
     var end = start + sliceAngle;
@@ -487,22 +523,131 @@ function buildWheel(kandidater) {
     path.setAttribute('stroke-width', '2');
     svg.appendChild(path);
     var midAngle = start + sliceAngle / 2;
-    var labelPos = polarToCartesian(cx, cy, r * 0.62, midAngle);
-    var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', labelPos.x);
-    text.setAttribute('y', labelPos.y);
-    text.setAttribute('fill', '#000');
-    text.setAttribute('font-family', 'Courier New, monospace');
-    text.setAttribute('font-weight', 'bold');
-    text.setAttribute('font-size', n > 8 ? '9' : '13');
-    text.setAttribute('text-anchor', 'middle');
-    text.setAttribute('dominant-baseline', 'middle');
-    text.setAttribute('transform', 'rotate(' + midAngle + ' ' + labelPos.x + ' ' + labelPos.y + ')');
-    text.textContent = kandidater[i].navn;
-    svg.appendChild(text);
+    var slug = logoMap[String(kandidater[i].navn || '').toLowerCase().trim()];
+    if (slug) {
+      var logoPos = polarToCartesian(cx, cy, r * 0.66, midAngle);
+      var clipId = 'wheelclip' + i;
+      var clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+      clipPath.setAttribute('id', clipId);
+      var clipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      clipCircle.setAttribute('cx', logoPos.x);
+      clipCircle.setAttribute('cy', logoPos.y);
+      clipCircle.setAttribute('r', logoR);
+      clipPath.appendChild(clipCircle);
+      defs.appendChild(clipPath);
+      var bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      bg.setAttribute('cx', logoPos.x);
+      bg.setAttribute('cy', logoPos.y);
+      bg.setAttribute('r', logoR + 3);
+      bg.setAttribute('fill', '#ffffff');
+      bg.setAttribute('stroke', '#000');
+      bg.setAttribute('stroke-width', '1.5');
+      svg.appendChild(bg);
+      var img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', KLUBB_LOGO_BASE + slug + '_logo.jpg');
+      img.setAttribute('href', KLUBB_LOGO_BASE + slug + '_logo.jpg');
+      img.setAttribute('x', logoPos.x - logoR);
+      img.setAttribute('y', logoPos.y - logoR);
+      img.setAttribute('width', logoR * 2);
+      img.setAttribute('height', logoR * 2);
+      img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      img.setAttribute('clip-path', 'url(#' + clipId + ')');
+      (function(bgEl) { img.addEventListener('error', function() { this.style.display = 'none'; bgEl.style.display = 'none'; }); })(bg);
+      svg.appendChild(img);
+      var namePos = polarToCartesian(cx, cy, r * 0.90, midAngle);
+      var text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text2.setAttribute('x', namePos.x);
+      text2.setAttribute('y', namePos.y);
+      text2.setAttribute('fill', '#000');
+      text2.setAttribute('font-family', 'Courier New, monospace');
+      text2.setAttribute('font-weight', 'bold');
+      text2.setAttribute('font-size', n > 8 ? '7' : '9');
+      text2.setAttribute('text-anchor', 'middle');
+      text2.setAttribute('dominant-baseline', 'middle');
+      text2.setAttribute('transform', 'rotate(' + midAngle + ' ' + namePos.x + ' ' + namePos.y + ')');
+      text2.textContent = kandidater[i].navn;
+      svg.appendChild(text2);
+    } else {
+      var labelPos = polarToCartesian(cx, cy, r * 0.62, midAngle);
+      var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', labelPos.x);
+      text.setAttribute('y', labelPos.y);
+      text.setAttribute('fill', '#000');
+      text.setAttribute('font-family', 'Courier New, monospace');
+      text.setAttribute('font-weight', 'bold');
+      text.setAttribute('font-size', n > 8 ? '9' : '13');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'middle');
+      text.setAttribute('transform', 'rotate(' + midAngle + ' ' + labelPos.x + ' ' + labelPos.y + ')');
+      text.textContent = kandidater[i].navn;
+      svg.appendChild(text);
+    }
   }
   void svg.offsetWidth;
-  svg.style.transition = 'transform 5s cubic-bezier(0.12,0.67,0.1,1)';
+  svg.style.transition = 'transform ' + (WHEEL_SPIN_MS / 1000) + 's cubic-bezier(0.12,0.67,0.1,1)';
+}
+
+// ---- Lyskrans ----
+var bulbEls = [];
+function initBulbRing() {
+  var stage = document.getElementById('wheelStage');
+  var ring = document.getElementById('wheelBulbRing');
+  if (!stage || !ring) return;
+  ring.innerHTML = '';
+  bulbEls = [];
+  var size = stage.offsetWidth || 360;
+  var count = Math.max(18, Math.round(size / 20));
+  var cx = size / 2, cy = size / 2;
+  var rr = size / 2 + Math.max(10, size * 0.035);
+  var bulbSize = Math.max(8, Math.round(size / 32));
+  for (var i = 0; i < count; i++) {
+    var angle = (360 / count) * i;
+    var pos = polarToCartesian(cx, cy, rr, angle);
+    var b = document.createElement('div');
+    b.className = 'bulb';
+    b.style.width = bulbSize + 'px';
+    b.style.height = bulbSize + 'px';
+    b.style.left = pos.x + 'px';
+    b.style.top = pos.y + 'px';
+    ring.appendChild(b);
+    bulbEls.push(b);
+  }
+}
+function setBulbsChasing(on) {
+  bulbEls.forEach(function(b, i) {
+    if (on) {
+      b.classList.remove('lit', 'strobe');
+      b.classList.add('chase');
+      b.style.animationDelay = (-(i / bulbEls.length)) + 's';
+    } else {
+      b.classList.remove('chase');
+    }
+  });
+}
+function bulbsLandCelebrate() {
+  bulbEls.forEach(function(b, i) {
+    b.classList.remove('chase');
+    setTimeout(function() {
+      b.classList.add('strobe');
+      setTimeout(function() { b.classList.remove('strobe'); b.classList.add('lit'); }, 1150);
+    }, (i % 6) * 25);
+  });
+}
+function bulbsReset() {
+  bulbEls.forEach(function(b) { b.classList.remove('chase', 'strobe', 'lit'); });
+}
+
+function landImpact() {
+  var stage = document.getElementById('wheelStage');
+  var pointer = document.getElementById('wheelPointer');
+  var flash = document.getElementById('wheelFlash');
+  if (stage) { stage.classList.remove('landed'); void stage.offsetWidth; stage.classList.add('landed'); }
+  if (pointer) {
+    pointer.classList.remove('bump'); void pointer.offsetWidth; pointer.classList.add('bump');
+    setTimeout(function() { pointer.classList.remove('bump'); }, 520);
+  }
+  if (flash) { flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
+  beep(120, .15, 'square', .25);
 }
 
 function initUavgjort(u) {
@@ -511,7 +656,11 @@ function initUavgjort(u) {
   wheelKandidater = (u.kandidater || []).slice();
   wheelRotation = 0;
   wheelSpinning = false;
-  buildWheel(wheelKandidater);
+  bulbsReset();
+  lastKlubbLogoMap().then(function() {
+    buildWheel(wheelKandidater);
+    initBulbRing();
+  });
   var spinBtn = document.getElementById('spinBtn');
   if (u.status === 'trukket') {
     spinBtn.style.display = 'none';
@@ -546,10 +695,11 @@ function spinWheel() {
   if (wheelSpinning) return;
   wheelSpinning = true;
   document.getElementById('spinBtn').disabled = true;
+  setBulbsChasing(true);
   apiGet('trekkUavgjort').then(function(rad) {
     uavgjortWinnersQueue = (rad.valgt || []).slice();
     spinToNextWinner(rad.kandidater ? rad.kandidater.slice() : wheelKandidater.slice());
-  }).catch(function(e) { console.error(e); wheelSpinning = false; document.getElementById('spinBtn').disabled = false; });
+  }).catch(function(e) { console.error(e); wheelSpinning = false; document.getElementById('spinBtn').disabled = false; setBulbsChasing(false); });
 }
 
 function spinToNextWinner(pool) {
@@ -563,31 +713,41 @@ function spinToNextWinner(pool) {
   var n = pool.length;
   var sliceAngle = 360 / n;
   var winnerMid = idx * sliceAngle + sliceAngle / 2;
-  var fullSpins = 6 + Math.floor(Math.random() * 3);
-  wheelRotation = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var fullSpins = 8 + Math.floor(Math.random() * 3);
+  var target = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var overshoot = target + WHEEL_OVERSHOOT_DEG;
   var svg = document.getElementById('wheelSvg');
-  svg.style.transform = 'rotate(' + wheelRotation + 'deg)';
-  tickSoundsDuring(5000);
+  svg.style.transition = 'transform ' + (WHEEL_SPIN_MS / 1000) + 's cubic-bezier(0.12,0.67,0.1,1)';
+  svg.style.transform = 'rotate(' + overshoot + 'deg)';
+  tickSoundsDuring(WHEEL_SPIN_MS);
   setTimeout(function() {
-    var el = document.getElementById('uavgjortResultat');
-    el.innerHTML += '<div>Vinner: ' + escHtml(winner.navn) + '</div>';
-    beepWinFanfare();
-    if (uavgjortWinnersQueue.length) {
-      pool = pool.slice();
-      pool.splice(idx, 1);
-      setTimeout(function() {
-        buildWheel(pool);
-        wheelRotation = 0;
-        spinToNextWinner(pool);
-      }, 1200);
-    } else {
-      finishSpin();
-    }
-  }, 5200);
+    svg.style.transition = 'transform ' + (WHEEL_BOUNCE_MS / 1000) + 's cubic-bezier(0.34,1.56,0.64,1)';
+    svg.style.transform = 'rotate(' + target + 'deg)';
+    wheelRotation = target;
+    landImpact();
+    setTimeout(function() {
+      var el = document.getElementById('uavgjortResultat');
+      el.innerHTML += '<div>Vinner: ' + escHtml(winner.navn) + '</div>';
+      beepWinFanfare();
+      if (uavgjortWinnersQueue.length) {
+        pool = pool.slice();
+        pool.splice(idx, 1);
+        setTimeout(function() {
+          buildWheel(pool);
+          wheelRotation = 0;
+          spinToNextWinner(pool);
+        }, 1400);
+      } else {
+        finishSpin();
+      }
+    }, WHEEL_BOUNCE_MS + 80);
+  }, WHEEL_SPIN_MS);
 }
 
 function finishSpin() {
   wheelSpinning = false;
+  setBulbsChasing(false);
+  bulbsLandCelebrate();
   confetti();
   var spinBtn = document.getElementById('spinBtn');
   if (spinBtn) spinBtn.style.display = 'none';
