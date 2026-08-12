@@ -25,14 +25,20 @@ button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-wei
 button:hover{background:#00ff00;filter:none;}
 button:disabled{background:#666;color:#ccc;cursor:default;}
 .info{border:2px solid #00ffff;background:#001a1a;padding:14px;margin-bottom:20px;font-size:.9em;opacity:.9;}
-.stortast{font-size:2.2em;text-align:center;padding:20px;border:3px dashed var(--accent2);margin-bottom:14px;word-break:break-all;}
+.knappgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:14px;}
+.knappboks{border:3px dashed #555;padding:16px;text-align:center;}
+.knappboks.mottatt{border-style:solid;border-color:#2ecc71;background:#04220f;}
+.knappboks h3{margin-bottom:6px;}
+.knappboks .kode{font-size:.8em;opacity:.7;margin-bottom:10px;}
+.knappboks .resultat{font-size:1.3em;min-height:1.4em;}
+.knappboks.mottatt .resultat{color:#2ecc71;}
+.tildeling{margin-top:6px;}
+.tildeling label{display:block;font-size:.85em;margin-bottom:4px;opacity:.85;}
 .logglinje{padding:4px 0;border-bottom:1px solid #222;font-size:13px;}
 .tid{color:#888;margin-right:10px;}
-.bindliste p{margin:4px 0;}
 .status-apen{color:#2ecc71;font-weight:700;}
 .status-lukket{color:#ffff00;font-weight:700;}
 .status-ledig{color:#888;}
-label{display:block;margin-bottom:6px;}
 </style>
 </head>
 <body>
@@ -52,25 +58,30 @@ Denne siden er trygg å bruke når som helst - den rører ikke lag, poeng, kateg
 </div>
 
 <div class="card">
-<h2>1. Se hva knappene sender</h2>
-<p style="font-size:.9em;opacity:.8;">Trykk på hver av de tre knappene på den fysiske buzzeren én om gangen. Du trenger ikke gjøre noe annet her - dette fanger alle tastetrykk uansett.</p>
-<div class="stortast" id="sisteTast">Venter på tastetrykk ...</div>
+<h2>1. Bekreft at knappene sender riktig tegn</h2>
+<p style="font-size:.9em;opacity:.8;">Buzzeren er antatt koblet slik: Knapp 1 = venstre pil, Knapp 2 = høyre pil, Knapp 3 = venstre Ctrl. Trykk hver knapp én om gangen og se om riktig boks blir grønn.</p>
+<div class="knappgrid">
+<div class="knappboks" id="boksArrowLeft"><h3>Knapp 1</h3><div class="kode">Forventer: venstre pil (ArrowLeft)</div><div class="resultat" id="resArrowLeft">Venter ...</div></div>
+<div class="knappboks" id="boksArrowRight"><h3>Knapp 2</h3><div class="kode">Forventer: høyre pil (ArrowRight)</div><div class="resultat" id="resArrowRight">Venter ...</div></div>
+<div class="knappboks" id="boksControlLeft"><h3>Knapp 3</h3><div class="kode">Forventer: venstre Ctrl (ControlLeft)</div><div class="resultat" id="resControlLeft">Venter ...</div></div>
+</div>
+<p style="font-size:.85em;opacity:.7;">Hvis en boks ikke blir grønn når du trykker riktig knapp, se rå-loggen under for å finne ut hva knappen faktisk sender.</p>
 <div id="tastelogg"></div>
 </div>
 
 <div class="card">
-<h2>2. Bind knappene til lag</h2>
-<p style="font-size:.9em;opacity:.8;">Velg et lag, klikk "Bind knapp for valgt lag", og trykk så på den fysiske knappen laget skal bruke.</p>
-<select id="bindLagValg"><option>Laster lag ...</option></select>
-<button type="button" onclick="startBinding()">Bind knapp for valgt lag</button>
-<p id="bindStatus"></p>
-<div class="bindliste" id="bindingsListe"><p><i>Ingen knapper bundet ennå.</i></p></div>
-<button type="button" onclick="nullstillBindinger()" style="background:#666;">Nullstill alle bindinger</button>
+<h2>2. Sett hvilket lag hver knapp styrer</h2>
+<p style="font-size:.9em;opacity:.8;">Velg hvilket lag Knapp 1, 2 og 3 skal styre i denne duellen (f.eks. utfordrer/forsvarer i opprykk, eller de tre finalistene).</p>
+<div class="knappgrid">
+<div class="tildeling"><label>Knapp 1 (venstre pil) styrer:</label><select id="lagArrowLeft"><option value="">- ikke i bruk -</option></select></div>
+<div class="tildeling"><label>Knapp 2 (høyre pil) styrer:</label><select id="lagArrowRight"><option value="">- ikke i bruk -</option></select></div>
+<div class="tildeling"><label>Knapp 3 (venstre Ctrl) styrer:</label><select id="lagControlLeft"><option value="">- ikke i bruk -</option></select></div>
+</div>
 </div>
 
 <div class="card">
 <h2>3. Test full buzzer-runde</h2>
-<p style="font-size:.9em;opacity:.8;">Åpne buzzeren, trykk deretter på en bundet knapp - riktig lag skal dukke opp under som vinner.</p>
+<p style="font-size:.9em;opacity:.8;">Åpne buzzeren, trykk deretter en knapp som har et lag tildelt over - riktig lag skal dukke opp under som vinner.</p>
 <p>Status: <span id="buzzerStatusTekst" class="status-ledig">laster ...</span></p>
 <button type="button" onclick="apneBuzzTest()">Åpne buzzer (test)</button>
 <button type="button" onclick="lukkBuzzTest()" style="background:#666;">Lukk / nullstill buzzer</button>
@@ -80,6 +91,7 @@ Denne siden er trygg å bruke når som helst - den rører ikke lag, poeng, kateg
 
 <script>
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var KNAPP_KODER = ["ArrowLeft", "ArrowRight", "ControlLeft"];
 
 function apiGet(action, extraParams) {
   var url = API_BASE + "?api=" + action;
@@ -94,11 +106,17 @@ function apiGet(action, extraParams) {
   });
 }
 
-// --- Del 1: rå tastelogg ---
+// --- Del 1: knapp-bokser + rå tastelogg ---
 var tastLogg = [];
+function visKnappTreff(kode) {
+  var boks = document.getElementById('boks' + kode);
+  var res = document.getElementById('res' + kode);
+  if (!boks || !res) return;
+  boks.className = 'knappboks mottatt';
+  res.textContent = 'Mottatt kl ' + new Date().toLocaleTimeString('no-NO');
+}
 function loggTast(e) {
-  var navn = e.key + " (code: " + e.code + ")";
-  document.getElementById('sisteTast').textContent = navn;
+  var navn = e.key + ' (code: ' + e.code + ')';
   var tid = new Date().toLocaleTimeString('no-NO');
   tastLogg.unshift({ navn: navn, tid: tid });
   if (tastLogg.length > 15) tastLogg.length = 15;
@@ -108,44 +126,23 @@ function loggTast(e) {
   document.getElementById('tastelogg').innerHTML = html;
 }
 
-// --- Del 2: knapp-til-lag-binding ---
-var bindinger = {};
-var armertFor = null;
-
+// --- Del 2: knapp-til-lag ---
 function lastLagListe() {
   apiGet('teams').then(function (teams) {
-    var sel = document.getElementById('bindLagValg');
-    var opts = '';
+    var opts = '<option value="">- ikke i bruk -</option>';
     for (var i = 0; i < teams.length; i++) {
       opts += '<option value="' + teams[i].id + '">' + teams[i].navn + '</option>';
     }
-    sel.innerHTML = opts || '<option>Ingen lag funnet</option>';
+    KNAPP_KODER.forEach(function (kode) {
+      var sel = document.getElementById('lag' + kode);
+      if (sel) sel.innerHTML = opts;
+    });
   }).catch(function (e) {
-    document.getElementById('bindLagValg').innerHTML = '<option>Feil: ' + e.message + '</option>';
+    KNAPP_KODER.forEach(function (kode) {
+      var sel = document.getElementById('lag' + kode);
+      if (sel) sel.innerHTML = '<option>Feil: ' + e.message + '</option>';
+    });
   });
-}
-
-function startBinding() {
-  var sel = document.getElementById('bindLagValg');
-  if (!sel || !sel.value) return;
-  var lagId = sel.value;
-  var navn = sel.options[sel.selectedIndex].text;
-  armertFor = { lagId: lagId, navn: navn };
-  document.getElementById('bindStatus').textContent = 'Trykk nå på knappen som skal styre ' + navn + ' ...';
-}
-
-function visBindinger() {
-  var keys = Object.keys(bindinger);
-  var html = keys.map(function (k) {
-    return '<p>Tast "' + k + '" &#8594; ' + bindinger[k].navn + '</p>';
-  }).join('');
-  document.getElementById('bindingsListe').innerHTML = html || '<p><i>Ingen knapper bundet ennå.</i></p>';
-}
-
-function nullstillBindinger() {
-  bindinger = {};
-  visBindinger();
-  document.getElementById('bindStatus').textContent = '';
 }
 
 // --- Del 3: full buzzer-test ---
@@ -164,7 +161,7 @@ function visBuzzerStatus(o) {
     el.textContent = 'Lukket / klar til å åpnes';
     el.className = 'status-ledig';
   } else if (o.status === 'apen') {
-    el.textContent = 'ÅPEN - trykk en bundet knapp nå';
+    el.textContent = 'ÅPEN - trykk en knapp med tildelt lag nå';
     el.className = 'status-apen';
   } else if (o.status === 'lukket') {
     el.textContent = (o.vinnerNavn || 'Ukjent lag') + ' var først!';
@@ -173,19 +170,16 @@ function visBuzzerStatus(o) {
 }
 setInterval(pollBuzzerStatus, 1000);
 
-// --- Global tastelytter (dekker del 1 og del 2+3 samtidig) ---
+// --- Global tastelytter ---
 document.addEventListener('keydown', function (e) {
   loggTast(e);
-  if (armertFor) {
-    bindinger[e.key] = { lagId: armertFor.lagId, navn: armertFor.navn };
-    document.getElementById('bindStatus').textContent = 'Bundet "' + e.key + '" til ' + armertFor.navn + '.';
-    armertFor = null;
-    visBindinger();
-    return;
-  }
-  var b = bindinger[e.key];
-  if (b) {
-    apiGet('trykkBuzzer', { lagId: b.lagId }).then(visBuzzerStatus).catch(function(){});
+  if (KNAPP_KODER.indexOf(e.code) !== -1) {
+    visKnappTreff(e.code);
+    var sel = document.getElementById('lag' + e.code);
+    var lagId = sel ? sel.value : '';
+    if (lagId) {
+      apiGet('trykkBuzzer', { lagId: lagId }).then(visBuzzerStatus).catch(function(){});
+    }
   }
 });
 
