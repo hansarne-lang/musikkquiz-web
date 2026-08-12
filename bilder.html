@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Klubbilder</title>
+<style>
+:root{
+  --bg:#000000;
+  --bg2:#000000;
+  --bg3:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gold:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;margin-bottom:6px;}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+input,select,button{background:#000000;border:2px solid var(--accent2);color:var(--text);border-radius:0;padding:8px 10px;font-size:14px;font-family:'Courier New',Courier,monospace;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:10px 16px;border-radius:0;cursor:pointer;font-size:14px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+.info{border:2px solid #00ffff;background:#001a1a;padding:14px;margin-bottom:20px;font-size:.9em;opacity:.95;line-height:1.5;}
+.info b{color:#ffff00;}
+.searchbar{margin-bottom:18px;}
+.searchbar input{width:100%;max-width:400px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.klubb{border:2px dashed #555;padding:14px;}
+.imgrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.imgbox{flex:1;min-width:120px;text-align:center;}
+.imgbox img,.imgbox canvas{max-width:100%;max-height:140px;border:1px solid #444;background:#111;display:block;margin:0 auto 6px;}
+.imgbox label{display:block;font-size:.75em;opacity:.7;margin-bottom:4px;text-transform:uppercase;}
+.imgbox input[type=file]{width:100%;font-size:.7em;padding:4px;margin-top:6px;}
+.imgbox .dlbtn{margin-top:6px;width:100%;font-size:.7em;padding:6px;display:none;}
+.imgbox.ready .dlbtn{display:block;}
+.imgbox .status{font-size:.7em;color:#00ff00;margin-top:4px;min-height:1.2em;}
+.linkbox{display:inline-block;background:rgba(0,255,255,0.15);padding:10px 14px;margin:4px 0;text-decoration:none;color:inherit;border:1px solid var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Musikkquiz - Klubbilder</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+</div>
+
+<div class="info">
+<b>Slik virker denne siden:</b> Den henter og viser dagens logo/drakt-bilder for hvert lag direkte fra GitHub, slik at du kan se hva som brukes i dag. Du kan velge et eget bilde per lag og per type (logo/drakt) - bildet skaleres automatisk ned lokalt i nettleseren (ingen opplasting skjer her). Trykk deretter "Last ned" for å få filen med riktig filnavn, og dra den inn på GitHub-opplastingssiden (lenke under) - den vil da erstatte det gamle bildet med samme filnavn når du committer.<br><br>
+<b>Viktig:</b> Denne siden henter, genererer eller foreslår ingen ekte klubbmerker/drakter automatisk - du velger selv hvilket bilde som skal brukes for hvert lag, og du er selv ansvarlig for at du har rettigheter til å bruke bildet.<br><br>
+<a class="linkbox" href="https://github.com/hansarne-lang/musikkquiz-web/upload/main/klubbdata" target="_blank">Åpne GitHub-opplasting for klubbdata-mappen &rarr;</a>
+</div>
+
+<div class="card searchbar">
+<label>Søk/filtrer lag:</label><br>
+<input type="text" id="sok" placeholder="Skriv lagnavn..." oninput="filtrer()">
+</div>
+
+<div class="card">
+<div class="grid" id="klubbGrid"><p>Laster klubbliste...</p></div>
+</div>
+
+</div>
+<script>
+var BILDE_BASE = "https://raw.githubusercontent.com/hansarne-lang/musikkquiz-web/main/klubbdata/";
+
+// Speilbilde av KLUBBER_-listen i Kode.gs - kun navn+slug, kun for visning/nedlasting her.
+var KLUBBER = [
+  { navn: 'Blackburn Rovers', slug: 'blackburn_rovers' },
+  { navn: 'Bolton Wanderers', slug: 'bolton_wanderers' },
+  { navn: 'Bristol City', slug: 'bristol_city' },
+  { navn: 'Chesterfield', slug: 'chesterfield' },
+  { navn: 'Coventry City', slug: 'coventry_city' },
+  { navn: 'Crewe Alexandra', slug: 'crewe_alexandra' },
+  { navn: 'Darlington', slug: 'darlington' },
+  { navn: 'Grimsby Town', slug: 'grimsby_town' },
+  { navn: 'Hartlepool United', slug: 'hartlepool_united' },
+  { navn: 'Luton Town', slug: 'luton_town' },
+  { navn: 'Millwall', slug: 'millwall' },
+  { navn: 'Notts County', slug: 'notts_county' },
+  { navn: 'Oldham Athletic', slug: 'oldham_athletic' },
+  { navn: 'Plymouth Argyle', slug: 'plymouth_argyle' },
+  { navn: 'Port Vale', slug: 'port_vale' },
+  { navn: 'Portsmouth', slug: 'portsmouth' },
+  { navn: 'Queens Park Rangers', slug: 'queens_park_rangers' },
+  { navn: 'Rotherham United', slug: 'rotherham_united' },
+  { navn: 'Shrewsbury Town', slug: 'shrewsbury_town' },
+  { navn: 'Stockport County', slug: 'stockport_county' },
+  { navn: 'Stoke City', slug: 'stoke_city' },
+  { navn: 'Swindon Town', slug: 'swindon_town' },
+  { navn: 'Torquay United', slug: 'torquay_united' },
+  { navn: 'Tranmere Rovers', slug: 'tranmere_rovers' },
+  { navn: 'Walsall', slug: 'walsall' },
+  { navn: 'Wrexham', slug: 'wrexham' }
+];
+
+var MAKS_PIKSLER = 500; // lengste side på nedskalert bilde
+
+function lagKort(klubb) {
+  var div = document.createElement('div');
+  div.className = 'klubb';
+  div.setAttribute('data-navn', klubb.navn.toLowerCase());
+  div.innerHTML =
+    '<h3>' + klubb.navn + '</h3>' +
+    '<div class="imgrow">' +
+      lagImgboks(klubb, 'logo') +
+      lagImgboks(klubb, 'drakt') +
+    '</div>';
+  return div;
+}
+
+function lagImgboks(klubb, type) {
+  var id = klubb.slug + '_' + type;
+  return '<div class="imgbox" id="box_' + id + '">' +
+    '<label>' + (type === 'logo' ? 'Logo (nåværende)' : 'Drakt (nåværende)') + '</label>' +
+    '<img src="' + BILDE_BASE + klubb.slug + '_' + type + '.jpg" alt="' + klubb.navn + ' ' + type + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{textContent:\'(mangler bilde)\',style:\'font-size:.7em;opacity:.6;padding:20px 0;\'}))">' +
+    '<input type="file" accept="image/*" onchange="handleFil(this, \'' + klubb.slug + '\', \'' + type + '\')">' +
+    '<canvas id="canvas_' + id + '" style="display:none;"></canvas>' +
+    '<a class="dlbtn" id="dl_' + id + '"><button style="width:100%;">Last ned ' + klubb.slug + '_' + type + '.jpg</button></a>' +
+    '<div class="status" id="status_' + id + '"></div>' +
+  '</div>';
+}
+
+function handleFil(input, slug, type) {
+  var fil = input.files && input.files[0];
+  if (!fil) return;
+  var id = slug + '_' + type;
+  var statusEl = document.getElementById('status_' + id);
+  statusEl.textContent = 'Behandler bilde...';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      var skala = Math.min(1, MAKS_PIKSLER / Math.max(w, h));
+      var nyW = Math.round(w * skala), nyH = Math.round(h * skala);
+      var canvas = document.getElementById('canvas_' + id);
+      canvas.width = nyW; canvas.height = nyH;
+      canvas.style.display = 'block';
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, nyW, nyH);
+      ctx.drawImage(img, 0, 0, nyW, nyH);
+      var box = document.getElementById('box_' + id);
+      var eksisterendeImg = box.querySelector('img');
+      if (eksisterendeImg) eksisterendeImg.style.display = 'none';
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.87);
+      var dl = document.getElementById('dl_' + id);
+      dl.href = dataUrl;
+      dl.download = slug + '_' + type + '.jpg';
+      box.classList.add('ready');
+      statusEl.textContent = 'Klar (' + nyW + 'x' + nyH + 'px) - last ned og last opp til GitHub.';
+    };
+    img.onerror = function() { statusEl.textContent = 'Kunne ikke lese bildet.'; };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(fil);
+}
+
+function filtrer() {
+  var s = document.getElementById('sok').value.toLowerCase();
+  document.querySelectorAll('.klubb').forEach(function(el) {
+    el.style.display = el.getAttribute('data-navn').indexOf(s) !== -1 ? '' : 'none';
+  });
+}
+
+function init() {
+  var sortert = KLUBBER.slice().sort(function(a, b) { return a.navn.localeCompare(b.navn, 'no'); });
+  var grid = document.getElementById('klubbGrid');
+  grid.innerHTML = '';
+  sortert.forEach(function(k) { grid.appendChild(lagKort(k)); });
+}
+
+init();
+</script>
+</body>
+</html>
