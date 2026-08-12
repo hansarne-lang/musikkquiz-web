@@ -74,6 +74,18 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="uavgjort"></div>
 <div id="opprykk"></div>
 <div id="buzzer"></div>
+<div id="fysiskBuzzerPanel" class="card" style="border:2px solid #ffff00;">
+<h2>Fysisk buzzer (knapper)</h2>
+<p style="font-size:.85em;opacity:.8;">Knapp 1 = venstre Ctrl, Knapp 2 = mellomrom, Knapp 3 = venstre Alt. Velg hvilket lag hver knapp skal styre i denne duellen.</p>
+<label><input type="checkbox" id="fysiskAktiv"> Lytt etter fysiske buzzer-trykk</label>
+<br><br>
+<div style="display:flex;gap:16px;flex-wrap:wrap;">
+<div><label style="display:block;font-size:.85em;margin-bottom:4px;">Knapp 1 (venstre Ctrl) styrer:</label><select id="lagKnapp1"><option value="">- ikke i bruk -</option></select></div>
+<div><label style="display:block;font-size:.85em;margin-bottom:4px;">Knapp 2 (mellomrom) styrer:</label><select id="lagKnapp2"><option value="">- ikke i bruk -</option></select></div>
+<div><label style="display:block;font-size:.85em;margin-bottom:4px;">Knapp 3 (venstre Alt) styrer:</label><select id="lagKnapp3"><option value="">- ikke i bruk -</option></select></div>
+</div>
+<p id="fysiskBindStatus" style="font-size:.85em;opacity:.75;margin-top:10px;"></p>
+</div>
 <div id="finaleB"></div>
 <div id="finale"></div>
 <div id="bommert"></div>
@@ -928,6 +940,38 @@ lastBommertPanel();
 lastJoker();
 lastSkjermOverride();
 setInterval(lastSkjermOverride, 4000);
+
+var FYSISK_KODE_TIL_FELT = { ControlLeft: "lagKnapp1", Space: "lagKnapp2", AltLeft: "lagKnapp3" };
+function lastLagListeForFysiskBinding() {
+  apiGet('teams').then(fysiskLagListeMottatt).catch(function (e) { console.error(e); });
+}
+function fysiskLagListeMottatt(teams) {
+  var opts = "<option value=\"\">- ikke i bruk -</option>";
+  for (var i = 0; i < teams.length; i++) {
+    opts = opts + "<option value=\"" + teams[i].id + "\">" + teams[i].navn + "</option>";
+  }
+  ["lagKnapp1", "lagKnapp2", "lagKnapp3"].forEach(function (feltId) {
+    var sel = document.getElementById(feltId);
+    if (sel) sel.innerHTML = opts;
+  });
+}
+function fysiskTastNed(e) {
+  var aktivBoks = document.getElementById("fysiskAktiv");
+  if (!aktivBoks || !aktivBoks.checked) { return; }
+  var feltId = FYSISK_KODE_TIL_FELT[e.code];
+  if (!feltId) { return; }
+  var sel = document.getElementById(feltId);
+  var lagId = sel ? sel.value : "";
+  if (!lagId) {
+    document.getElementById("fysiskBindStatus").textContent = e.code + " trykket, men ingen lag er satt for denne knappen.";
+    return;
+  }
+  var navn = sel.options[sel.selectedIndex].text;
+  document.getElementById("fysiskBindStatus").textContent = e.code + " trykket - sender buzz for " + navn + ".";
+  apiGet('trykkBuzzer', { lagId: lagId }).then(visBuzzer).catch(feil);
+}
+document.addEventListener("keydown", fysiskTastNed);
+lastLagListeForFysiskBinding();
 </script>
 </body>
 </html>
