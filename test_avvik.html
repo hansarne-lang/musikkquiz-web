@@ -216,11 +216,14 @@ async function kjorAlle() {
       }
     });
 
-    await kjorTest("Fasit-validering (setFasit)", "#5 Fasit med tomme strenger for alle felt aksepteres som gyldig", async function () {
+    await kjorTest("Fasit-validering (setFasit)", "#5 Fasit med tomme strenger for alle felt avvises (AVVIK-005 rettet)", async function () {
       var fasitTom = [{ artist: '', latt: '', aar: '' }, { artist: '', latt: '', aar: '' }, { artist: '', latt: '', aar: '' }];
-      await apiGet('setFasit', { runde: TOM_RUNDE, fasit: JSON.stringify(fasitTom) });
-      var res = await apiGet('scoreRunde', { runde: TOM_RUNDE });
-      assert(Array.isArray(res), "scoreRunde krasjet med fasit bestående av kun tomme strenger");
+      var feilmelding = null;
+      try {
+        await apiGet('setFasit', { runde: TOM_RUNDE, fasit: JSON.stringify(fasitTom) });
+      } catch (e) { feilmelding = String(e); }
+      assert(feilmelding, "setFasit med tomme strenger for alle felt ble akseptert - AVVIK-005-rettelsen fungerer ikke lenger");
+      assert(feilmelding.indexOf('mangler artist') !== -1, "Fikk en feilmelding, men ikke den forventede valideringsfeilen: " + feilmelding);
     });
 
     await kjorTest("Fasit-validering (setFasit)", "#6 setFasit kalt to ganger på samme runde oppdaterer, ikke dupliserer", async function () {
@@ -329,18 +332,18 @@ async function kjorAlle() {
       }
     });
 
-    await kjorTest("Klubbnavn-validering", "#15 Ekstremt langt navn (600 tegn) håndteres uten krasj", async function () {
+    await kjorTest("Klubbnavn-validering", "#15 Ekstremt langt navn (600 tegn) avvises av lengdebegrensning (AVVIK-006 rettet)", async function () {
       assert(testKlubbSlug1, "Ingen testklubb1 funnet");
+      var langtNavn = new Array(601).join('X');
+      var feilmelding = null;
       try {
-        var langtNavn = new Array(601).join('X');
-        var res = await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: langtNavn });
-        var liste = await apiGet('klubbListe');
-        var k = liste.find(function (x) { return x.slug === testKlubbSlug1; });
-        assert(k && k.navn.length > 0, "Klubben mistet navnet sitt etter et ekstremt langt navn");
-        return "MERK: ingen lengdebegrensning finnes - " + k.navn.length + " tegn ble lagret";
-      } finally {
-        await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
-      }
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: langtNavn });
+      } catch (e) { feilmelding = String(e); }
+      assert(feilmelding, "Ekstremt langt klubbnavn (600 tegn) ble akseptert - AVVIK-006-rettelsen fungerer ikke lenger");
+      assert(feilmelding.indexOf('lengre enn 60 tegn') !== -1, "Fikk en feilmelding, men ikke den forventede lengdefeilen: " + feilmelding);
+      var liste = await apiGet('klubbListe');
+      var k = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+      assert(k && k.navn === opprinneligKlubbNavn1, "Klubbnavnet ble endret selv om lengdebegrensningen skulle avvist forsøket");
     });
 
     await kjorTest("Klubbnavn-validering", "#16 Navn med HTML/spesialtegn lagres og hentes korrekt tilbake", async function () {
@@ -356,19 +359,19 @@ async function kjorAlle() {
       }
     });
 
-    await kjorTest("Klubbnavn-validering", "#17 Endre navn til et navn som allerede brukes av en annen klubb (ingen unikhetssjekk)", async function () {
+    await kjorTest("Klubbnavn-validering", "#17 Endre navn til et navn som allerede brukes av en annen klubb avvises (AVVIK-007 rettet)", async function () {
       assert(testKlubbSlug1 && testKlubbSlug2, "Mangler testklubb1/testklubb2");
+      var feilmelding = null;
       try {
         await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn2 });
-        var liste = await apiGet('klubbListe');
-        var k1 = liste.find(function (x) { return x.slug === testKlubbSlug1; });
-        var k2 = liste.find(function (x) { return x.slug === testKlubbSlug2; });
-        assert(k1 && k2, "En av testklubbene forsvant fra listen etter duplikat-navnetest");
-        return "MERK: ingen unikhetssjekk finnes - begge klubbene heter nå '" + k1.navn + "'";
-      } finally {
-        await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
-        await apiGet('endreKlubbNavn', { slug: testKlubbSlug2, navn: opprinneligKlubbNavn2 }).catch(function () {});
-      }
+      } catch (e) { feilmelding = String(e); }
+      assert(feilmelding, "Duplikat klubbnavn ble akseptert - AVVIK-007-rettelsen (unikhetssjekk) fungerer ikke lenger");
+      assert(feilmelding.indexOf('allerede navnet') !== -1, "Fikk en feilmelding, men ikke den forventede unikhetsfeilen: " + feilmelding);
+      var liste = await apiGet('klubbListe');
+      var k1 = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+      var k2 = liste.find(function (x) { return x.slug === testKlubbSlug2; });
+      assert(k1 && k1.navn === opprinneligKlubbNavn1, "Klubb1 sitt navn ble endret selv om unikhetssjekken skulle avvist forsøket");
+      assert(k2 && k2.navn === opprinneligKlubbNavn2, "Klubb2 sitt navn ble uventet påvirket av det avviste forsøket");
     });
 
     await kjorTest("Klubbnavn-validering", "#18 Ugyldig slug gir forventet feilmelding og påvirker ingen andre klubber", async function () {

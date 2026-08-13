@@ -711,47 +711,55 @@ async function kjorAlle() {
     await kjorTest("Klubb-administrasjon", "endreKlubbNavn endrer og gjenoppretter navn korrekt", async function () {
       assert(testKlubbSlug, "Ingen testklubb funnet fra forrige test");
       var midlertidigNavn = "TEST_KLUBBNAVN_" + Date.now();
-      var res1 = await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: midlertidigNavn });
-      assert(res1.navn === midlertidigNavn, "Klubbnavnet ble ikke endret til det midlertidige testnavnet");
-      var liste = await apiGet('klubbListe');
-      var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
-      assert(k && k.navn === midlertidigNavn, "klubbListe reflekterte ikke det midlertidige navnet");
-      // sett umiddelbart tilbake til opprinnelig navn
-      var res2 = await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
-      assert(res2.navn === opprinneligKlubbNavn, "Klarte ikke å sette klubbnavnet tilbake til det opprinnelige");
+      try {
+        var res1 = await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: midlertidigNavn });
+        assert(res1.navn === midlertidigNavn, "Klubbnavnet ble ikke endret til det midlertidige testnavnet");
+        var liste = await apiGet('klubbListe');
+        var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
+        assert(k && k.navn === midlertidigNavn, "klubbListe reflekterte ikke det midlertidige navnet");
+      } finally {
+        // garantert gjenoppretting til opprinnelig navn, uansett om assertene over kastet eller ikke
+        var res2 = await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
+        assert(res2.navn === opprinneligKlubbNavn, "Klarte ikke å sette klubbnavnet tilbake til det opprinnelige");
+      }
     });
 
     await kjorTest("Klubb-administrasjon", "Rask dobbel endreKlubbNavn på samme klubb - siste endring vinner", async function () {
       assert(testKlubbSlug, "Ingen testklubb funnet");
       var navnA = "TEST_DOBBEL_A_" + Date.now();
       var navnB = "TEST_DOBBEL_B_" + Date.now();
-      await Promise.all([
-        apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: navnA }),
-        apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: navnB })
-      ]);
-      var liste = await apiGet('klubbListe');
-      var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
-      assert(k.navn === navnA || k.navn === navnB, "Klubbnavnet endte opp som noe helt annet enn de to forsøkte verdiene: " + k.navn);
-      // sett tilbake til opprinnelig navn uansett hvilken som vant
-      await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
-      var listeEtter = await apiGet('klubbListe');
-      var kEtter = listeEtter.find(function (x) { return x.slug === testKlubbSlug; });
-      assert(kEtter.navn === opprinneligKlubbNavn, "Klarte ikke å gjenopprette opprinnelig klubbnavn etter dobbeltkallet");
+      try {
+        await Promise.all([
+          apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: navnA }),
+          apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: navnB })
+        ]);
+        var liste = await apiGet('klubbListe');
+        var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
+        assert(k.navn === navnA || k.navn === navnB, "Klubbnavnet endte opp som noe helt annet enn de to forsøkte verdiene: " + k.navn);
+      } finally {
+        // garantert gjenoppretting til opprinnelig navn, uansett utfall av dobbeltkallet over
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
+        var listeEtter = await apiGet('klubbListe');
+        var kEtter = listeEtter.find(function (x) { return x.slug === testKlubbSlug; });
+        assert(kEtter.navn === opprinneligKlubbNavn, "Klarte ikke å gjenopprette opprinnelig klubbnavn etter dobbeltkallet");
+      }
     });
 
     await kjorTest("Klubb-administrasjon", "endreKlubbNavn med tomt navn håndteres uten å ødelegge klubbdata", async function () {
       assert(testKlubbSlug, "Ingen testklubb funnet");
       try {
-        await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: '' });
-      } catch (e) {
-        // akseptabelt at backend avviser tomt navn
-      }
-      var liste = await apiGet('klubbListe');
-      var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
-      assert(k && k.navn, "Klubben mistet navnet sitt helt etter forsøk på tomt navn");
-      if (k.navn !== opprinneligKlubbNavn) {
-        // rydd opp uansett utfall
-        await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
+        try {
+          await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: '' });
+        } catch (e) {
+          // akseptabelt at backend avviser tomt navn
+        }
+        var liste = await apiGet('klubbListe');
+        var k = liste.find(function (x) { return x.slug === testKlubbSlug; });
+        assert(k && k.navn, "Klubben mistet navnet sitt helt etter forsøk på tomt navn");
+      } finally {
+        // garantert gjenoppretting til opprinnelig navn, uansett utfall over
+        var res3 = await apiGet('endreKlubbNavn', { slug: testKlubbSlug, navn: opprinneligKlubbNavn });
+        assert(res3.navn === opprinneligKlubbNavn, "Klarte ikke å gjenopprette opprinnelig klubbnavn etter tomt-navn-testen");
       }
     });
 
