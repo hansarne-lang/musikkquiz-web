@@ -123,11 +123,11 @@ var AVVIK_DATA = [
     tittel: "test_utvidet.html: opprydding for klubbnavn-test hoppes over hvis assert() feiler",
     omrade: "Testverktøy - test_utvidet.html",
     alvorlighet: "middels",
-    status: "apen",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "Direkte kodegjennomgang etter Coventry City-hendelsen (AVVIK-002)",
     beskrivelse: "I testen 'endreKlubbNavn med tomt navn håndteres uten å ødelegge klubbdata' ligger rollback-koden (som setter klubbnavnet tilbake til det opprinnelige) ETTER en assert()-linje. Når assert() kaster en feil, hopper try/catch-wrapperen i kjorTest rett til catch-blokken, og rollback-koden når aldri å kjøre. Dette var direkte årsaken til at 'Coventry City' mistet navnet sitt i produksjon under en testkjøring.",
-    losning: "Ikke rettet i test_utvidet.html ennå. Den nye filen test_avvik.html bruker et korrekt try/finally-mønster for alle klubbnavn-tester (garantert rollback uansett utfall), men den gamle testen i test_utvidet.html står fortsatt urettet og bør unngås/rettes ved anledning.",
+    losning: "Rettet i test_utvidet.html: de 3 berørte testene i gruppen 'Klubb-administrasjon' er skrevet om til å bruke try/finally, slik at rollback-koden garantert kjører uansett om assert() underveis feiler. Verifisert med Node syntax-sjekk (new Function på hele scriptet - OK). Publisert til GitHub.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -135,11 +135,11 @@ var AVVIK_DATA = [
     tittel: "Fasit med tomme strenger i alle felt: setFasit rapporterer suksess, men scoreRunde finner den ikke igjen",
     omrade: "Backend - setFasit / scoreRunde (Kode.gs)",
     alvorlighet: "middels",
-    status: "kjent",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_avvik.html - #5 (kjørt live, rødt resultat), verifisert manuelt to ganger direkte mot produksjonsbackend",
-    beskrivelse: "Valideringen i AVVIK-001 sjekker kun at fasit[0]/[1]/[2] finnes som objekter (ikke er null/undefined), ikke at feltene artist/latt/aar faktisk har innhold. Et fasit-array der alle 3 sangene har tomme strenger i alle felt (f.eks. [{artist:'',latt:'',aar:''}, ...]) består valideringen og setFasit svarer 'true' (lagret OK), men et umiddelbart påfølgende scoreRunde-kall for samme runde feiler med kontrollert feilmelding 'Fasit mangler for runde X' i stedet for enten å score runden eller avvise den tomme fasiten direkte i setFasit. Dette er altså ikke et krasj (ingen rå TypeError), men en reell inkonsistens mellom lagre-suksess og les-feil. Corner case #4 ({}-objekt for én sang) og #1-#3 (ufullstendig array) går derimot grønt.",
-    losning: "Ikke rettet. Vurder å utvide setFasit-valideringen til å kreve at hvert sang-objekt har et ikke-tomt artist-felt (evt. også latt/aar), slik at hele den tomme fasiten avvises kontrollert i setFasit i stedet for å 'lykkes' og deretter feile i scoreRunde.",
+    beskrivelse: "Valideringen i AVVIK-001 sjekket kun at fasit[0]/[1]/[2] fantes som objekter (ikke var null/undefined), ikke at feltene artist/latt/aar faktisk hadde innhold. Et fasit-array der alle 3 sangene hadde tomme strenger i alle felt besto valideringen og setFasit svarte 'true' (lagret OK), men et umiddelbart påfølgende scoreRunde-kall for samme runde feilet med 'Fasit mangler for runde X' - en inkonsistens mellom lagre-suksess og les-feil.",
+    losning: "Rettet i Kode.gs: setFasit krever nå at hvert av de 3 sang-objektene har et ikke-tomt artist-, latt- og aar-felt, ellers kastes en kontrollert feilmelding ('Fasit for sang N i runde X mangler artist, låt eller år.') direkte i setFasit i stedet for å 'lykkes' og senere feile i scoreRunde. Distribuert som Versjon 73 (13.08.2026). Verifisert live direkte mot produksjonsbackend (setFasit med tomme strenger på isolert testrunde 996 kastet forventet feilmelding) og gjennom test_avvik.html corner case #5 (oppdatert til å forvente avvisning) - 25/25 tester grønt i full kjøring.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -147,11 +147,11 @@ var AVVIK_DATA = [
     tittel: "endreKlubbNavn_ har ingen lengdebegrensning på navn",
     omrade: "Backend - endreKlubbNavn_ (Kode.gs)",
     alvorlighet: "lav",
-    status: "kjent",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_avvik.html - #15 (planlagt corner case)",
-    beskrivelse: "Etter trim-fiksen i AVVIK-002 finnes fortsatt ingen øvre grense på navnelengde. Et ekstremt langt navn kan i teorien lagres og ødelegge visningen i bildeadmin.html/styre.html/hovedskjerm.html.",
-    losning: "Ikke rettet. Vurder en fornuftig maks lengde (f.eks. 60 tegn) i samme validering.",
+    beskrivelse: "Etter trim-fiksen i AVVIK-002 fantes fortsatt ingen øvre grense på navnelengde. Et ekstremt langt navn kunne i teorien lagres og ødelegge visningen i bildeadmin.html/styre.html/hovedskjerm.html.",
+    losning: "Rettet i Kode.gs: endreKlubbNavn_ avviser nå navn lengre enn 60 tegn med feilmeldingen 'Klubbnavn kan ikke være lengre enn 60 tegn.'. Distribuert som Versjon 73 (13.08.2026). Verifisert live direkte mot produksjonsbackend (61-tegns navn på ekte klubb ble avvist, navnet uendret) og gjennom test_avvik.html corner case #15 (oppdatert til å forvente avvisning av et 600-tegns navn) - 25/25 tester grønt i full kjøring.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -159,11 +159,11 @@ var AVVIK_DATA = [
     tittel: "endreKlubbNavn_ har ingen unikhetssjekk - duplikate klubbnavn tillates",
     omrade: "Backend - endreKlubbNavn_ (Kode.gs)",
     alvorlighet: "lav",
-    status: "kjent",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_avvik.html - #17 (planlagt corner case)",
-    beskrivelse: "To ulike klubber (ulik slug) kan få nøyaktig samme navn uten at backend reagerer. Kan skape forvirring i UI der klubber vises kun med navn (uten slug).",
-    losning: "Ikke rettet. Vurder en sjekk mot øvrige klubbnavn i endreKlubbNavn_ før lagring.",
+    beskrivelse: "To ulike klubber (ulik slug) kunne få nøyaktig samme navn uten at backend reagerte. Kunne skape forvirring i UI der klubber vises kun med navn (uten slug).",
+    losning: "Rettet i Kode.gs: endreKlubbNavn_ sjekker nå navnet (case-insensitivt) mot alle øvrige klubbers navn før lagring, og avviser med 'En annen klubb har allerede navnet \"X\".' ved duplikat. Distribuert som Versjon 73 (13.08.2026). Verifisert live direkte mot produksjonsbackend (forsøk på å gi 'coventry_city' det allerede brukte navnet 'Bristol City' ble avvist) og gjennom test_avvik.html corner case #17 (oppdatert til å forvente avvisning) - 25/25 tester grønt i full kjøring.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -171,11 +171,11 @@ var AVVIK_DATA = [
     tittel: "sendSvarForSang bruker ett globalt lock i stedet for per runde/sang",
     omrade: "Backend - sendSvarForSang (Kode.gs)",
     alvorlighet: "middels",
-    status: "kjent",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "Kodegjennomgang i forbindelse med AVVIK-003",
-    beskrivelse: "Selv etter timeout-økningen i AVVIK-003 er låsen fortsatt global: alle lag og alle sanger/runder køer bak samme LockService-lås. Ved svært mange samtidige innsendinger (typisk mot slutten av en runde) kan dette fortsatt bli en flaskehals, selv om 30 sekunder gir god margin for normal bruk.",
-    losning: "Ikke rettet. En fullverdig løsning krever en nøkkelbasert lås (f.eks. via PropertiesService per runde+sang) eller en kø-basert skriveprosess - vurderes ikke nødvendig med mindre reelle quizkvelder viser problemer selv med 30 sekunders timeout.",
+    beskrivelse: "Selv etter timeout-økningen i AVVIK-003 var låsen fortsatt global: alle lag og alle sanger/runder køet bak samme LockService-lås. Ved svært mange samtidige innsendinger (typisk mot slutten av en runde) kunne dette bli en unødvendig flaskehals selv om ulike innsendinger gjaldt helt forskjellige runder/sanger.",
+    losning: "Rettet i Kode.gs: innført en nøkkelbasert lås per runde+sang (taNokkelLaas_/slippNokkelLaas_) med CacheService som lagrer et kortvarig flagg per nøkkel, og et kort globalt LockService-lås (5s) brukes kun til å atomisk sjekke-og-sette flagget, ikke til å holde hele skriveoperasjonen. Distribuert som Versjon 73 (13.08.2026). Verifisert live gjennom test_avvik.html corner case #19 (20 samtidige innsendinger til samme sang - 0 tidsavbrudd, nøyaktig 1 rad) og #20 (3 lag til 3 ulike sanger samtidig - 0 tidsavbrudd) - 25/25 tester grønt i full kjøring.",
     sistOppdatert: "2026-08-13"
   },
   {
