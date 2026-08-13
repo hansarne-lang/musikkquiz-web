@@ -87,11 +87,11 @@ var AVVIK_DATA = [
     tittel: "setFasit krasjer med rå TypeError ved ufullstendig fasit-array",
     omrade: "Backend - setFasit (Kode.gs)",
     alvorlighet: "hoy",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_utvidet.html - gruppe scoreRunde/svar",
     beskrivelse: "setFasit(runde, fasit) leser fasit[0], fasit[1] og fasit[2] uten å sjekke at arrayet faktisk har 3 elementer. Sendes et fasit-array med færre enn 3 sanger, kastes en rå 'Cannot read properties of undefined (reading artist)' i stedet for en forståelig feilmelding. Dette ble opprinnelig feilrapportert som en scoreRunde-bug, men rotårsaken ligger i setFasit - scoreRunde selv tåler runder uten innsendte svar fint.",
-    losning: "Lagt til validering øverst i setFasit som kaster 'Fasit må inneholde 3 sanger (artist, låt, år) for runde X.' hvis fasit ikke er et array med 3 gyldige elementer. I tillegg fikk scoreRunde en ekstra beskyttelse (continue hvis fasit for en sang mangler) som ren sikkerhetsmargin.",
+    losning: "Rettet i Kode.gs og distribuert som Versjon 72 (13.08.2026). Verifisert live mot produksjonsbackend med test_avvik.html corner case #1-#4 (alle 4 grønne): ufullstendig fasit-array kastes nå med forståelig feilmelding, gyldig fasit fungerer som før, og scoreRunde krasjer ikke lenger med rå TypeError.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -99,11 +99,11 @@ var AVVIK_DATA = [
     tittel: "endreKlubbNavn_ mangler validering av tomt navn",
     omrade: "Backend - endreKlubbNavn_ (Kode.gs)",
     alvorlighet: "hoy",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_utvidet.html - gruppe Klubb-administrasjon",
-    beskrivelse: "endreKlubbNavn_(slug, navn) lagret navn direkte uten noen sjekk på tomt/whitespace-navn. Dette forårsaket en reell hendelse i produksjon: klubben 'Coventry City' fikk navnet sitt fullstendig tømt under testkjøring, fordi testens egen opprydding hoppet over rollback (se AVVIK-005). Feilen ble oppdaget umiddelbart og rettet manuelt via bildeadmin.html samme dag.",
-    losning: "Lagt til trim + tomhetssjekk: kaster 'Klubbnavn kan ikke være tomt.' hvis navnet er tomt eller kun mellomrom etter trim.",
+    beskrivelse: "endreKlubbNavn_(slug, navn) lagret navn direkte uten noen sjekk på tomt/whitespace-navn. Dette forårsaket en reell hendelse i produksjon: klubben 'Coventry City' fikk navnet sitt fullstendig tømt under testkjøring, fordi testens egen opprydding hoppet over rollback (se AVVIK-004). Feilen ble oppdaget umiddelbart og rettet manuelt via bildeadmin.html samme dag.",
+    losning: "Rettet i Kode.gs og distribuert som Versjon 72 (13.08.2026). Verifisert live med test_avvik.html corner case #13-#18 (alle grønne): tomt/whitespace-navn avvises nå kontrollert med 'Klubbnavn kan ikke være tomt.', og gyldige navneendringer fungerer som før.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -111,11 +111,11 @@ var AVVIK_DATA = [
     tittel: "sendSvarForSang - LockService gir tidsavbrudd ved høyere samtidighet",
     omrade: "Backend - sendSvarForSang (Kode.gs)",
     alvorlighet: "hoy",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_utvidet.html - gruppe Robusthet (LockService)",
     beskrivelse: "sendSvarForSang bruker ett globalt LockService-scriptlock som deles av ALLE lag og ALLE sanger/runder samtidig (ikke per runde/sang). Med lock.waitLock(10000) (10 sekunder) rakk ikke alle forespørsler gjennom køen ved 10 samtidige innsendinger til samme sang, og heller ikke ved kryssede samtidige innsendinger til to ulike sanger - begge ga 'Tidsavbrudd for låsing'. 5 samtidige innsendinger (opprinnelig test.html) fungerte fortsatt fint.",
-    losning: "Økt lock.waitLock fra 10000 til 30000 ms, og flyttet det avsluttende (ikke-kritiske) getSvarForLag-oppslaget til etter at låsen slippes, slik at låsen holdes kortere per kall. Låsen er fortsatt global, ikke per runde/sang - se AVVIK-006 for gjenstående begrensning.",
+    losning: "Økt lock.waitLock fra 10000 til 30000 ms, og flyttet det avsluttende (ikke-kritiske) getSvarForLag-oppslaget til etter at låsen slippes, slik at låsen holdes kortere per kall. Distribuert som Versjon 72 og verifisert live: 20 samtidige innsendinger til samme sang ga 0 tidsavbrudd og nøyaktig 1 rad (ingen duplikater), og 3 lag x 3 ulike sanger samtidig (corner case #20-#21) gikk også grønt. Låsen er fortsatt global, ikke per runde/sang - se AVVIK-008 for gjenstående begrensning.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -132,14 +132,14 @@ var AVVIK_DATA = [
   },
   {
     id: "AVVIK-005",
-    tittel: "Fasit-validering fanger ikke et tomt sang-objekt ({})",
-    omrade: "Backend - setFasit (Kode.gs)",
-    alvorlighet: "lav",
+    tittel: "Fasit med tomme strenger i alle felt: setFasit rapporterer suksess, men scoreRunde finner den ikke igjen",
+    omrade: "Backend - setFasit / scoreRunde (Kode.gs)",
+    alvorlighet: "middels",
     status: "kjent",
     funnetDato: "2026-08-13",
-    funnetAv: "test_avvik.html - #4 (planlagt corner case)",
-    beskrivelse: "Valideringen i AVVIK-001 sjekker kun at fasit[0]/[1]/[2] finnes (ikke er null/undefined), ikke at de faktisk inneholder artist/latt/aar. Et fasit-array som f.eks. [{...}, {}, {...}] består valideringen, men gir en sang uten reell fasit. Ukjent per nå om dette gir stille feil-score eller en ny type feil lenger nede i scoreRunde/scoreEnSang_ - avklares når test_avvik.html #4 kjøres.",
-    losning: "Ikke rettet. Vurder å utvide valideringen til å kreve at hvert sang-objekt har (minst) artist-feltet definert.",
+    funnetAv: "test_avvik.html - #5 (kjørt live, rødt resultat), verifisert manuelt to ganger direkte mot produksjonsbackend",
+    beskrivelse: "Valideringen i AVVIK-001 sjekker kun at fasit[0]/[1]/[2] finnes som objekter (ikke er null/undefined), ikke at feltene artist/latt/aar faktisk har innhold. Et fasit-array der alle 3 sangene har tomme strenger i alle felt (f.eks. [{artist:'',latt:'',aar:''}, ...]) består valideringen og setFasit svarer 'true' (lagret OK), men et umiddelbart påfølgende scoreRunde-kall for samme runde feiler med kontrollert feilmelding 'Fasit mangler for runde X' i stedet for enten å score runden eller avvise den tomme fasiten direkte i setFasit. Dette er altså ikke et krasj (ingen rå TypeError), men en reell inkonsistens mellom lagre-suksess og les-feil. Corner case #4 ({}-objekt for én sang) og #1-#3 (ufullstendig array) går derimot grønt.",
+    losning: "Ikke rettet. Vurder å utvide setFasit-valideringen til å kreve at hvert sang-objekt har et ikke-tomt artist-felt (evt. også latt/aar), slik at hele den tomme fasiten avvises kontrollert i setFasit i stedet for å 'lykkes' og deretter feile i scoreRunde.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -176,6 +176,18 @@ var AVVIK_DATA = [
     funnetAv: "Kodegjennomgang i forbindelse med AVVIK-003",
     beskrivelse: "Selv etter timeout-økningen i AVVIK-003 er låsen fortsatt global: alle lag og alle sanger/runder køer bak samme LockService-lås. Ved svært mange samtidige innsendinger (typisk mot slutten av en runde) kan dette fortsatt bli en flaskehals, selv om 30 sekunder gir god margin for normal bruk.",
     losning: "Ikke rettet. En fullverdig løsning krever en nøkkelbasert lås (f.eks. via PropertiesService per runde+sang) eller en kø-basert skriveprosess - vurderes ikke nødvendig med mindre reelle quizkvelder viser problemer selv med 30 sekunders timeout.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-009",
+    tittel: "test_avvik.html #19 manglet forutsetning (svar på sang 1 før stress-test av sang 2)",
+    omrade: "Testverktøy - test_avvik.html",
+    alvorlighet: "lav",
+    status: "lost",
+    funnetDato: "2026-08-13",
+    funnetAv: "Første live kjøring av alle 21 corner cases (test_avvik.html)",
+    beskrivelse: "Corner case #19 sendte 20 samtidige svar til sang 2 uten at laget først hadde besvart sang 1. sendSvarForSang har en (fra før eksisterende, uendret) rekkefølgevalidering som krever svar på sang 1 før sang 2/3 kan sendes inn - dette er ikke en feil, men tiltenkt oppførsel. Testrunden ble nullstilt av corner case #12 rett før #19 kjørte, så laget hadde ikke lenger et registrert svar på sang 1. Alle 20 kall ble derfor avvist med 'Du må sende inn svar for sang 1 først', testen fant 0 rader og feilet - dette er altså en svakhet i selve testoppsettet, ikke en backend-bug.",
+    losning: "Rettet i test_avvik.html: #19 sender nå inn svar på sang 1 for laget rett før stress-testen av sang 2. Manuelt verifisert direkte mot produksjonsbackend etter rettelsen: 20 samtidige kall til sang 2 ga 0 avviste kall og nøyaktig 1 rad - bekrefter at AVVIK-003-fiksen faktisk fungerer.",
     sistOppdatert: "2026-08-13"
   }
 ];

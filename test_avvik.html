@@ -386,7 +386,10 @@ async function kjorAlle() {
 
     // ========== Gruppe: LockService / samtidighet ==========
     await kjorTest("LockService / samtidighet", "#19 20 samtidige innsendinger til samme sang gir kun 1 rad, ingen tidsavbrudd", async function () {
+      await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function () {});
       await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify([{ artist: 'A1', latt: 'L1', aar: '2001' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+      // sang 1 må sendes inn først pga. rekkefølgevalidering i sendSvarForSang, før vi stress-tester sang 2
+      await apiGet('sendSvarForSang', { lagId: lagCCA, runde: TEST_RUNDE, sangNr: 1, artist: 'A1', latt: 'L1', aar: 2001 });
       var kall = [];
       for (var i = 0; i < 20; i++) {
         kall.push(apiGet('sendSvarForSang', { lagId: lagCCA, runde: TEST_RUNDE, sangNr: 2, artist: "Stress" + i, latt: "L", aar: 2000 }));
