@@ -195,11 +195,11 @@ var AVVIK_DATA = [
     tittel: "setFasit aksepterer ugyldig, ikke-numerisk rundenummer uten validering",
     omrade: "Backend - setFasit (Kode.gs)",
     alvorlighet: "lav",
-    status: "kjent",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_avvik2.html - #3 (30 nye corner cases)",
     beskrivelse: "setFasit gjør Number(e.parameter.runde) uten å sjekke om resultatet er NaN. Et kall med runde='abc' godtas stille (ingen feilmelding kastes) i stedet for å avvises - fasiten skrives sannsynligvis til en rad/celle indeksert med NaN i Runder-arket. Testet også med runde=0 og runde=-5, som begge også godtas uten validering. Ikke et krasj, men en stille aksept av åpenbart ugyldig input som i teorien kan skape en 'spøkelses-rad' i regnearket.",
-    losning: "Ikke rettet. Vurder å validere at Number(e.parameter.runde) ikke er NaN (og gjerne at det er et positivt heltall) i setFasit, og kaste en kontrollert feilmelding dersom det ikke er tilfelle.",
+    losning: "Rettet i Kode.gs: setFasit sjekker nå eksplisitt om Number(runde) er NaN og kaster en kontrollert feilmelding ('Ugyldig rundenummer: X.') dersom det er tilfelle. Distribuert som Versjon 74 (13.08.2026). Verifisert live direkte mot produksjonsbackend (setFasit med runde='abc' ga forventet feilmelding 'Ugyldig rundenummer: NaN.') og gjennom test_avvik2.html corner case #3 (oppdatert til å forvente avvisning) - full regresjonssjekk av AVVIK-005/006/007/008 kjørt på nytt uten avvik.",
     sistOppdatert: "2026-08-13"
   },
   {
@@ -207,11 +207,11 @@ var AVVIK_DATA = [
     tittel: "sendSvarForSang aksepterer sangNr=0 uten eksplisitt rangevalidering",
     omrade: "Backend - sendSvarForSang (Kode.gs)",
     alvorlighet: "lav",
-    status: "kjent",
+    status: "lost",
     funnetDato: "2026-08-13",
     funnetAv: "test_avvik2.html - #18 (30 nye corner cases)",
     beskrivelse: "sendSvarForSang har en rekkefølgevalidering som krever at forrige sang er besvart før neste sendes inn, men validerer ikke eksplisitt at sangNr faktisk ligger i det gyldige intervallet 1-3. sangNr=0 slipper gjennom rekkefølgevalideringen (siden 'sang -1 besvart' trivielt er oppfylt når det ikke kreves noen forrige sang) og godtas stille, mens sangNr=4 korrekt avvises fordi det krever et svar på sang 3 som ikke finnes. Kan i teorien skape en rad med sangNr=0 som ikke vises eller telles noe sted i UI eller i scoreRunde.",
-    losning: "Ikke rettet. Vurder å legge til en eksplisitt sjekk på at sangNr er 1, 2 eller 3 (evt. innenfor gyldig antall sanger for runden) tidlig i sendSvarForSang.",
+    losning: "Rettet i Kode.gs: sendSvarForSang sjekker nå eksplisitt at sangNr er mellom 1 og 3 (og ikke NaN) rett etter Number(sangNr)-konverteringen, og kaster en kontrollert feilmelding ('Ugyldig sangnummer: må være 1, 2 eller 3.') dersom det ikke er tilfelle. Distribuert som Versjon 74 (13.08.2026). Verifisert live direkte mot produksjonsbackend (sendSvarForSang med sangNr=0 ga forventet feilmelding) og gjennom test_avvik2.html corner case #18 (oppdatert til å forvente avvisning) - full regresjonssjekk av AVVIK-005/006/007/008 kjørt på nytt uten avvik.",
     sistOppdatert: "2026-08-13"
   }
 ];
