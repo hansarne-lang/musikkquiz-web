@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Avviksoversikt</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;font-size:1em;margin:0;}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:10px 18px;border-radius:0;cursor:pointer;font-size:14px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;}
+button:hover{background:#00ff00;}
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
+.stat{border:2px solid #444;padding:10px 16px;min-width:140px;}
+.stat .tall{font-size:1.8em;font-weight:700;}
+.stat .lbl{font-size:0.75em;color:#aaa;text-transform:uppercase;}
+.stat.apen .tall{color:#ff6b6b;}
+.stat.venter .tall{color:#ffff00;}
+.stat.lost .tall{color:#00ff00;}
+.stat.kjent .tall{color:#888;}
+.filterrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.filterbtn{background:#111;border:1px solid #555;color:#ccc;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Courier New',Courier,monospace;text-transform:uppercase;}
+.filterbtn.aktiv{background:#00ffff;color:#000;border-color:#00ffff;}
+.avvik{border:2px solid #333;margin-bottom:14px;padding:16px;position:relative;}
+.avvik.sev-hoy{border-left:6px solid #ff0000;}
+.avvik.sev-middels{border-left:6px solid #ffaa00;}
+.avvik.sev-lav{border-left:6px solid #666;}
+.avvik-topp{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;}
+.avvik-id{color:#00ffff;font-size:0.85em;}
+.avvik-tittel{font-size:1.05em;font-weight:700;color:#fff;margin:2px 0 6px;}
+.badge{display:inline-block;padding:4px 10px;font-size:0.75em;font-weight:700;text-transform:uppercase;border:1px solid;white-space:nowrap;}
+.badge.apen{color:#ff6b6b;border-color:#ff6b6b;background:#330000;}
+.badge.venter{color:#ffff00;border-color:#ffff00;background:#332b00;}
+.badge.lost{color:#00ff00;border-color:#00ff00;background:#002200;}
+.badge.kjent{color:#aaa;border-color:#666;background:#1a1a1a;}
+.meta{font-size:0.8em;color:#999;margin-bottom:8px;}
+.meta span{margin-right:16px;}
+.felt-lbl{color:#00ffff;font-size:0.75em;text-transform:uppercase;margin-top:8px;}
+.felt-innhold{font-size:0.9em;color:#ddd;margin-top:2px;line-height:1.4;}
+.oppdatert{font-size:0.72em;color:#666;margin-top:10px;text-align:right;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Avviksoversikt</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="test.html"><button style="background:#ff6b6b;color:#fff;">Standard testverktøy</button></a>
+<a href="test_utvidet.html"><button style="background:#ff6b6b;color:#fff;">Utvidet testverktøy</button></a>
+<a href="test_avvik.html"><button style="background:#00ffff;">Corner case-tester</button></a>
+</div>
+
+<div class="card">
+<h2>Sammendrag</h2>
+<div class="stats" id="stats"></div>
+<div class="filterrow" id="filterrow"></div>
+</div>
+
+<div id="liste"></div>
+
+<div class="card" style="font-size:0.75em;color:#666;">
+<p>Denne siden vedlikeholdes manuelt av Claude etter hver testrunde/kodegjennomgang. Data ligger i <code>AVVIK_DATA</code> øverst i scriptet i denne filen.</p>
+</div>
+</div>
+
+<script>
+// ============================================================
+// AVVIK_DATA - rediger denne listen når nye avvik oppdages eller løses
+// status: "apen" | "venter" (rettet i kode, venter på distribusjon) | "lost" | "kjent" (kjent begrensning, ikke rettet)
+// alvorlighet: "hoy" | "middels" | "lav"
+// ============================================================
+var AVVIK_DATA = [
+  {
+    id: "AVVIK-001",
+    tittel: "setFasit krasjer med rå TypeError ved ufullstendig fasit-array",
+    omrade: "Backend - setFasit (Kode.gs)",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-13",
+    funnetAv: "test_utvidet.html - gruppe scoreRunde/svar",
+    beskrivelse: "setFasit(runde, fasit) leser fasit[0], fasit[1] og fasit[2] uten å sjekke at arrayet faktisk har 3 elementer. Sendes et fasit-array med færre enn 3 sanger, kastes en rå 'Cannot read properties of undefined (reading artist)' i stedet for en forståelig feilmelding. Dette ble opprinnelig feilrapportert som en scoreRunde-bug, men rotårsaken ligger i setFasit - scoreRunde selv tåler runder uten innsendte svar fint.",
+    losning: "Lagt til validering øverst i setFasit som kaster 'Fasit må inneholde 3 sanger (artist, låt, år) for runde X.' hvis fasit ikke er et array med 3 gyldige elementer. I tillegg fikk scoreRunde en ekstra beskyttelse (continue hvis fasit for en sang mangler) som ren sikkerhetsmargin.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-002",
+    tittel: "endreKlubbNavn_ mangler validering av tomt navn",
+    omrade: "Backend - endreKlubbNavn_ (Kode.gs)",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-13",
+    funnetAv: "test_utvidet.html - gruppe Klubb-administrasjon",
+    beskrivelse: "endreKlubbNavn_(slug, navn) lagret navn direkte uten noen sjekk på tomt/whitespace-navn. Dette forårsaket en reell hendelse i produksjon: klubben 'Coventry City' fikk navnet sitt fullstendig tømt under testkjøring, fordi testens egen opprydding hoppet over rollback (se AVVIK-005). Feilen ble oppdaget umiddelbart og rettet manuelt via bildeadmin.html samme dag.",
+    losning: "Lagt til trim + tomhetssjekk: kaster 'Klubbnavn kan ikke være tomt.' hvis navnet er tomt eller kun mellomrom etter trim.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-003",
+    tittel: "sendSvarForSang - LockService gir tidsavbrudd ved høyere samtidighet",
+    omrade: "Backend - sendSvarForSang (Kode.gs)",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-13",
+    funnetAv: "test_utvidet.html - gruppe Robusthet (LockService)",
+    beskrivelse: "sendSvarForSang bruker ett globalt LockService-scriptlock som deles av ALLE lag og ALLE sanger/runder samtidig (ikke per runde/sang). Med lock.waitLock(10000) (10 sekunder) rakk ikke alle forespørsler gjennom køen ved 10 samtidige innsendinger til samme sang, og heller ikke ved kryssede samtidige innsendinger til to ulike sanger - begge ga 'Tidsavbrudd for låsing'. 5 samtidige innsendinger (opprinnelig test.html) fungerte fortsatt fint.",
+    losning: "Økt lock.waitLock fra 10000 til 30000 ms, og flyttet det avsluttende (ikke-kritiske) getSvarForLag-oppslaget til etter at låsen slippes, slik at låsen holdes kortere per kall. Låsen er fortsatt global, ikke per runde/sang - se AVVIK-006 for gjenstående begrensning.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-004",
+    tittel: "test_utvidet.html: opprydding for klubbnavn-test hoppes over hvis assert() feiler",
+    omrade: "Testverktøy - test_utvidet.html",
+    alvorlighet: "middels",
+    status: "apen",
+    funnetDato: "2026-08-13",
+    funnetAv: "Direkte kodegjennomgang etter Coventry City-hendelsen (AVVIK-002)",
+    beskrivelse: "I testen 'endreKlubbNavn med tomt navn håndteres uten å ødelegge klubbdata' ligger rollback-koden (som setter klubbnavnet tilbake til det opprinnelige) ETTER en assert()-linje. Når assert() kaster en feil, hopper try/catch-wrapperen i kjorTest rett til catch-blokken, og rollback-koden når aldri å kjøre. Dette var direkte årsaken til at 'Coventry City' mistet navnet sitt i produksjon under en testkjøring.",
+    losning: "Ikke rettet i test_utvidet.html ennå. Den nye filen test_avvik.html bruker et korrekt try/finally-mønster for alle klubbnavn-tester (garantert rollback uansett utfall), men den gamle testen i test_utvidet.html står fortsatt urettet og bør unngås/rettes ved anledning.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-005",
+    tittel: "Fasit-validering fanger ikke et tomt sang-objekt ({})",
+    omrade: "Backend - setFasit (Kode.gs)",
+    alvorlighet: "lav",
+    status: "kjent",
+    funnetDato: "2026-08-13",
+    funnetAv: "test_avvik.html - #4 (planlagt corner case)",
+    beskrivelse: "Valideringen i AVVIK-001 sjekker kun at fasit[0]/[1]/[2] finnes (ikke er null/undefined), ikke at de faktisk inneholder artist/latt/aar. Et fasit-array som f.eks. [{...}, {}, {...}] består valideringen, men gir en sang uten reell fasit. Ukjent per nå om dette gir stille feil-score eller en ny type feil lenger nede i scoreRunde/scoreEnSang_ - avklares når test_avvik.html #4 kjøres.",
+    losning: "Ikke rettet. Vurder å utvide valideringen til å kreve at hvert sang-objekt har (minst) artist-feltet definert.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-006",
+    tittel: "endreKlubbNavn_ har ingen lengdebegrensning på navn",
+    omrade: "Backend - endreKlubbNavn_ (Kode.gs)",
+    alvorlighet: "lav",
+    status: "kjent",
+    funnetDato: "2026-08-13",
+    funnetAv: "test_avvik.html - #15 (planlagt corner case)",
+    beskrivelse: "Etter trim-fiksen i AVVIK-002 finnes fortsatt ingen øvre grense på navnelengde. Et ekstremt langt navn kan i teorien lagres og ødelegge visningen i bildeadmin.html/styre.html/hovedskjerm.html.",
+    losning: "Ikke rettet. Vurder en fornuftig maks lengde (f.eks. 60 tegn) i samme validering.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-007",
+    tittel: "endreKlubbNavn_ har ingen unikhetssjekk - duplikate klubbnavn tillates",
+    omrade: "Backend - endreKlubbNavn_ (Kode.gs)",
+    alvorlighet: "lav",
+    status: "kjent",
+    funnetDato: "2026-08-13",
+    funnetAv: "test_avvik.html - #17 (planlagt corner case)",
+    beskrivelse: "To ulike klubber (ulik slug) kan få nøyaktig samme navn uten at backend reagerer. Kan skape forvirring i UI der klubber vises kun med navn (uten slug).",
+    losning: "Ikke rettet. Vurder en sjekk mot øvrige klubbnavn i endreKlubbNavn_ før lagring.",
+    sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-008",
+    tittel: "sendSvarForSang bruker ett globalt lock i stedet for per runde/sang",
+    omrade: "Backend - sendSvarForSang (Kode.gs)",
+    alvorlighet: "middels",
+    status: "kjent",
+    funnetDato: "2026-08-13",
+    funnetAv: "Kodegjennomgang i forbindelse med AVVIK-003",
+    beskrivelse: "Selv etter timeout-økningen i AVVIK-003 er låsen fortsatt global: alle lag og alle sanger/runder køer bak samme LockService-lås. Ved svært mange samtidige innsendinger (typisk mot slutten av en runde) kan dette fortsatt bli en flaskehals, selv om 30 sekunder gir god margin for normal bruk.",
+    losning: "Ikke rettet. En fullverdig løsning krever en nøkkelbasert lås (f.eks. via PropertiesService per runde+sang) eller en kø-basert skriveprosess - vurderes ikke nødvendig med mindre reelle quizkvelder viser problemer selv med 30 sekunders timeout.",
+    sistOppdatert: "2026-08-13"
+  }
+];
+
+function badgeInfo(status) {
+  if (status === 'apen') return { klasse: 'apen', tekst: 'Åpen' };
+  if (status === 'venter') return { klasse: 'venter', tekst: 'Rettet i kode - venter på distribusjon' };
+  if (status === 'lost') return { klasse: 'lost', tekst: 'Løst og verifisert' };
+  return { klasse: 'kjent', tekst: 'Kjent begrensning (ikke rettet)' };
+}
+
+function sevKlasse(a) {
+  if (a === 'hoy') return 'sev-hoy';
+  if (a === 'middels') return 'sev-middels';
+  return 'sev-lav';
+}
+function sevTekst(a) {
+  if (a === 'hoy') return 'Høy alvorlighet';
+  if (a === 'middels') return 'Middels alvorlighet';
+  return 'Lav alvorlighet';
+}
+
+var aktivtFilter = 'alle';
+
+function tegnStats() {
+  var apen = AVVIK_DATA.filter(function (a) { return a.status === 'apen'; }).length;
+  var venter = AVVIK_DATA.filter(function (a) { return a.status === 'venter'; }).length;
+  var lost = AVVIK_DATA.filter(function (a) { return a.status === 'lost'; }).length;
+  var kjent = AVVIK_DATA.filter(function (a) { return a.status === 'kjent'; }).length;
+  document.getElementById('stats').innerHTML =
+    '<div class="stat apen"><div class="tall">' + apen + '</div><div class="lbl">Åpne</div></div>' +
+    '<div class="stat venter"><div class="tall">' + venter + '</div><div class="lbl">Venter på distribusjon</div></div>' +
+    '<div class="stat lost"><div class="tall">' + lost + '</div><div class="lbl">Løst og verifisert</div></div>' +
+    '<div class="stat kjent"><div class="tall">' + kjent + '</div><div class="lbl">Kjente begrensninger</div></div>' +
+    '<div class="stat"><div class="tall">' + AVVIK_DATA.length + '</div><div class="lbl">Totalt</div></div>';
+
+  var filtre = [
+    { key: 'alle', navn: 'Alle (' + AVVIK_DATA.length + ')' },
+    { key: 'apen', navn: 'Åpne (' + apen + ')' },
+    { key: 'venter', navn: 'Venter på distribusjon (' + venter + ')' },
+    { key: 'lost', navn: 'Løst (' + lost + ')' },
+    { key: 'kjent', navn: 'Kjente begrensninger (' + kjent + ')' }
+  ];
+  document.getElementById('filterrow').innerHTML = filtre.map(function (f) {
+    return '<button class="filterbtn' + (aktivtFilter === f.key ? ' aktiv' : '') + '" onclick="settFilter(\'' + f.key + '\')">' + f.navn + '</button>';
+  }).join('');
+}
+
+function settFilter(f) {
+  aktivtFilter = f;
+  tegnStats();
+  tegnListe();
+}
+
+function tegnListe() {
+  var data = AVVIK_DATA.slice().sort(function (a, b) {
+    var rekkefolge = { apen: 0, venter: 1, kjent: 2, lost: 3 };
+    return rekkefolge[a.status] - rekkefolge[b.status];
+  });
+  if (aktivtFilter !== 'alle') {
+    data = data.filter(function (a) { return a.status === aktivtFilter; });
+  }
+  var html = data.map(function (a) {
+    var b = badgeInfo(a.status);
+    return '<div class="avvik ' + sevKlasse(a.alvorlighet) + '">' +
+      '<div class="avvik-topp">' +
+        '<div><span class="avvik-id">' + a.id + '</span><div class="avvik-tittel">' + a.tittel + '</div></div>' +
+        '<span class="badge ' + b.klasse + '">' + b.tekst + '</span>' +
+      '</div>' +
+      '<div class="meta"><span>' + sevTekst(a.alvorlighet) + '</span><span>Område: ' + a.omrade + '</span><span>Funnet: ' + a.funnetDato + '</span></div>' +
+      '<div class="felt-lbl">Beskrivelse</div><div class="felt-innhold">' + a.beskrivelse + '</div>' +
+      '<div class="felt-lbl">Funnet av</div><div class="felt-innhold">' + a.funnetAv + '</div>' +
+      '<div class="felt-lbl">Løsning / status</div><div class="felt-innhold">' + a.losning + '</div>' +
+      '<div class="oppdatert">Sist oppdatert: ' + a.sistOppdatert + '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('liste').innerHTML = html || '<div class="card"><p>Ingen avvik i denne kategorien.</p></div>';
+}
+
+tegnStats();
+tegnListe();
+</script>
+</body>
+</html>

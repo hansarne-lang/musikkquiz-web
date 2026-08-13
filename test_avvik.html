@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Corner case-tester (avvikskontroll)</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+.warn{border:3px solid #ff0000;background:#330000;padding:16px;margin-bottom:20px;}
+.warn h2{color:#ff6b6b;}
+.testrow{padding:8px 10px;border-bottom:1px solid #333;font-size:14px;display:flex;gap:10px;align-items:baseline;}
+.testrow .navn{flex:1;}
+.ok{color:#00ff00;font-weight:700;}
+.feilet{color:#ff6b6b;font-weight:700;}
+.venter{color:#888;}
+.gruppe{margin-top:18px;font-size:0.85em;color:#00ffff;text-transform:uppercase;border-bottom:1px solid #00ffff;padding-bottom:4px;}
+#sammendrag{font-size:1.1em;margin-top:16px;}
+.melding{font-size:12px;color:#aaa;margin-left:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Corner case-tester (avvikskontroll)</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="avvik.html"><button style="background:#00ffff;">Avviksside</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="test.html"><button style="background:#ff6b6b;color:#fff;">Standard testverktøy</button></a>
+<a href="test_utvidet.html"><button style="background:#ff6b6b;color:#fff;">Utvidet testverktøy</button></a>
+</div>
+
+<div class="warn">
+<h2>⚠️ Ikke bruk under en pågående quizkveld!</h2>
+<p>Dette testverktøyet sjekker 21 spesifikke corner cases rundt de fire backend-rettelsene fra denne økten: fasit-validering (setFasit), scoreRunde-robusthet, klubbnavn-validering (endreKlubbNavn) og samtidighet i sendSvarForSang (LockService). Den kjører ekte API-kall mot backend: erstatter hele laglisten med 3 testlag, bruker isolerte testrunder (995, 996, 997), og endrer midlertidig navnet på to ekte klubber (gjenopprettes garantert med try/finally selv om en test feiler underveis). Kjør kun mellom quizkvelder.</p>
+</div>
+
+<div class="card">
+<button id="kjorAlleBtn" onclick="kjorAlle()">Kjør alle 21 corner cases</button>
+<button onclick="ryddOppManuelt()" style="background:#666;">Nødopprydding (kjør hvis noe gikk galt)</button>
+<div id="sammendrag"></div>
+</div>
+
+<div class="card">
+<div id="resultater"><p class="venter">Ingen tester kjørt ennå.</p></div>
+</div>
+</div>
+
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+var TEST_RUNDE = 997;
+var TOM_RUNDE = 996;
+var INGEN_FASIT_RUNDE = 995;
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function (k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+// Rått kall som IKKE sender med en gitt parameter i det hele tatt (for å teste manglende/undefined-parametre)
+function apiGetUtenParam(action, params) {
+  var url = API_BASE + "?api=" + action;
+  Object.keys(params).forEach(function (k) {
+    url += "&" + k + "=" + encodeURIComponent(params[k]);
+  });
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+var resultater = [];
+var gjeldendeGruppe = "";
+var kjorer = false;
+
+function logg(gruppe, navn, ok, melding) {
+  if (gruppe !== gjeldendeGruppe) {
+    gjeldendeGruppe = gruppe;
+    resultater.push({ type: "gruppe", navn: gruppe });
+  }
+  resultater.push({ type: "test", navn: navn, ok: ok, melding: melding || "" });
+  tegn();
+}
+
+function tegn() {
+  var html = "";
+  resultater.forEach(function (r) {
+    if (r.type === "gruppe") {
+      html += '<div class="gruppe">' + r.navn + '</div>';
+    } else {
+      html += '<div class="testrow"><span class="navn">' + r.navn + '</span><span class="' + (r.ok ? 'ok">✓ OK' : 'feilet">✗ FEILET') + '</span>' + (r.melding ? '<span class="melding">' + r.melding + '</span>' : '') + '</div>';
+    }
+  });
+  document.getElementById('resultater').innerHTML = html || '<p class="venter">Ingen tester kjørt ennå.</p>';
+  var antall = resultater.filter(function (r) { return r.type === 'test'; }).length;
+  var feilet = resultater.filter(function (r) { return r.type === 'test' && !r.ok; }).length;
+  document.getElementById('sammendrag').innerHTML = antall ? ('<b>' + (antall - feilet) + ' / ' + antall + ' tester bestått.</b>' + (feilet ? ' <span class="feilet">' + feilet + ' feilet.</span>' : '')) : '';
+  window.__testResultater = resultater;
+}
+
+function assert(betingelse, meldingHvisFeil) {
+  if (!betingelse) throw new Error(meldingHvisFeil || 'Assertion feilet');
+}
+
+async function kjorTest(gruppe, navn, fn) {
+  try {
+    var melding = await fn();
+    logg(gruppe, navn, true, melding || "");
+  } catch (e) {
+    logg(gruppe, navn, false, (e && e.message) ? e.message : String(e));
+  }
+}
+
+async function kjorAlle() {
+  if (kjorer) return;
+  kjorer = true;
+  document.getElementById('kjorAlleBtn').disabled = true;
+  resultater = [];
+  gjeldendeGruppe = "";
+  tegn();
+
+  var lagCCA = null, lagCCB = null, lagCCC = null;
+  var testKlubbSlug1 = null, opprinneligKlubbNavn1 = null;
+  var testKlubbSlug2 = null, opprinneligKlubbNavn2 = null;
+
+  try {
+    // ========== Oppsett ==========
+    await kjorTest("Oppsett", "Opprett 3 testlag til corner case-testene", async function () {
+      var teams = [
+        { navn: "TEST_CC_A", divisjon: 1, bord: 1 },
+        { navn: "TEST_CC_B", divisjon: 1, bord: 2 },
+        { navn: "TEST_CC_C", divisjon: 2, bord: 3 }
+      ];
+      await apiGet('saveTeams', { teams: JSON.stringify(teams) });
+      var stilling = await apiGet('stilling');
+      var alle = stilling.div1.concat(stilling.div2);
+      lagCCA = alle.find(function (t) { return t.navn === 'TEST_CC_A'; }).lagId;
+      lagCCB = alle.find(function (t) { return t.navn === 'TEST_CC_B'; }).lagId;
+      lagCCC = alle.find(function (t) { return t.navn === 'TEST_CC_C'; }).lagId;
+      assert(lagCCA && lagCCB && lagCCC, "Fikk ikke opprettet alle 3 testlagene");
+    });
+
+    await kjorTest("Oppsett", "Hent to klubber som skal brukes til navnevalidering, husk opprinnelig navn", async function () {
+      var liste = await apiGet('klubbListe');
+      assert(Array.isArray(liste) && liste.length >= 2, "Fant ikke minst 2 klubber å teste mot");
+      testKlubbSlug1 = liste[0].slug; opprinneligKlubbNavn1 = liste[0].navn;
+      testKlubbSlug2 = liste[1].slug; opprinneligKlubbNavn2 = liste[1].navn;
+    });
+
+    // ========== Gruppe: Fasit-validering (setFasit) ==========
+    await kjorTest("Fasit-validering (setFasit)", "#1 Fasit med kun 1 sang gir tydelig feilmelding, ikke rå TypeError", async function () {
+      var feilmelding = null;
+      try {
+        await apiGet('setFasit', { runde: TOM_RUNDE, fasit: JSON.stringify([{ artist: 'X', latt: 'Y', aar: '2020' }]) });
+      } catch (e) {
+        feilmelding = (e && e.message) ? e.message : String(e);
+      }
+      assert(feilmelding, "setFasit med kun 1 sang ga ingen feil i det hele tatt - forventet en tydelig valideringsfeil");
+      assert(feilmelding.toLowerCase().indexOf('cannot read propert') === -1, "setFasit krasjet fortsatt med rå TypeError i stedet for en kontrollert feilmelding: " + feilmelding);
+    });
+
+    await kjorTest("Fasit-validering (setFasit)", "#2 Fasit med kun 2 sanger gir tydelig feilmelding", async function () {
+      var feilmelding = null;
+      try {
+        await apiGet('setFasit', { runde: TOM_RUNDE, fasit: JSON.stringify([{ artist: 'X', latt: 'Y', aar: '2020' }, { artist: 'X2', latt: 'Y2', aar: '2021' }]) });
+      } catch (e) {
+        feilmelding = (e && e.message) ? e.message : String(e);
+      }
+      assert(feilmelding, "setFasit med kun 2 sanger ga ingen feil - forventet en tydelig valideringsfeil");
+      assert(feilmelding.toLowerCase().indexOf('cannot read propert') === -1, "setFasit krasjet fortsatt med rå TypeError: " + feilmelding);
+    });
+
+    await kjorTest("Fasit-validering (setFasit)", "#3 Fasit med 4 sanger aksepteres, kun de 3 første brukes", async function () {
+      var fasit4 = [{ artist: 'A1', latt: 'L1', aar: '2001' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }, { artist: 'A4-SKAL-IGNORERES', latt: 'L4', aar: '2004' }];
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify(fasit4) });
+      var res = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      assert(Array.isArray(res), "scoreRunde ga ikke gyldig liste tilbake etter fasit med 4 sanger");
+    });
+
+    await kjorTest("Fasit-validering (setFasit)", "#4 Fasit hvor sang 2 er et tomt objekt {} håndteres uten ukontrollert krasj", async function () {
+      var feilmelding = null;
+      try {
+        await apiGet('setFasit', { runde: TOM_RUNDE, fasit: JSON.stringify([{ artist: 'A1', latt: 'L1', aar: '2001' }, {}, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+        // Hvis dette IKKE kaster feil: sjekk at scoreRunde på runden etterpå heller ikke krasjer
+        var res = await apiGet('scoreRunde', { runde: TOM_RUNDE });
+        assert(Array.isArray(res), "scoreRunde krasjet etter fasit med tomt sang-objekt (kjent hull: valideringen fanger ikke {})");
+        return "MERK: {} ble akseptert av setFasit (valideringen sjekker kun !fasit[n], ikke feltene inni) - scoreRunde tålte det likevel";
+      } catch (e) {
+        feilmelding = (e && e.message) ? e.message : String(e);
+        assert(feilmelding.toLowerCase().indexOf('cannot read propert') === -1, "Krasjet med rå TypeError på tomt sang-objekt: " + feilmelding);
+        return "setFasit avviste tomt sang-objekt kontrollert: " + feilmelding;
+      }
+    });
+
+    await kjorTest("Fasit-validering (setFasit)", "#5 Fasit med tomme strenger for alle felt aksepteres som gyldig", async function () {
+      var fasitTom = [{ artist: '', latt: '', aar: '' }, { artist: '', latt: '', aar: '' }, { artist: '', latt: '', aar: '' }];
+      await apiGet('setFasit', { runde: TOM_RUNDE, fasit: JSON.stringify(fasitTom) });
+      var res = await apiGet('scoreRunde', { runde: TOM_RUNDE });
+      assert(Array.isArray(res), "scoreRunde krasjet med fasit bestående av kun tomme strenger");
+    });
+
+    await kjorTest("Fasit-validering (setFasit)", "#6 setFasit kalt to ganger på samme runde oppdaterer, ikke dupliserer", async function () {
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify([{ artist: 'FORSTE', latt: 'L1', aar: '2001' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify([{ artist: 'SISTE', latt: 'L1', aar: '2001' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+      await apiGet('sendSvarForSang', { lagId: lagCCA, runde: TEST_RUNDE, sangNr: 1, artist: 'SISTE', latt: 'L1', aar: 2001 });
+      var res = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var lag = res.find(function (x) { return String(x.lagId) === String(lagCCA); });
+      assert(lag && lag.detaljer[0].artistOk === true, "Andre setFasit-kall overstyrte ikke fasiten riktig (fikk ikke poeng for 'SISTE' som skulle vært riktig svar)");
+    });
+
+    // ========== Gruppe: scoreRunde - robusthet ==========
+    await kjorTest("scoreRunde - robusthet", "#7 scoreRunde på runde med gyldig fasit, men ingen innsendte svar i det hele tatt", async function () {
+      await apiGet('setFasit', { runde: INGEN_FASIT_RUNDE, fasit: JSON.stringify([{ artist: 'A1', latt: 'L1', aar: '2001' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+      var res = await apiGet('scoreRunde', { runde: INGEN_FASIT_RUNDE });
+      assert(Array.isArray(res), "scoreRunde krasjet på en runde uten noen innsendte svar");
+      res.forEach(function (r) { assert(r.poengDenneRunden === 0, "Lag uten innsendte svar fikk poeng > 0: " + r.poengDenneRunden); });
+    });
+
+    await kjorTest("scoreRunde - robusthet", "#8 scoreRunde med delvis innsending (kun ett av tre lag har svart)", async function () {
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify([{ artist: 'Delvis', latt: 'DelvisLatt', aar: '2005' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+      await apiGet('sendSvarForSang', { lagId: lagCCB, runde: TEST_RUNDE, sangNr: 1, artist: 'Delvis', latt: 'DelvisLatt', aar: 2005 });
+      var res = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var b = res.find(function (x) { return String(x.lagId) === String(lagCCB); });
+      var c = res.find(function (x) { return String(x.lagId) === String(lagCCC); });
+      assert(b && b.poengDenneRunden > 0, "Laget som faktisk svarte riktig fikk ikke poeng");
+      assert(c && c.poengDenneRunden === 0, "Laget som ikke svarte i det hele tatt fikk likevel poeng");
+    });
+
+    await kjorTest("scoreRunde - robusthet", "#9 scoreRunde kjørt 3 ganger på rad gir identisk poengsum (regresjon)", async function () {
+      var r1 = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var r2 = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var r3 = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var p1 = r1.find(function (x) { return String(x.lagId) === String(lagCCB); }).poengDenneRunden;
+      var stilling = await apiGet('stilling');
+      var lag = stilling.div1.concat(stilling.div2).find(function (t) { return t.lagId === lagCCB; });
+      assert(lag.poeng === p1, "Poengdobling-feilen er tilbake: forventet stilling=" + p1 + ", fikk " + lag.poeng + " etter 3 identiske scoreRunde-kall");
+    });
+
+    await kjorTest("scoreRunde - robusthet", "#10 Re-scoring etter endret fasit gir oppdatert poengsum", async function () {
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify([{ artist: 'HELT ANNET SVAR', latt: 'HELT ANNEN LATT', aar: '1900' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+      var res = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var b = res.find(function (x) { return String(x.lagId) === String(lagCCB); });
+      assert(b && b.detaljer[0].artistOk === false, "Re-scoring etter fasitendring ga fortsatt poeng for et svar som ikke lenger er riktig");
+    });
+
+    await kjorTest("scoreRunde - robusthet", "#11 scoreRunde på en runde uten fasit satt i det hele tatt gir kontrollert feil", async function () {
+      var HELT_UBRUKT_RUNDE = 994;
+      var feilmelding = null;
+      try {
+        await apiGet('scoreRunde', { runde: HELT_UBRUKT_RUNDE });
+      } catch (e) {
+        feilmelding = (e && e.message) ? e.message : String(e);
+      }
+      assert(feilmelding, "scoreRunde på en runde uten fasit ga ingen feil");
+      assert(feilmelding.toLowerCase().indexOf('cannot read propert') === -1, "scoreRunde krasjet med rå TypeError i stedet for kontrollert feil: " + feilmelding);
+    });
+
+    await kjorTest("scoreRunde - robusthet", "#12 Lag med hull i innsendelsen (kun sang 2 og 3, ikke sang 1) scores uten krasj", async function () {
+      await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function () {});
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify([{ artist: 'S1', latt: 'L1', aar: '2001' }, { artist: 'S2', latt: 'L2', aar: '2002' }, { artist: 'S3', latt: 'L3', aar: '2003' }]) });
+      // send direkte til sang 2 og 3 via rå kall (hopper bevisst over rekkefølgevalideringen sin normale vei via sang 1)
+      try { await apiGet('sendSvarForSang', { lagId: lagCCC, runde: TEST_RUNDE, sangNr: 2, artist: 'S2', latt: 'L2', aar: 2002 }); } catch (e) {}
+      try { await apiGet('sendSvarForSang', { lagId: lagCCC, runde: TEST_RUNDE, sangNr: 3, artist: 'S3', latt: 'L3', aar: 2003 }); } catch (e) {}
+      var res = await apiGet('scoreRunde', { runde: TEST_RUNDE });
+      var c = res.find(function (x) { return String(x.lagId) === String(lagCCC); });
+      assert(c && Array.isArray(c.detaljer) && c.detaljer.length === 3, "scoreRunde krasjet eller ga ufullstendige detaljer ved hull i innsendelsen");
+    });
+
+    // ========== Gruppe: Klubbnavn-validering ==========
+    await kjorTest("Klubbnavn-validering", "#13 Navn med kun mellomrom avvises (trim-sjekk)", async function () {
+      assert(testKlubbSlug1, "Ingen testklubb1 funnet");
+      try {
+        var feilet = false;
+        try {
+          await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: '   ' });
+        } catch (e) { feilet = true; }
+        var liste = await apiGet('klubbListe');
+        var k = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+        assert(feilet || (k && k.navn === opprinneligKlubbNavn1), "Navn med kun mellomrom ble lagret som gyldig klubbnavn: '" + (k ? k.navn : '?') + "'");
+      } finally {
+        var listeSjekk = await apiGet('klubbListe');
+        var kSjekk = listeSjekk.find(function (x) { return x.slug === testKlubbSlug1; });
+        if (kSjekk && kSjekk.navn !== opprinneligKlubbNavn1) {
+          await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
+        }
+      }
+    });
+
+    await kjorTest("Klubbnavn-validering", "#14 navn-parameter helt utelatt (null/undefined) håndteres uten å ødelegge klubbdata", async function () {
+      assert(testKlubbSlug1, "Ingen testklubb1 funnet");
+      try {
+        var feilet = false;
+        try {
+          await apiGetUtenParam('endreKlubbNavn', { slug: testKlubbSlug1 });
+        } catch (e) { feilet = true; }
+        var liste = await apiGet('klubbListe');
+        var k = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+        assert(feilet || (k && k.navn === opprinneligKlubbNavn1), "Manglende navn-parameter ble likevel lagret som gyldig (eller tømte) klubbnavn: '" + (k ? k.navn : '?') + "'");
+      } finally {
+        var listeSjekk = await apiGet('klubbListe');
+        var kSjekk = listeSjekk.find(function (x) { return x.slug === testKlubbSlug1; });
+        if (kSjekk && kSjekk.navn !== opprinneligKlubbNavn1) {
+          await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
+        }
+      }
+    });
+
+    await kjorTest("Klubbnavn-validering", "#15 Ekstremt langt navn (600 tegn) håndteres uten krasj", async function () {
+      assert(testKlubbSlug1, "Ingen testklubb1 funnet");
+      try {
+        var langtNavn = new Array(601).join('X');
+        var res = await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: langtNavn });
+        var liste = await apiGet('klubbListe');
+        var k = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+        assert(k && k.navn.length > 0, "Klubben mistet navnet sitt etter et ekstremt langt navn");
+        return "MERK: ingen lengdebegrensning finnes - " + k.navn.length + " tegn ble lagret";
+      } finally {
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
+      }
+    });
+
+    await kjorTest("Klubbnavn-validering", "#16 Navn med HTML/spesialtegn lagres og hentes korrekt tilbake", async function () {
+      assert(testKlubbSlug1, "Ingen testklubb1 funnet");
+      try {
+        var raertNavn = "TEST_<script>alert(1)<\/script>_Ærlig & Blå'Ø\"";
+        var res = await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: raertNavn });
+        var liste = await apiGet('klubbListe');
+        var k = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+        assert(k && k.navn === raertNavn, "Navn med spesialtegn/HTML ble ikke lagret/hentet tilbake identisk - fikk: '" + (k ? k.navn : '?') + "'");
+      } finally {
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
+      }
+    });
+
+    await kjorTest("Klubbnavn-validering", "#17 Endre navn til et navn som allerede brukes av en annen klubb (ingen unikhetssjekk)", async function () {
+      assert(testKlubbSlug1 && testKlubbSlug2, "Mangler testklubb1/testklubb2");
+      try {
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn2 });
+        var liste = await apiGet('klubbListe');
+        var k1 = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+        var k2 = liste.find(function (x) { return x.slug === testKlubbSlug2; });
+        assert(k1 && k2, "En av testklubbene forsvant fra listen etter duplikat-navnetest");
+        return "MERK: ingen unikhetssjekk finnes - begge klubbene heter nå '" + k1.navn + "'";
+      } finally {
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
+        await apiGet('endreKlubbNavn', { slug: testKlubbSlug2, navn: opprinneligKlubbNavn2 }).catch(function () {});
+      }
+    });
+
+    await kjorTest("Klubbnavn-validering", "#18 Ugyldig slug gir forventet feilmelding og påvirker ingen andre klubber", async function () {
+      var listeFor = await apiGet('klubbListe');
+      var feilmelding = null;
+      try {
+        await apiGet('endreKlubbNavn', { slug: 'finnes_ikke_slug_123456789', navn: 'Whatever' });
+      } catch (e) {
+        feilmelding = (e && e.message) ? e.message : String(e);
+      }
+      assert(feilmelding, "endreKlubbNavn med ugyldig slug ga ingen feil");
+      var listeEtter = await apiGet('klubbListe');
+      assert(listeEtter.length === listeFor.length, "Antall klubber endret seg etter forsøk med ugyldig slug");
+    });
+
+    // ========== Gruppe: LockService / samtidighet ==========
+    await kjorTest("LockService / samtidighet", "#19 20 samtidige innsendinger til samme sang gir kun 1 rad, ingen tidsavbrudd", async function () {
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify([{ artist: 'A1', latt: 'L1', aar: '2001' }, { artist: 'A2', latt: 'L2', aar: '2002' }, { artist: 'A3', latt: 'L3', aar: '2003' }]) });
+      var kall = [];
+      for (var i = 0; i < 20; i++) {
+        kall.push(apiGet('sendSvarForSang', { lagId: lagCCA, runde: TEST_RUNDE, sangNr: 2, artist: "Stress" + i, latt: "L", aar: 2000 }));
+      }
+      var res = await Promise.allSettled(kall);
+      var avviste = res.filter(function (r) { return r.status === 'rejected'; });
+      var tidsavbrudd = avviste.filter(function (r) { return r.reason && /tidsavbrudd|lås/i.test(String(r.reason.message || r.reason)); });
+      assert(tidsavbrudd.length === 0, tidsavbrudd.length + " av 20 samtidige kall fikk tidsavbrudd på låsen");
+      var svarListe = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 2 });
+      var radenerForLag = svarListe.filter(function (s) { return String(s.lagId) === String(lagCCA); });
+      assert(radenerForLag.length === 1, "Forventet nøyaktig 1 rad etter 20 samtidige kall, fant " + radenerForLag.length);
+    });
+
+    await kjorTest("LockService / samtidighet", "#20 Samtidige innsendinger fra 3 ulike lag til 3 ulike sanger samtidig - ingen tidsavbrudd", async function () {
+      var kall = [
+        apiGet('sendSvarForSang', { lagId: lagCCA, runde: TEST_RUNDE, sangNr: 1, artist: "X1", latt: "L", aar: 2000 }),
+        apiGet('sendSvarForSang', { lagId: lagCCB, runde: TEST_RUNDE, sangNr: 2, artist: "X2", latt: "L", aar: 2000 }),
+        apiGet('sendSvarForSang', { lagId: lagCCC, runde: TEST_RUNDE, sangNr: 3, artist: "X3", latt: "L", aar: 2000 })
+      ];
+      var res = await Promise.allSettled(kall);
+      var avviste = res.filter(function (r) { return r.status === 'rejected'; });
+      var tidsavbrudd = avviste.filter(function (r) { return r.reason && /tidsavbrudd|lås/i.test(String(r.reason.message || r.reason)); });
+      assert(tidsavbrudd.length === 0, tidsavbrudd.length + " av 3 kryssede kall fikk tidsavbrudd på låsen: " + avviste.map(function (r) { return r.reason && r.reason.message; }).join(' | '));
+    });
+
+    await kjorTest("LockService / samtidighet", "#21 Rekkefølgevalidering holder selv når sang 1 og sang 2 sendes samtidig for samme lag", async function () {
+      await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function () {});
+      var p1 = apiGet('sendSvarForSang', { lagId: lagCCA, runde: TEST_RUNDE, sangNr: 1, artist: 'A1', latt: 'L1', aar: 2000 });
+      var p2 = apiGet('sendSvarForSang', { lagId: lagCCA, runde: TEST_RUNDE, sangNr: 2, artist: 'A2', latt: 'L2', aar: 2001 });
+      var res = await Promise.allSettled([p1, p2]);
+      var svar1 = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 1 });
+      var harSang1 = svar1.some(function (s) { return String(s.lagId) === String(lagCCA); });
+      var sang2Utfall = res[1];
+      if (sang2Utfall.status === 'fulfilled') {
+        assert(harSang1, "Sang 2 ble akseptert samtidig som sang 1, men sang 1 ble aldri lagret - rekkefølgevalidering feilet under samtidighet");
+      }
+      return "sang2 utfall: " + sang2Utfall.status;
+    });
+
+  } finally {
+    // ========== Gruppe: Opprydding ==========
+    await kjorTest("Opprydding", "Gjenoppretter klubbnavn dersom noe fortsatt avviker", async function () {
+      if (testKlubbSlug1 && opprinneligKlubbNavn1) {
+        var liste = await apiGet('klubbListe');
+        var k1 = liste.find(function (x) { return x.slug === testKlubbSlug1; });
+        if (k1 && k1.navn !== opprinneligKlubbNavn1) {
+          await apiGet('endreKlubbNavn', { slug: testKlubbSlug1, navn: opprinneligKlubbNavn1 }).catch(function () {});
+        }
+        var k2 = liste.find(function (x) { return x.slug === testKlubbSlug2; });
+        if (k2 && opprinneligKlubbNavn2 && k2.navn !== opprinneligKlubbNavn2) {
+          await apiGet('endreKlubbNavn', { slug: testKlubbSlug2, navn: opprinneligKlubbNavn2 }).catch(function () {});
+        }
+      }
+      var listeEtter = await apiGet('klubbListe');
+      var rester = listeEtter.filter(function (k) { return k.navn.indexOf('TEST_') === 0; });
+      assert(rester.length === 0, "Fant " + rester.length + " klubber med gjenværende TEST_-navn: " + rester.map(function (k) { return k.slug; }).join(', '));
+    });
+
+    await kjorTest("Opprydding", "Fjerner testlag og testsvar", async function () {
+      await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function () {});
+      await apiGet('nullstillPoeng').catch(function () {});
+      await apiGet('resetTeams');
+      var stilling = await apiGet('stilling');
+      var rest = stilling.div1.concat(stilling.div2);
+      assert(rest.length === 0, "Forventet 0 lag igjen etter resetTeams, fant " + rest.length);
+    });
+
+    kjorer = false;
+    document.getElementById('kjorAlleBtn').disabled = false;
+  }
+}
+
+async function ryddOppManuelt() {
+  document.getElementById('sammendrag').innerHTML = 'Rydder opp...';
+  try {
+    await apiGet('nullstillSvar', { runde: TEST_RUNDE }).catch(function () {});
+    await apiGet('nullstillPoeng').catch(function () {});
+    await apiGet('resetTeams').catch(function () {});
+    var liste = await apiGet('klubbListe');
+    var rester = liste.filter(function (k) { return k.navn.indexOf('TEST_') === 0; });
+    document.getElementById('sammendrag').innerHTML = rester.length
+      ? ('Nødopprydding: ' + rester.length + ' klubber har fortsatt TEST_-navn og må rettes manuelt i bildeadmin.html: ' + rester.map(function (k) { return k.slug; }).join(', '))
+      : 'Nødopprydding ferdig. Ingen klubber med TEST_-navn funnet.';
+  } catch (e) {
+    document.getElementById('sammendrag').innerHTML = 'Nødopprydding feilet: ' + (e && e.message ? e.message : e);
+  }
+}
+</script>
+</body>
+</html>
