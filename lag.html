@@ -70,6 +70,11 @@ function apiGet(action, extraParams) {
   });
 }
 
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function feil(e) {
   document.getElementById('app').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p></div>';
 }
@@ -97,7 +102,7 @@ function vis(data) {
     document.getElementById('app').innerHTML = '<div class="card"><p>Fant ikke laget. Sjekk QR-koden.</p></div>';
     return;
   }
-  var html = '<div class="card"><h2>' + data.team.navn + '</h2><p>Divisjon ' + data.team.divisjon + ' - Bord ' + data.team.bord + '</p><p>Runde ' + data.runde + '</p>' +
+  var html = '<div class="card"><h2>' + escHtml(data.team.navn) + '</h2><p>Divisjon ' + data.team.divisjon + ' - Bord ' + data.team.bord + '</p><p>Runde ' + data.runde + '</p>' +
     '<button onclick="init()">Oppdater</button></div>';
   if (data.status !== 'apen') {
     html += '<div class="card"><p>Runden er ikke åpen for innsending akkurat nå.</p></div>';
@@ -148,20 +153,40 @@ function sendSangInn(sangNr) {
   });
 }
 
+// Modus maa pollers. Leses den bare ved sidelast, faar ingen lag BUZZ-knappen
+// naar styret bytter til virtuell midt i kvelden (AVVIK-013).
+var buzzerPoll = null;
+var sisteBuzzerModus = null;
+
 function sjekkBuzzerModus() {
   apiGet('buzzerModus').then(function (o) {
-    if (o.modus === 'virtuell') {
-      lastBuzzerLag();
-      setInterval(lastBuzzerLag, 700);
+    var virtuell = (o.modus === 'virtuell');
+    if (virtuell === (sisteBuzzerModus === 'virtuell') && sisteBuzzerModus !== null) { return; }
+    sisteBuzzerModus = virtuell ? 'virtuell' : 'fysisk';
+    if (virtuell) {
+      if (!buzzerPoll) {
+        lastBuzzerLag();
+        buzzerPoll = setInterval(lastBuzzerLag, 700);
+      }
+    } else {
+      if (buzzerPoll) { clearInterval(buzzerPoll); buzzerPoll = null; }
+      var div = document.getElementById('buzzerdiv');
+      if (div) div.style.display = 'none';
     }
   }).catch(function (e) { console.error(e); });
 }
 
 function lastBuzzerLag() {
-  apiGet('buzzerStatus').then(visBuzzerLag).catch(function (e) { console.error(e); });
+  var g = buzzGenerasjon;
+  apiGet('buzzerStatus').then(function (o) { visBuzzerLag(o, g); }).catch(function (e) { console.error(e); });
 }
 
-function visBuzzerLag(o) {
+// Settes naar laget selv har buzzet, slik at et pollesvar som ble sendt FOER
+// buzzen ikke rekker aa gjore knappen gronn igjen etterpaa (AVVIK-019).
+var buzzGenerasjon = 0;
+
+function visBuzzerLag(o, generasjon) {
+  if (generasjon !== undefined && generasjon !== buzzGenerasjon) { return; }
   var div = document.getElementById('buzzerdiv');
   var knapp = document.getElementById('buzzknapp');
   var tekst = document.getElementById('buzztekst');
@@ -178,12 +203,26 @@ function visBuzzerLag(o) {
     knapp.disabled = true;
     knapp.style.background = '#999';
     tekst.textContent = (String(o.vinnerId) === String(teamId)) ? 'Dere var først!' : (o.vinnerNavn + ' var først!');
+    buzzGenerasjon++;
   }
 }
 
 function buzz() {
-  document.getElementById('buzzknapp').disabled = true;
-  apiGet('trykkBuzzer', { lagId: teamId }).then(visBuzzerLag).catch(function (e) { console.error(e); });
+  var knapp = document.getElementById('buzzknapp');
+  if (knapp.disabled) { return; }
+  knapp.disabled = true;
+  knapp.style.background = '#999';
+  buzzGenerasjon++;
+  document.getElementById('buzztekst').textContent = 'Sender...';
+  apiGet('trykkBuzzer', { lagId: teamId }).then(function (o) {
+    visBuzzerLag(o);
+  }).catch(function (e) {
+    // Uten tilbakemelding tror laget at trykket gikk gjennom (AVVIK-019).
+    console.error(e);
+    document.getElementById('buzztekst').textContent = 'Fikk ikke sendt - prøv igjen!';
+    knapp.disabled = false;
+    knapp.style.background = '#2ecc71';
+  });
 }
 
 function lastOpprykkLag() {
@@ -223,6 +262,7 @@ function velgKategoriSelv(navn) {
 init();
 if (teamId) {
   sjekkBuzzerModus();
+  setInterval(sjekkBuzzerModus, 5000);
   lastOpprykkLag();
   setInterval(lastOpprykkLag, 1500);
 }

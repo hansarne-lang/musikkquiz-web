@@ -63,7 +63,7 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 </div>
 <div id="lagModusQr" style="margin-top:12px;display:none;">
 <p class="small">Åpner en side der lag kan melde seg på selv med lagnavn. Nullstiller dagens lagliste.</p>
-<button onclick="startSelvregistrering()">Start selvregistrering</button>
+<button id="startSelvregKnapp" onclick="startSelvregistrering()">Start selvregistrering</button>
 <div id="selvregistreringDiv"></div>
 </div>
 <div id="lagRaderDiv"></div>
@@ -150,6 +150,20 @@ function apiGet(action, params) {
 
 function feil(e) {
   document.getElementById('app').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil: ' + (e && e.message ? e.message : e) + '</p></div>';
+}
+
+// Skriver feilmeldingen i et lokalt panel i stedet for aa erstatte hele #app.
+// Uten dette visker ett feilende kall ut fasitskjemaet midt i en runde (AVVIK-015).
+function lokalFeil(divId, prefiks) {
+  return function (e) {
+    var d = document.getElementById(divId);
+    var tekst = 'Feil' + (prefiks ? ' (' + prefiks + ')' : '') + ': ' + (e && e.message ? e.message : e);
+    if (d) {
+      d.innerHTML = '<div class="card"><p style="color:#ff6b6b">' + escHtml(tekst) + '</p></div>';
+    } else {
+      console.error(tekst);
+    }
+  };
 }
 
 function init() {
@@ -495,37 +509,51 @@ function visBuzzer(o) {
   } else if (o.status === 'apen') {
     html += '<p style="color:#2ecc71;font-weight:bold;">Buzzer er åpen - lagene kan trykke.</p><button onclick="nullstillBuzz()">Steng / nullstill</button>';
   } else if (o.status === 'lukket') {
-    html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> var først!</p><button onclick="apneBuzz()">Åpne igjen</button> <button onclick="nullstillBuzz()">Nullstill</button>';
+    html += '<p style="font-size:1.3em;"><b>' + escHtml(o.vinnerNavn) + '</b> var først!</p><button onclick="apneBuzz()">Åpne igjen</button> <button onclick="nullstillBuzz()">Nullstill</button>';
   }
   html += '</div>';
   document.getElementById('buzzer').innerHTML = html;
 }
 
 function apneBuzz() {
-  apiGet('apneBuzzer').then(visBuzzer).catch(feil);
+  apiGet('apneBuzzer').then(visBuzzer).catch(lokalFeil('buzzer', 'buzzer'));
 }
 
 function nullstillBuzz() {
-  apiGet('lukkBuzzer').then(visBuzzer).catch(feil);
+  apiGet('lukkBuzzer').then(visBuzzer).catch(lokalFeil('buzzer', 'buzzer'));
 }
 
 function lastBuzzerModus() {
-  apiGet('buzzerModus').then(visBuzzerModus).catch(feil);
+  apiGet('buzzerModus').then(visBuzzerModus).catch(lokalFeil('buzzerModusPanel', 'buzzer-modus'));
 }
+
+var gjeldendeBuzzerModus = 'fysisk';
 
 function visBuzzerModus(o) {
   var fysisk = (o.modus !== 'virtuell');
+  gjeldendeBuzzerModus = fysisk ? 'fysisk' : 'virtuell';
   var fFysisk = document.getElementById('buzzerModusFysisk');
   var fVirtuell = document.getElementById('buzzerModusVirtuell');
   var panel = document.getElementById('fysiskBuzzerPanel');
+  var aktivBoks = document.getElementById('fysiskAktiv');
   if (fFysisk) fFysisk.checked = fysisk;
   if (fVirtuell) fVirtuell.checked = !fysisk;
   if (panel) panel.style.display = fysisk ? '' : 'none';
+  // Panelet skjules i virtuell modus, saa avhukingen maa nullstilles her -
+  // ellers kan den ikke skrus av og fanger fortsatt tastetrykk (AVVIK-014).
+  if (!fysisk && aktivBoks) aktivBoks.checked = false;
 }
 
 function settBuzzerModus() {
   var virtuell = document.getElementById('buzzerModusVirtuell').checked;
-  apiGet('setBuzzerModus', { modus: virtuell ? 'virtuell' : 'fysisk' }).then(visBuzzerModus).catch(feil);
+  apiGet('setBuzzerModus', { modus: virtuell ? 'virtuell' : 'fysisk' })
+    .then(visBuzzerModus)
+    .catch(function (e) {
+      // Serveren beholdt gammel modus - still radioknappene tilbake i stedet
+      // for aa la UI-et lyve om hvilken modus som faktisk gjelder.
+      visBuzzerModus({ modus: gjeldendeBuzzerModus });
+      lokalFeil('buzzerModusPanel', 'buzzer-modus')(e);
+    });
 }
 
 function lastFinale() {
@@ -823,15 +851,20 @@ function veksleLagModus() {
 }
 
 function startSelvregistrering() {
+  // Denne nullstiller dagens lagliste og alle utdelte lag-lenker (AVVIK-017).
+  if (!confirm('Dette sletter dagens lagliste og alle utdelte lag-lenker. Fortsette?')) { return; }
   document.getElementById('lagRaderDiv').innerHTML = '';
   document.getElementById('lagOppsettResultat').innerHTML = '';
   document.getElementById('selvregistreringDiv').innerHTML = '<p>Starter selvregistrering...</p>';
   apiGet('apneSelvregistrering').then(function () {
     visSelvregistrering();
-  }).catch(feil);
+  }).catch(lokalFeil('selvregistreringDiv', 'påmelding'));
 }
 
 function visSelvregistrering() {
+  // Knappen ligger rett over lista og sletter alt hvis den bomklikkes (AVVIK-017).
+  var startKnapp = document.getElementById('startSelvregKnapp');
+  if (startKnapp) startKnapp.style.display = 'none';
   var link = siteUrl + '/registrer.html';
   var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(link);
   var html = '<div class="qrcard" style="max-width:260px;"><h3>Skann for å melde på laget</h3><img src="' + qrUrl + '" width="220" height="220" alt="QR-kode"><p class="small">' + link + '</p></div>';
@@ -850,10 +883,17 @@ function oppdaterSelvregistrerteLag() {
     if (!teams.length) { div.innerHTML = '<p>Ingen lag påmeldt ennå.</p>'; return; }
     var html = '<table><tr><th>Lag</th><th>Divisjon</th><th>Bord</th></tr>';
     teams.forEach(function (t) {
-      html += '<tr><td>' + t.navn + '</td><td>' + t.divisjon + '</td><td>' + t.bord + '</td></tr>';
+      html += '<tr><td>' + escHtml(t.navn) + '</td><td>' + escHtml(t.divisjon) + '</td><td>' + escHtml(t.bord) + '</td></tr>';
     });
     html += '</table><p class="small">' + teams.length + ' lag påmeldt.</p>';
     div.innerHTML = html;
+  }).catch(function (e) {
+    // Uten dette staar lista taust og foreldet mens lagene tror de er paameldt (AVVIK-018).
+    var div = document.getElementById('selvregistrerteLag');
+    if (div) {
+      div.innerHTML = '<p style="color:#ff6b6b">Klarte ikke hente påmeldte lag: ' +
+        escHtml(e && e.message ? e.message : e) + '</p><p class="small">Prøver igjen om 4 sekunder.</p>';
+    }
   });
 }
 
@@ -863,7 +903,12 @@ function lukkPaamelding() {
   apiGet('lukkSelvregistrering').then(function (teams) {
     document.getElementById('selvregistreringDiv').innerHTML = '<p class="ok" style="color:#00ff00;">Påmelding lukket. ' + teams.length + ' lag påmeldt.</p>';
     lagOppsettVisResultat(teams);
-  }).catch(feil);
+  }).catch(function (e) {
+    // Pollingen er allerede stoppet her, saa operatoren maa faa en vei tilbake.
+    document.getElementById('selvregistreringDiv').innerHTML =
+      '<p style="color:#ff6b6b">Klarte ikke lukke påmeldingen: ' + escHtml(e && e.message ? e.message : e) +
+      '</p><button onclick="visSelvregistrering()">Vis påmeldingen igjen</button>';
+  });
 }
 
 function lagRader() {
@@ -903,7 +948,7 @@ function lagOppsettVisResultat(teams) {
   teams.forEach(function (t) {
     var link = siteUrl + '/lag.html?id=' + t.id;
     var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(link);
-    html += '<div class="qrcard" id="qr' + t.id + '"><h3>' + t.navn + '</h3><p>Divisjon ' + t.divisjon + ' - Bord ' + t.bord + '</p><img src="' + qrUrl + '" width="150" height="150" alt="QR-kode"><p class="small">' + link + '</p></div>';
+    html += '<div class="qrcard" id="qr' + escHtml(t.id) + '"><h3>' + escHtml(t.navn) + '</h3><p>Divisjon ' + escHtml(t.divisjon) + ' - Bord ' + escHtml(t.bord) + '</p><img src="' + qrUrl + '" width="150" height="150" alt="QR-kode"><p class="small">' + link + '</p></div>';
   });
   html += '</div><button onclick="window.print()">Skriv ut alle</button> <button onclick="genererLagslides()">Generer lagslides (Google Presentasjoner)</button><div id="lagslidesResultat"></div>';
   document.getElementById('lagOppsettResultat').innerHTML = html;
@@ -1028,6 +1073,7 @@ setInterval(lastOpprykk, 4000);
 lastBuzzer();
 setInterval(lastBuzzer, 2000);
 lastBuzzerModus();
+setInterval(lastBuzzerModus, 5000);
 lastFinale();
 setInterval(lastFinale, 3000);
 lastFinaleB();
@@ -1044,7 +1090,7 @@ function lastLagListeForFysiskBinding() {
 function fysiskLagListeMottatt(teams) {
   var opts = "<option value=\"\">- ikke i bruk -</option>";
   for (var i = 0; i < teams.length; i++) {
-    opts = opts + "<option value=\"" + teams[i].id + "\">" + teams[i].navn + "</option>";
+    opts = opts + "<option value=\"" + escHtml(teams[i].id) + "\">" + escHtml(teams[i].navn) + "</option>";
   }
   ["lagKnapp1", "lagKnapp2", "lagKnapp3"].forEach(function (feltId) {
     var sel = document.getElementById(feltId);
@@ -1052,10 +1098,19 @@ function fysiskLagListeMottatt(teams) {
   });
 }
 function fysiskTastNed(e) {
+  // Buzzeren er virtuell - de fysiske knappene skal ikke gjelde (AVVIK-014).
+  if (gjeldendeBuzzerModus === 'virtuell') { return; }
   var aktivBoks = document.getElementById("fysiskAktiv");
   if (!aktivBoks || !aktivBoks.checked) { return; }
+  // Ikke tolk tastetrykk som buzz naar operatoren skriver i et felt (AVVIK-014).
+  var m = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
+  if (m === 'INPUT' || m === 'TEXTAREA' || m === 'SELECT' || (e.target && e.target.isContentEditable)) { return; }
+  // En knapp som holdes inne gir ellers ~30 kall i sekundet.
+  if (e.repeat) { return; }
   var feltId = FYSISK_KODE_TIL_FELT[e.code];
   if (!feltId) { return; }
+  // Mellomrom scroller siden og venstre Alt hopper til menylinja.
+  e.preventDefault();
   var sel = document.getElementById(feltId);
   var lagId = sel ? sel.value : "";
   if (!lagId) {
@@ -1064,7 +1119,7 @@ function fysiskTastNed(e) {
   }
   var navn = sel.options[sel.selectedIndex].text;
   document.getElementById("fysiskBindStatus").textContent = e.code + " trykket - sender buzz for " + navn + ".";
-  apiGet('trykkBuzzer', { lagId: lagId }).then(visBuzzer).catch(feil);
+  apiGet('trykkBuzzer', { lagId: lagId }).then(visBuzzer).catch(lokalFeil('buzzer', 'buzzer'));
 }
 document.addEventListener("keydown", fysiskTastNed);
 lastLagListeForFysiskBinding();

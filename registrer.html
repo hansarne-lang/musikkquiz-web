@@ -40,6 +40,11 @@ label{display:inline-block;margin-top:6px;font-size:0.9em;color:#00ffff;}
 <script>
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
 
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function apiGet(action, params) {
   var url = API_BASE + "?api=" + action;
   if (params) {
@@ -65,35 +70,60 @@ function visSkjema() {
 
 function meldPa() {
   var inp = document.getElementById('navnInput');
+  var knapp = document.getElementById('meldPaKnapp');
+  // Enter-lytteren gaar utenom knappen. Uten denne vakten gir tre raske
+  // Enter-trykk tre paameldinger av samme lag paa treg backend (AVVIK-016).
+  if (knapp.disabled) { return; }
   var navn = inp.value.trim();
   var statusDiv = document.getElementById('status');
   if (!navn) { statusDiv.innerHTML = '<p class="err">Skriv inn et lagnavn først.</p>'; return; }
-  var knapp = document.getElementById('meldPaKnapp');
   knapp.disabled = true;
+  inp.disabled = true;
   statusDiv.innerHTML = '<p>Melder på...</p>';
   apiGet('registrerLagSelv', { navn: navn }).then(function (lag) {
-    statusDiv.innerHTML = '<p class="ok">' + lag.navn + ' er påmeldt!</p><p class="small">Divisjon ' + lag.divisjon + ' - Bord ' + lag.bord + '</p><p class="small">Vis dette til en arrangør, eller vent til dere blir ropt opp / får utdelt bordnummer.</p>';
+    var svar = '<p class="ok">' + escHtml(lag.navn) + ' er påmeldt!</p><p class="small">Divisjon ' + escHtml(lag.divisjon) + ' - Bord ' + escHtml(lag.bord) + '</p>';
+    // Har backend gitt oss lag-id-en, slipper laget aa vente paa en utdelt QR-kode (AVVIK-021).
+    if (lag.id) {
+      var lenke = location.href.replace(/registrer\.html.*$/, '') + 'lag.html?id=' + encodeURIComponent(lag.id);
+      svar += '<p class="small">Svarsiden deres:</p><p><a href="' + escHtml(lenke) + '" style="color:#00ff00;word-break:break-all;">' + escHtml(lenke) + '</a></p>';
+      svar += '<p class="small">Lagre denne lenken - det er her dere sender inn svarene.</p>';
+    } else {
+      svar += '<p class="small">Vis dette til en arrangør, eller vent til dere blir ropt opp / får utdelt bordnummer.</p>';
+    }
+    statusDiv.innerHTML = svar;
     inp.value = '';
-    knapp.disabled = false;
+    // Laget er paameldt - skjemaet skal ikke invitere til en ny paamelding.
+    inp.disabled = true;
+    knapp.style.display = 'none';
   }).catch(function (e) {
-    statusDiv.innerHTML = '<p class="err">Feil: ' + (e && e.message ? e.message : e) + '</p>';
+    statusDiv.innerHTML = '<p class="err">Feil: ' + escHtml(e && e.message ? e.message : e) + '</p>';
     knapp.disabled = false;
+    inp.disabled = false;
   });
 }
+
+// Skjemaet skal dukke opp av seg selv naar arrangoren aapner paameldingen.
+// Uten dette staar siden doed for alle som skannet QR-koden for tidlig (AVVIK-020).
+var statusPoll = null;
+var skjemaVist = false;
 
 function init() {
   apiGet('paameldingStatus').then(function (s) {
     if (s.status === 'apen') {
-      visSkjema();
-    } else {
-      document.getElementById('app').innerHTML = '<p class="err">Påmelding er ikke åpen akkurat nå.</p><p class="small">Spør en arrangør om å starte selvregistreringen, eller vent til den åpner.</p>';
+      if (!skjemaVist) { skjemaVist = true; visSkjema(); }
+      if (statusPoll) { clearInterval(statusPoll); statusPoll = null; }
+    } else if (!skjemaVist) {
+      document.getElementById('app').innerHTML = '<p class="err">Påmelding er ikke åpen akkurat nå.</p><p class="small">Spør en arrangør om å starte selvregistreringen. Denne siden åpner seg selv når påmeldingen starter - la den ligge åpen.</p>';
     }
   }).catch(function (e) {
-    document.getElementById('app').innerHTML = '<p class="err">Klarte ikke å sjekke påmeldingsstatus: ' + (e && e.message ? e.message : e) + '</p>';
+    if (!skjemaVist) {
+      document.getElementById('app').innerHTML = '<p class="err">Klarte ikke å sjekke påmeldingsstatus: ' + escHtml(e && e.message ? e.message : e) + '</p><p class="small">Prøver igjen om noen sekunder.</p>';
+    }
   });
 }
 
 init();
+statusPoll = setInterval(init, 5000);
 </script>
 </body>
 </html>

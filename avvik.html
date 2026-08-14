@@ -213,6 +213,210 @@ var AVVIK_DATA = [
     beskrivelse: "sendSvarForSang har en rekkefølgevalidering som krever at forrige sang er besvart før neste sendes inn, men validerer ikke eksplisitt at sangNr faktisk ligger i det gyldige intervallet 1-3. sangNr=0 slipper gjennom rekkefølgevalideringen (siden 'sang -1 besvart' trivielt er oppfylt når det ikke kreves noen forrige sang) og godtas stille, mens sangNr=4 korrekt avvises fordi det krever et svar på sang 3 som ikke finnes. Kan i teorien skape en rad med sangNr=0 som ikke vises eller telles noe sted i UI eller i scoreRunde.",
     losning: "Rettet i Kode.gs: sendSvarForSang sjekker nå eksplisitt at sangNr er mellom 1 og 3 (og ikke NaN) rett etter Number(sangNr)-konverteringen, og kaster en kontrollert feilmelding ('Ugyldig sangnummer: må være 1, 2 eller 3.') dersom det ikke er tilfelle. Distribuert som Versjon 74 (13.08.2026). Verifisert live direkte mot produksjonsbackend (sendSvarForSang med sangNr=0 ga forventet feilmelding) og gjennom test_avvik2.html corner case #18 (oppdatert til å forvente avvisning) - full regresjonssjekk av AVVIK-005/006/007/008 kjørt på nytt uten avvik.",
     sistOppdatert: "2026-08-13"
+  },
+  {
+    id: "AVVIK-012",
+    tittel: "Lagnavn fra QR-påmelding settes inn uescapet og kan kjøre kode i styringspanelet",
+    omrade: "Frontend - styre.html, stilling.html, lag.html, registrer.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026) - reprodusert",
+    beskrivelse: "Med QR-selvregistrering kommer lagnavn for første gang fra publikum i stedet for fra arrangøren. Navnene ble satt inn med innerHTML uten escaping i påmeldingslista (styre.html:853), QR-kortene (:906), buzzer-nedtrekkene (:1047), vinnernavnet (:498), stillingstabellen på storskjerm (stilling.html:100) og lagsidas overskrift (lag.html:100). escHtml fantes allerede i styre.html:640 og ble brukt for kategorinavn og bommert, men ikke her; stilling.html hadde ingen escHtml i det hele tatt. Reprodusert i Chromium: et lag påmeldt som <img src=x onerror=\"...\"> fikk koden kjørt i styringspanelet så snart det dukket opp i påmeldingslista. Koden har full tilgang til API-et, og window.onerror i styre.html:811 returnerer true og svelger følgefeil, så det er nesten umulig å feilsøke live. Mildere variant: navn med & og anførselstegn ødela visningen.",
+    losning: "Alle lagnavn, divisjoner, bordnumre og id-er sendes nå gjennom escHtml() før de settes inn med innerHTML. escHtml er lagt til i stilling.html, lag.html og registrer.html, som ikke hadde den. Verifisert i Chromium: samme ondsinnede lagnavn kjører ikke lenger (window.__XSS satt = false), vises som ufarlig tekst i både nedtrekkslista og stillingstabellen, og nedtrekkslista har fortsatt riktig antall valg med anførselstegn i navnet.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-013",
+    tittel: "Buzzer-modus leses kun ved sidelast - lagene får aldri BUZZ-knappen ved modusbytte",
+    omrade: "Frontend - lag.html, styre.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026) - reprodusert",
+    beskrivelse: "sjekkBuzzerModus() i lag.html:151-158 ble kalt én gang fra :225 og aldri mer. Reprodusert i Chromium: en lagside ble åpnet mens modus var fysisk, deretter ble modus satt til virtuell og buzzeren åpnet - buzzerdiv sto på display:none gjennom hele testen. Dette er normalkvelden: lagene skanner QR-koden kl. 19, virtuell buzzer velges til finalen kl. 22.30, og ingen av telefonene får BUZZ-knapp. Motsatt vei: var modus virtuell ved lasting og styret byttet til fysisk, fortsatte telefonene å polle og vise en aktiv knapp. Intervallhåndtaket ble heller ikke tatt vare på, så pollingen kunne ikke stoppes. I styre.html ble lastBuzzerModus kalt én gang uten setInterval, slik at to styre-flater kunne vise ulik modus.",
+    losning: "lag.html poller nå buzzerModus hvert 5. sekund, tar vare på intervallhåndtaket, starter buzzer-pollingen når modus blir virtuell og stopper den (og skjuler knappen) når den blir fysisk. Pollingen startes bare én gang uansett hvor mange ganger modus leses. styre.html poller nå også modus hvert 5. sekund. Verifisert i Chromium: en lagside åpnet i fysisk modus fikk BUZZ-knappen automatisk innen få sekunder etter at modus ble satt til virtuell.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-014",
+    tittel: "Fysisk buzzer-lytter er aktiv i virtuell modus og fanger tastetrykk i skjemafelter",
+    omrade: "Frontend - styre.html (fysiskTastNed)",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026) - reprodusert",
+    beskrivelse: "visBuzzerModus skjulte \"Fysisk buzzer\"-panelet i virtuell modus, men nullstilte ikke avkryssingsboksen \"Lytt etter fysiske buzzer-trykk\" - og siden panelet var skjult kunne den heller ikke fjernes manuelt. Den globale keydown-lytteren (styre.html:1054-1069) sjekket kun avkryssingsboksen, ikke gjeldende modus, ikke e.target, og kalte ikke preventDefault(). Reprodusert i Chromium: med avhuket boks og Knapp 2 bundet til et lag, etter bytte til virtuell modus, ga teksten \"Vi er straks tilbake\" skrevet i et vanlig tekstfelt tre ekte trykkBuzzer-kall for det laget. Manglende preventDefault betyr i tillegg at mellomrom scroller styre-siden en skjerm ned per buzz og at venstre Alt flytter fokus til nettleserens menylinje. Uten e.repeat-sjekk gir en knapp som holdes inne ca. 30 kall i sekundet. buzzertest.html:177 gjorde dette riktig allerede.",
+    losning: "fysiskTastNed returnerer nå tidlig hvis modus er virtuell, hvis fokus står i INPUT/TEXTAREA/SELECT eller et contentEditable-felt, og hvis e.repeat er satt. e.preventDefault() kalles før buzzen sendes. visBuzzerModus nullstiller avkryssingsboksen når modus settes til virtuell, slik at den ikke kan bli stående usynlig og aktiv. Verifisert i Chromium: samme scenario gir nå 0 trykkBuzzer-kall.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-015",
+    tittel: "Ett feilende kall i ny buzzer- og påmeldingskode visker ut hele styringspanelet",
+    omrade: "Frontend - styre.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026) - reprodusert",
+    beskrivelse: "lastBuzzerModus (:513), settBuzzerModus (:528), apneBuzz (:505), nullstillBuzz (:509), fysiskTastNed (:1067), startSelvregistrering (:831) og lukkPaamelding (:866) brukte alle .catch(feil), og feil() (:151) erstatter hele #app - altså fasitskjemaet, poengberegningen og \"Åpne neste runde\". Dette er samme feilklasse som ble rettet i AVVIK-003-perioden med commit 29e63e6; de eldre pollerne (lastBuzzer, lastOpprykk, lastFinale) skriver riktig til sin egen div, men den nye koden gjorde ikke det. Reprodusert i Chromium med en backend som svarte {error} på buzzerModus: hele fasitskjemaet ble erstattet av én feilmelding, uten retry, siden lastBuzzerModus ikke lå i noe setInterval. I praksis holder det med ett nettverksglipp i det man klikker på en modus-radioknapp, så er fasit man holder på å skrive borte. I tillegg ble radioknappen stående på den nye verdien selv om serveren beholdt den gamle, slik at UI-et løy om gjeldende modus.",
+    losning: "Innført lokalFeil(divId, prefiks) som skriver feilmeldingen i det aktuelle kortet i stedet for i #app. Alle de nevnte kallene bruker den nå: buzzer-kallene skriver til #buzzer, modus-kallene til #buzzerModusPanel og påmeldingskallene til #selvregistreringDiv. Feiler setBuzzerModus, stilles radioknappene tilbake til den modusen serveren faktisk har. Feiler lukkPaamelding, får operatøren en \"Vis påmeldingen igjen\"-knapp i stedet for en blindvei. Verifisert i Chromium: med samme feilende backend står fasitskjemaet og alle inndatafelt urørt.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-016",
+    tittel: "Enter-tasten omgår knappelåsen i registrer.html og melder på samme lag flere ganger",
+    omrade: "Frontend - registrer.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026) - reprodusert med 1,5 s svartid",
+    beskrivelse: "meldPa() deaktiverte knappen, men Enter-lytteren (registrer.html:63) kalte meldPa() direkte uten å sjekke om knappen var deaktivert, og selve inputfeltet ble aldri deaktivert. Reprodusert i Chromium med 1,5 sekunds svartid - realistisk for Apps Script på en travel kveld: tre Enter-trykk ga tre påmeldinger av samme lag, med tre bordnumre. Med rask backend oppstår ikke feilen, som er nettopp derfor den ikke oppdages før kvelden det gjelder. Etter en vellykket påmelding ble knappen dessuten re-aktivert med skjemaet stående, så samme telefon kunne melde på laget en gang til.",
+    losning: "meldPa() returnerer nå tidlig hvis knappen allerede er deaktivert, og deaktiverer inputfeltet sammen med knappen. Ved vellykket påmelding låses skjemaet og knappen skjules. Ved feil åpnes begge igjen slik at laget kan prøve på nytt. Verifisert i Chromium med 1,5 sekunds svartid: tre raske Enter-trykk gir nå nøyaktig én påmelding.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-017",
+    tittel: "\"Start selvregistrering\" sletter dagens lagliste uten å spørre",
+    omrade: "Frontend - styre.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang (14.08.2026) - ikke testet live fordi handlingen er destruktiv",
+    beskrivelse: "Hjelpeteksten på styre.html:65 sier eksplisitt \"Nullstiller dagens lagliste\", men startSelvregistrering() (:825-832) hadde ingen confirm(). Alle andre destruktive handlinger i filen har det: nullstill (:922), arkiverKveld (:1012), nySesongClick (:1006). Verre: når init() (:157-163) oppdager at påmelding allerede er åpen, vises påmeldingslista - men \"Start selvregistrering\"-knappen blir stående rett over den. Laster man styre.html på nytt midt i påmeldingen og bomklikker, er alle påmeldte lag borte sammen med lag.html?id=-lenkene de allerede har åpne på telefonene. Knappen ble heller ikke deaktivert, så dobbeltklikk sendte to nullstillinger.",
+    losning: "startSelvregistrering() krever nå en bekreftelse (\"Dette sletter dagens lagliste og alle utdelte lag-lenker. Fortsette?\") før noe skjer, og knappen har fått id-en startSelvregKnapp og skjules så snart påmeldingen er aktiv - også når styre.html lastes på nytt midt i en pågående påmelding. Verifisert i Chromium: dialogen vises, og avbryter man den sendes ingen apneSelvregistrering.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-018",
+    tittel: "Polling av påmeldte lag manglet feilhåndtering og frøs taust",
+    omrade: "Frontend - styre.html (oppdaterSelvregistrerteLag)",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026)",
+    beskrivelse: "oppdaterSelvregistrerteLag (:846-858) var den eneste pollefunksjonen i filen helt uten .catch. Apps Script sitt vanlige feilmønster er HTTP 200 med {error} i kroppen, som apiGet kaster på - det ga en unhandled promise rejection som window.onerror ikke fanger. Resultatet er at lista fryser på siste vellykkede opptelling uten noe varsel, mens lagene i salen får \"er påmeldt!\" på telefonen. Operatøren kan lukke påmeldingen i den tro at alle er med.",
+    losning: "Lagt til .catch som skriver \"Klarte ikke hente påmeldte lag: <årsak>. Prøver igjen om 4 sekunder.\" i påmeldingspanelet, slik at pollingen fortsetter mens operatøren ser at noe er galt. Verifisert i Chromium ved å tvinge teams-kallet til å feile: feilmeldingen dukker opp i panelet innen ett polleintervall.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-019",
+    tittel: "Foreldet pollesvar re-aktiverer BUZZ-knappen etter at laget har buzzet",
+    omrade: "Frontend - lag.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026) - reprodusert med 1,5 s svartid",
+    beskrivelse: "buzz() deaktiverte knappen lokalt, men 700 ms-polleren kalte visBuzzerLag med svar som ble utstedt før buzzen, og grenen for status \"apen\" satte ubetinget knapp.disabled = false og tømte teksten. Apps Script-kall tar typisk 300-800 ms, altså på nivå med polleintervallet, så dette inntreffer rutinemessig. Reprodusert i Chromium med 1,5 sekunds svartid: knappen ble grønn og aktiv igjen i omtrent ett sekund etter buzzen, slik at laget tror trykket ikke gikk gjennom og trykker på nytt. I tillegg feilet buzz() helt taust - ved timeout fikk laget ingen melding, ingen retry, og polleren re-aktiverte knappen som om ingenting hadde skjedd.",
+    losning: "Innført en generasjonsteller: buzz() øker telleren, og pollesvar som ble utstedt før den økningen forkastes i stedet for å tegne om knappen. buzz() gir nå tilbakemelding (\"Sender...\") og ved feil \"Fikk ikke sendt - prøv igjen!\" med knappen åpnet igjen, slik at laget vet hva som skjedde. Dobbeltklikk på selve knappen avvises også. Verifisert i Chromium med 1,5 sekunds svartid: knappen forblir deaktivert gjennom hele forløpet etter en buzz (24 målinger over 6 sekunder).",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-020",
+    tittel: "Påmeldingssiden står død for alle som skanner QR-koden før påmeldingen åpnes",
+    omrade: "Frontend - registrer.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang + reproduksjon i Chromium mot simulert backend (14.08.2026), bekreftet mot produksjon",
+    beskrivelse: "init() i registrer.html kjørte én gang. Var påmeldingen ikke åpen ennå, fikk laget \"Påmelding er ikke åpen akkurat nå\" og siden var død - ingen polling, ingen \"Prøv igjen\"-knapp. Lagene skanner QR-koden på vei inn i lokalet, ofte før arrangøren har rukket å trykke \"Start selvregistrering\", legger bort telefonen, og oppdager aldri at påmeldingen faktisk åpnet. Bekreftet mot produksjonsbackend samme dag: paameldingStatus svarte {\"status\":\"av\"} og siden viste nettopp denne blindveien.",
+    losning: "registrer.html poller nå paameldingStatus hvert 5. sekund og bytter automatisk til påmeldingsskjemaet når status blir \"apen\", uten at laget gjør noe. Teksten er endret til å si at siden åpner seg selv og at den kan bli liggende åpen. Pollingen stopper når skjemaet er vist. Verifisert i Chromium: siden viste ventetekst, og skjemaet dukket opp av seg selv innen få sekunder etter at påmeldingen ble åpnet.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-021",
+    tittel: "Selvpåmeldte lag får ikke lenken til sin egen svarside",
+    omrade: "Backend - registrerLagSelv (Kode.gs) + registrer.html",
+    alvorlighet: "middels",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang (14.08.2026)",
+    beskrivelse: "registrerLagSelv-svaret inneholder navn, divisjon og bord, men ingen lag-id. Laget står med telefonen i hånda rett etter påmelding og blir i stedet bedt om å vente på å bli ropt opp, mens arrangøren fortsatt må lukke påmeldingen og dele ut per-lag-QR-koder manuelt - altså akkurat det steget QR-påmeldingen skulle fjerne. Beslektet spørsmål som bør avklares: registrer.html viser divisjon og bord i påmeldingsøyeblikket, men hvis backend fordeler divisjoner etter innkomstrekkefølge kan fordelingen først være riktig når påmeldingen er lukket - da får lag nr. 3 av 20 beskjed om \"Divisjon 1 - Bord 3\" og kan ende i divisjon 2.",
+    losning: "Frontend-delen er klargjort: returnerer backend et id-felt i registrerLagSelv-svaret, viser registrer.html nå lenken til lag.html?id=... direkte til laget med oppfordring om å lagre den, ellers vises den gamle teksten som før. Gjenstår: legge id-feltet inn i registrerLagSelv i Kode.gs, og avklare om divisjon/bord er endelig ved påmeldingstidspunktet.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-022",
+    tittel: "I virtuell buzzer-modus vises BUZZ-knappen for alle lag, ikke bare finalelagene",
+    omrade: "Frontend - lag.html + backend trykkBuzzer",
+    alvorlighet: "middels",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang (14.08.2026)",
+    beskrivelse: "visBuzzerLag viser buzzerdiv for enhver teamId så snart buzzerStatus er \"apen\". Det finnes ingen sjekk mot finaleStatus eller opprykkStatus for om laget faktisk deltar - til forskjell fra visOpprykkLag (lag.html:197-200), som eksplisitt sjekker erA/erB/erC. I fysisk modus er begrensningen implisitt fordi det bare finnes tre knapper; virtuell modus fjerner den. Et utslått lag som fortsatt har lag.html åpen ser BUZZ-knappen under finalen, og trykker det, vises laget som vinner på både styre.html og hovedskjerm.html.",
+    losning: "Ikke rettet. Krever at klienten vet hvem som deltar i duellen (lese finaleStatus/finaleBStatus/opprykkStatus og bare vise knappen for de tre lagene), og helst at trykkBuzzer i Kode.gs avviser lagId-er som ikke er med. Inntil videre er dette dokumentert i veiledning.html under buzzer-modus.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-023",
+    tittel: "Lagsidene poller buzzerStatus hvert 700 ms hele kvelden",
+    omrade: "Frontend - lag.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang (14.08.2026)",
+    beskrivelse: "setInterval(lastBuzzerLag, 700) ble startet i virtuell modus og aldri stoppet, også i de ~95 prosentene av kvelden hvor buzzeren ikke er i bruk. Med 20 lag gir det rundt 28 forespørsler i sekundet mot Apps Script, i tillegg til opprykkStatus hvert 1,5 sekund per enhet, hovedskjermen hvert 0,7 sekund og styre-siden hvert 2. sekund. Apps Script har harde grenser på samtidige kjøringer, og når de treffes feiler ikke bare buzzeren, men også sendSvarForSang - altså selve svarinnsendingen.",
+    losning: "Delvis rettet sammen med AVVIK-013: pollingen startes nå bare når modus faktisk er virtuell, og stoppes med clearInterval så snart modus settes tilbake til fysisk. Gjenstår som kjent begrensning: i virtuell modus poller lagsidene fortsatt hvert 700 ms uavhengig av om buzzeren er åpen. En videre forbedring er å polle sjeldnere (f.eks. hvert 3. sekund) når status er \"ledig\" og bare gå til 700 ms når buzzeren er åpen.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-024",
+    tittel: "Lag som melder seg på etter at quizen har startet trekkes rett inn i nedrykksspillet",
+    omrade: "Frontend/backend - påmelding vs. opp-/nedrykk",
+    alvorlighet: "lav",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang (14.08.2026)",
+    beskrivelse: "Påmeldingen lukkes ikke automatisk når en runde åpnes, og det finnes ingen varsling i styre.html om at påmeldingen fortsatt står åpen. stilling.html:91-94 og hovedskjerm.html:340-342 markerer de to nederste i 1. divisjon som deltakere i nedrykkstrekningen, og startOpprykk plukker etter samme prinsipp. Et lag som melder seg på i runde 4 med 0 poeng er garantert nederst, blir gulmarkert på storskjermen og trekkes inn i nedrykksspillet i stedet for laget som faktisk har prestert dårligst over hele kvelden. Sidene håndterer for øvrig sent påmeldte lag teknisk fint - ingen krasj, diff faller tilbake på 0 og antallSvar på 0.",
+    losning: "Ikke rettet i kode. Foreløpig dekket med en instruks i veiledning.html om å lukke påmeldingen før første runde åpnes. En reell fiks er enten å lukke påmeldingen automatisk i apneRunde, eller å utelate lag som er påmeldt etter runde 1 fra nedrykkstrekningen.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-025",
+    tittel: "Veiledning og oversiktsside beskriver ikke QR-påmelding og buzzer-modus",
+    omrade: "Dokumentasjon - veiledning.html, index.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang (14.08.2026)",
+    beskrivelse: "veiledning.html:250 beskrev det fysiske buzzer-kortet som eneste mulighet - et kort som er skjult i virtuell modus, slik at instruksen er umulig å følge. Linje 117-118 beskrev kun manuelt lagoppsett. Verken QR-selvpåmelding eller buzzer-modus var nevnt noe sted. index.html manglet registrer.html i både lenkelista og \"Del riktig side med riktig gruppe\".",
+    losning: "veiledning.html er oppdatert: lagoppsett beskriver nå begge veier (manuelt og QR-påmelding) med advarsel om at \"Start selvregistrering\" nullstiller laglista og at påmeldingen bør lukkes før første runde (jf. AVVIK-024), og finaleavsnittet beskriver valget mellom fysisk og virtuell buzzer, inkludert at lagsidene oppdager modusbyttet selv og at BUZZ-knappen foreløpig vises for alle lag (jf. AVVIK-022). index.html har fått registrer.html i lenkelista og i delelista.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-026",
+    tittel: "Regresjonstestene dekker ikke de nye API-handlingene, og startOpprykk kalles med utdatert signatur",
+    omrade: "Testverktøy - test.html, test_utvidet.html",
+    alvorlighet: "lav",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang (14.08.2026)",
+    beskrivelse: "Ingen av de seks nye handlingene (paameldingStatus, registrerLagSelv, apneSelvregistrering, lukkSelvregistrering, buzzerModus, setBuzzerModus) har testdekning. Buzzer-gruppen i test_utvidet.html:606-651 setter aldri buzzer-modus og dekker dermed ikke den virtuelle stien i det hele tatt. I tillegg fikk startOpprykk parameteren runde i denne endringen, men testene (test.html:330 og 341, test_utvidet.html:525, 537 og 592) kaller den fortsatt uten - de tester altså en annen signatur enn appen bruker. index.html:98 påstår fortsatt at de 69 testene dekker buzzer.",
+    losning: "Ikke rettet. Bør utvides med tester for de seks nye handlingene, en buzzer-test som kjøres i begge moduser, og oppdatering av startOpprykk-kallene til å sende runde.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-027",
+    tittel: "buzzerStatus i produksjon har rester etter testkjøring",
+    omrade: "Backend - buzzerStatus (Kode.gs / regneark)",
+    alvorlighet: "lav",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Lesetest mot produksjonsbackend (14.08.2026)",
+    beskrivelse: "Lesetest mot produksjonsbackend 14.08.2026 ga buzzerStatus = {\"status\":\"ledig\",\"vinnerId\":\"ugyldig_id_888888\",\"vinnerNavn\":\"ugyldig_id_888888\"}. Verdiene er etterlatt av corner case-testen som sender en ugyldig lagId. Status er \"ledig\", så det vises ikke noe sted i UI-et akkurat nå, men vinnerfeltene bør nullstilles sammen med statusen.",
+    losning: "Ikke rettet. Nullstill vinnerId og vinnerNavn i lukkBuzzer/nullstilling i Kode.gs, og rydd bort dagens verdi. Testene bør dessuten rydde opp etter seg, jf. AVVIK-004.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-028",
+    tittel: "Avvikssiden gjengav sine egne felter uescapet og kjorte kodeeksempler som markup",
+    omrade: "Frontend - avvik.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Oppdaget da AVVIK-012 ble lagt inn i denne lista (14.08.2026)",
+    beskrivelse: "tegnListe() satte tittel, omrade, beskrivelse, funnetAv og losning rett inn med innerHTML. Da beskrivelsen av AVVIK-012 - som naturlig nok inneholder et img-taggen med en onerror-handler som eksempel - ble lagt inn i lista, tolket nettleseren teksten som markup i stedet for tekst: img-elementet ble faktisk opprettet, ga 404, og onerror-handleren kjorte og kastet en SyntaxError i konsollen. Samme klasse feil som AVVIK-012, bare paa verktoysiden. Siden vedlikeholdes manuelt og har ingen brukerinput, saa dette er ikke en sikkerhetsrisiko - men det gjor at ethvert avvik som beskriver HTML eller JavaScript blir feil gjengitt eller odelegger kortet.",
+    losning: "Innfort escape-funksjonen e() i avvik.html, og alle tekstfelter i kortene sendes naa gjennom den. Verifisert i Chromium: alle 27 kort tegnes, tellerne stemmer (5 apne / 11 venter / 11 lost), og siden laster uten en eneste JS-feil - mot en SyntaxError for rettelsen.",
+    sistOppdatert: "2026-08-14"
   }
 ];
 
@@ -266,6 +470,14 @@ function settFilter(f) {
   tegnListe();
 }
 
+// Avviksteksten inneholder kodeeksempler. Uten escaping ble de tolket som
+// markup - en beskrivelse av selve XSS-avviket (AVVIK-012) kjorte faktisk
+// i denne siden da den ble lagt inn.
+function e(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function tegnListe() {
   var data = AVVIK_DATA.slice().sort(function (a, b) {
     var rekkefolge = { apen: 0, venter: 1, kjent: 2, lost: 3 };
@@ -278,14 +490,14 @@ function tegnListe() {
     var b = badgeInfo(a.status);
     return '<div class="avvik ' + sevKlasse(a.alvorlighet) + '">' +
       '<div class="avvik-topp">' +
-        '<div><span class="avvik-id">' + a.id + '</span><div class="avvik-tittel">' + a.tittel + '</div></div>' +
+        '<div><span class="avvik-id">' + e(a.id) + '</span><div class="avvik-tittel">' + e(a.tittel) + '</div></div>' +
         '<span class="badge ' + b.klasse + '">' + b.tekst + '</span>' +
       '</div>' +
-      '<div class="meta"><span>' + sevTekst(a.alvorlighet) + '</span><span>Område: ' + a.omrade + '</span><span>Funnet: ' + a.funnetDato + '</span></div>' +
-      '<div class="felt-lbl">Beskrivelse</div><div class="felt-innhold">' + a.beskrivelse + '</div>' +
-      '<div class="felt-lbl">Funnet av</div><div class="felt-innhold">' + a.funnetAv + '</div>' +
-      '<div class="felt-lbl">Løsning / status</div><div class="felt-innhold">' + a.losning + '</div>' +
-      '<div class="oppdatert">Sist oppdatert: ' + a.sistOppdatert + '</div>' +
+      '<div class="meta"><span>' + sevTekst(a.alvorlighet) + '</span><span>Område: ' + e(a.omrade) + '</span><span>Funnet: ' + e(a.funnetDato) + '</span></div>' +
+      '<div class="felt-lbl">Beskrivelse</div><div class="felt-innhold">' + e(a.beskrivelse) + '</div>' +
+      '<div class="felt-lbl">Funnet av</div><div class="felt-innhold">' + e(a.funnetAv) + '</div>' +
+      '<div class="felt-lbl">Løsning / status</div><div class="felt-innhold">' + e(a.losning) + '</div>' +
+      '<div class="oppdatert">Sist oppdatert: ' + e(a.sistOppdatert) + '</div>' +
     '</div>';
   }).join('');
   document.getElementById('liste').innerHTML = html || '<div class="card"><p>Ingen avvik i denne kategorien.</p></div>';

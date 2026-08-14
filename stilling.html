@@ -58,6 +58,11 @@ tr:nth-child(even){background:rgba(0,255,255,0.08);}
 <script>
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
 
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function last() {
   fetch(API_BASE + "?api=stilling")
     .then(function(res) { return res.json(); })
@@ -97,7 +102,7 @@ function lagTabell(rader, divisjon) {
     var diff = r.poeng - forrige;
     var poengHtml = r.poeng + (diff > 0 ? ' <span class="poeng-anim">+' + diff + '</span>' : '');
     forrigePoeng[r.lagId] = r.poeng;
-    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + r.navn + '</td><td>' + r.bord + '</td><td>' + poengHtml + '</td><td>' + (r.antallSvar || 0) + '</td></tr>';
+    html += '<tr' + stil + '><td>' + (i + 1) + '</td><td>' + escHtml(r.navn) + '</td><td>' + escHtml(r.bord) + '</td><td>' + poengHtml + '</td><td>' + (r.antallSvar || 0) + '</td></tr>';
   });
   html += '</table>';
   return html;
