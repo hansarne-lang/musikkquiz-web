@@ -327,11 +327,11 @@ var AVVIK_DATA = [
     tittel: "Selvpåmeldte lag får ikke lenken til sin egen svarside",
     omrade: "Backend - registrerLagSelv (Kode.gs) + registrer.html",
     alvorlighet: "middels",
-    status: "apen",
+    status: "lost",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang (14.08.2026)",
     beskrivelse: "registrerLagSelv-svaret inneholder navn, divisjon og bord, men ingen lag-id. Laget står med telefonen i hånda rett etter påmelding og blir i stedet bedt om å vente på å bli ropt opp, mens arrangøren fortsatt må lukke påmeldingen og dele ut per-lag-QR-koder manuelt - altså akkurat det steget QR-påmeldingen skulle fjerne. Beslektet spørsmål som bør avklares: registrer.html viser divisjon og bord i påmeldingsøyeblikket, men hvis backend fordeler divisjoner etter innkomstrekkefølge kan fordelingen først være riktig når påmeldingen er lukket - da får lag nr. 3 av 20 beskjed om \"Divisjon 1 - Bord 3\" og kan ende i divisjon 2.",
-    losning: "Frontend-delen er klargjort: returnerer backend et id-felt i registrerLagSelv-svaret, viser registrer.html nå lenken til lag.html?id=... direkte til laget med oppfordring om å lagre den, ellers vises den gamle teksten som før. Gjenstår: legge id-feltet inn i registrerLagSelv i Kode.gs, og avklare om divisjon/bord er endelig ved påmeldingstidspunktet.",
+    losning: "Viste seg allerede rettet i backend: registrerLagSelv i Kode.gs returnerer { id, navn, divisjon, bord } - id-feltet var pa plass hele tiden. Det som manglet var frontend-siden, og den ble rettet 14.08.2026: registrer.html viser na lenken til lag.html?id=... direkte til laget med oppfordring om a lagre den. Bekreftet ved a lese Kode.gs (linje 33) via Google Drive. Verifisert i simulator: registrerLagSelv returnerer id, og gjestesiden viser lenken. Gjenstar som eget sporsmal, ikke et avvik: om divisjon og bord er endelige ved paameldingstidspunktet, eller forst nar paameldingen lukkes.",
     sistOppdatert: "2026-08-14"
   },
   {
@@ -339,11 +339,11 @@ var AVVIK_DATA = [
     tittel: "I virtuell buzzer-modus vises BUZZ-knappen for alle lag, ikke bare finalelagene",
     omrade: "Frontend - lag.html + backend trykkBuzzer",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang (14.08.2026)",
     beskrivelse: "visBuzzerLag viser buzzerdiv for enhver teamId så snart buzzerStatus er \"apen\". Det finnes ingen sjekk mot finaleStatus eller opprykkStatus for om laget faktisk deltar - til forskjell fra visOpprykkLag (lag.html:197-200), som eksplisitt sjekker erA/erB/erC. I fysisk modus er begrensningen implisitt fordi det bare finnes tre knapper; virtuell modus fjerner den. Et utslått lag som fortsatt har lag.html åpen ser BUZZ-knappen under finalen, og trykker det, vises laget som vinner på både styre.html og hovedskjerm.html.",
-    losning: "Lost i frontend uten backend-endring: lag.html henter na finaleStatus, finaleBStatus og opprykkStatus forste gang buzzeren apnes, og viser BUZZ-knappen kun for lagene som faktisk deltar i duellen. Er ingen duell i gang (buzzeren brukes ad hoc), oppfores den som for og alle kan buzze. Deltakerlista hentes en gang per buzzerrunde, ikke ved hver polling, saa lastprofilen er uendret. Verifisert i Chromium: lag i finalen far knappen, lag 6 utenfor far den ikke, og uten aktiv finale far alle den igjen.",
+    losning: "Lost i frontend, og backend viste seg allerede a handheve det for hovedfinalen: trykkBuzzer kaller erFinalist_(lagId) og avviser lag utenfor finalen. Kode.gs har i tillegg et ubrukt endepunkt buzzerStatusForLag som returnerer tillattForLag og finaleAktiv. lag.html henter na finaleStatus, finaleBStatus og opprykkStatus forste gang buzzeren apnes, og viser BUZZ-knappen kun for lagene i duellen - altsa bredere enn backend, som bare dekker hovedfinalen. Er ingen duell i gang, oppforer den seg som for. Verifisert i Chromium: lag i finalen far knappen, lag utenfor far den ikke. Merk at min opprinnelige beskrivelse pastod at backend ikke validerte deltakelse - det var feil.",
     sistOppdatert: "2026-08-14"
   },
   {
@@ -363,11 +363,11 @@ var AVVIK_DATA = [
     tittel: "Lag som melder seg på etter at quizen har startet trekkes rett inn i nedrykksspillet",
     omrade: "Frontend/backend - påmelding vs. opp-/nedrykk",
     alvorlighet: "lav",
-    status: "apen",
+    status: "lost",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang (14.08.2026)",
     beskrivelse: "Påmeldingen lukkes ikke automatisk når en runde åpnes, og det finnes ingen varsling i styre.html om at påmeldingen fortsatt står åpen. stilling.html:91-94 og hovedskjerm.html:340-342 markerer de to nederste i 1. divisjon som deltakere i nedrykkstrekningen, og startOpprykk plukker etter samme prinsipp. Et lag som melder seg på i runde 4 med 0 poeng er garantert nederst, blir gulmarkert på storskjermen og trekkes inn i nedrykksspillet i stedet for laget som faktisk har prestert dårligst over hele kvelden. Sidene håndterer for øvrig sent påmeldte lag teknisk fint - ingen krasj, diff faller tilbake på 0 og antallSvar på 0.",
-    losning: "Ikke rettet i kode. Foreløpig dekket med en instruks i veiledning.html om å lukke påmeldingen før første runde åpnes. En reell fiks er enten å lukke påmeldingen automatisk i apneRunde, eller å utelate lag som er påmeldt etter runde 1 fra nedrykkstrekningen.",
+    losning: "Rettet i Kode.gs: apneRunde setter na paamelding_status til av samtidig som runden apnes, slik at et bord som skanner QR-koden i en pause ikke lenger kan melde seg pa midt i kvelden og havne nederst med 0 poeng. Distribuert som versjon 84 (14.08.2026 kl. 16:07) pa samme distribusjons-ID, saa /exec-URL-en er uendret. Verifisert direkte mot produksjon: paamelding ble apnet, apneRunde kalt, og status gikk til av. Laglista var tom under testen, og sluttilstanden ble kontrollert etterpa (paamelding av, 0 lag, buzzer ledig, runde 1).",
     sistOppdatert: "2026-08-14"
   },
   {
@@ -399,11 +399,11 @@ var AVVIK_DATA = [
     tittel: "buzzerStatus i produksjon har rester etter testkjøring",
     omrade: "Backend - buzzerStatus (Kode.gs / regneark)",
     alvorlighet: "lav",
-    status: "apen",
+    status: "lost",
     funnetDato: "2026-08-14",
     funnetAv: "Lesetest mot produksjonsbackend (14.08.2026)",
     beskrivelse: "Lesetest mot produksjonsbackend 14.08.2026 ga buzzerStatus = {\"status\":\"ledig\",\"vinnerId\":\"ugyldig_id_888888\",\"vinnerNavn\":\"ugyldig_id_888888\"}. Verdiene er etterlatt av corner case-testen som sender en ugyldig lagId. Status er \"ledig\", så det vises ikke noe sted i UI-et akkurat nå, men vinnerfeltene bør nullstilles sammen med statusen.",
-    losning: "Ikke rettet. Nullstill vinnerId og vinnerNavn i lukkBuzzer/nullstilling i Kode.gs, og rydd bort dagens verdi. Testene bør dessuten rydde opp etter seg, jf. AVVIK-004.",
+    losning: "Rotarsaken var bevisst kode, ikke en glipp: lukkBuzzer kopierte vinnerId og vinnerNavn videre i stedet for a tomme dem. Rettet i Kode.gs slik at lukkBuzzer setter begge til tom streng sammen med statusen. Distribuert som versjon 84. Verifisert mot produksjon: buzzerStatus returnerte vinnerId ugyldig_id_888888 for, og tomme felt etter en apne/lukke-runde - dagens rester er dermed ogsa ryddet bort. test_utvidet.html har fatt to tester som fanger dette automatisk hvis det skulle komme tilbake.",
     sistOppdatert: "2026-08-14"
   },
   {
