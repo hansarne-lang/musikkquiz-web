@@ -97,8 +97,9 @@ h2{margin-top:32px;}
 <a class="linkbox" href="https://open.spotify.com/playlist/2Y2YYQiKsmLwjcFiIoRTEy" target="_blank"><b>Spotify - Kategorier Quiz2</b><span>Låter til kategorirunder</span></a>
 <a class="linkbox" href="test.html" target="_blank" style="background:rgba(255,107,107,0.15);"><b>Testverktøy (kun for utvikler/admin)</b><span>Kjører automatiserte regresjonstester mot backend. Bruk kun mellom quizkvelder - aldri mens en skarp quiz pågår, se advarsel på siden.</span></a>
 <a class="linkbox" href="bildeadmin.html"><b>Klubbilder (kun for utvikler/admin)</b><span>Oversikt over logo/drakt-bilder per lag med status for hva som mangler, søk/filter, og innebygd verktøy for å dra/zoome/beskjære et nytt bilde før det skaleres ned og lastes ned for manuell opplasting til klubbdata-mappen på GitHub.</span></a>
-<a class="linkbox" href="test_utvidet.html" target="_blank" style="background:rgba(255,107,107,0.15);"><b>Utvidet testverktøy - 3x (kun for utvikler/admin)</b><span>69 tester, dekker vesentlig mer enn standard testverktøy (buzzer, hovedskjerm-overstyring, bommert-visning, joker, klubb-administrasjon m.m.). Bruk kun mellom quizkvelder.</span></a>
+<a class="linkbox" href="test_utvidet.html" target="_blank" style="background:rgba(255,107,107,0.15);"><b>Utvidet testverktøy - 3x (kun for utvikler/admin)</b><span>79 tester, dekker vesentlig mer enn standard testverktøy (buzzer i både fysisk og virtuell modus, QR-påmelding, hovedskjerm-overstyring, bommert-visning, joker, klubb-administrasjon m.m.). Har i tillegg en egen knapp for å teste QR-selvregistreringen - den sletter laglisten og kjøres derfor kun manuelt. Bruk kun mellom quizkvelder.</span></a>
 <a class="linkbox" href="test_avvik.html" target="_blank" style="background:rgba(255,107,107,0.15);"><b>Corner case-tester (kun for utvikler/admin)</b><span>21 spisse tester rundt fasit-validering, scoreRunde-robusthet, klubbnavn-validering og samtidighet i svarinnsending. Bruk kun mellom quizkvelder.</span></a>
+<a class="linkbox" href="test_avvik2.html" target="_blank" style="background:rgba(255,107,107,0.15);"><b>Corner case-tester 2 (kun for utvikler/admin)</b><span>35 tester rundt validering av rundenummer, sangnummer og klubbnavn, samt stille aksept av ugyldig input. Kilden til AVVIK-010 og AVVIK-011. Bruk kun mellom quizkvelder.</span></a>
 <a class="linkbox" href="avvik.html"><b>Avviksoversikt (kun for utvikler/admin)</b><span>Levende liste over kjente feil/avvik i systemet, med alvorlighet og status (åpen / rettet - venter på distribusjon / løst / kjent begrensning).</span></a>
 
 <h2>Slik gjennomføres en quizrunde</h2>
@@ -108,7 +109,7 @@ h2{margin-top:32px;}
 <ul>
 <li>Lagoppsett, svarinnsending, automatisk poengberegning og live dashboard <span class="status ferdig">klart</span></li>
 <li>Opp-/nedrykk med kategori-trekning (egen trekningsside + admin velger i Styre) <span class="status ferdig">klart</span></li>
-<li>Fysisk buzzer (USB-knapper koblet til admin-PC-en, styrt fra Styre-siden, resultat vises på storskjermen) <span class="status ferdig">klart</span></li>
+<li>Buzzer med valgbar modus - fysisk (USB-knapper koblet til admin-PC-en) eller virtuell (lagene buzzer fra sin egen side). Styres fra Styre-siden, resultat vises på storskjermen <span class="status ferdig">klart</span></li>
 <li>Finale-modus (buzzer-runde for topp 3 i 1. divisjon) <span class="status ferdig">klart</span></li>
 <li>Fargekodet stilling - 1. plass i grønt, opp-/nedrykk-kandidater i gult <span class="status ferdig">klart</span></li>
 <li>Kategori-styring i Admin - se, rediger, legg til og fjern sanger/kategorier uten å røre regnearket <span class="status ferdig">klart</span></li>

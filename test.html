@@ -111,6 +111,10 @@ function tegn() {
   document.getElementById('sammendrag').innerHTML = antall ? ('<b>' + (antall - feilet) + ' / ' + antall + ' tester bestått.</b>' + (feilet ? ' <span class="feilet">' + feilet + ' feilet.</span>' : '')) : '';
 }
 
+// styre.html sender runde til startOpprykk (siden 12.08.2026). Testene ma bruke
+// samme signatur, ellers tester de en annen sti enn appen kjorer (AVVIK-026).
+var gjeldendeRundeForTest = 1;
+
 function assert(betingelse, meldingHvisFeil) {
   if (!betingelse) throw new Error(meldingHvisFeil || 'Assertion feilet');
 }
@@ -131,6 +135,12 @@ async function kjorAlle() {
   resultater = [];
   gjeldendeGruppe = "";
   tegn();
+
+  // Bruk den runden appen faktisk star pa, slik startOpprykk kalles fra styre.html
+  try {
+    var sd = await apiGet('styreData');
+    if (sd && sd.runde) { gjeldendeRundeForTest = sd.runde; }
+  } catch (e) { /* faller tilbake pa 1 */ }
 
   var testLagIder = [];
   var testKatNavn = TEST_KAT_PREFIX + Date.now();
@@ -327,7 +337,7 @@ async function kjorAlle() {
     // --- Gruppe: Opprykk ---
     await kjorTest("Opprykk", "Fremtving uavgjort opprykk-utfordrer og reset", async function () {
       await apiGet('nullstillPoeng');
-      await apiGet('startOpprykk');
+      await apiGet('startOpprykk', { runde: gjeldendeRundeForTest });
       var uavgjort = await apiGet('uavgjortStatus');
       if (uavgjort.status !== 'venter') return "hoppet over (fikk ikke fremtvunget uavgjort - poengene var trolig allerede ulike)";
       await apiGet('resetOpprykk');
@@ -338,7 +348,7 @@ async function kjorAlle() {
     await kjorTest("Opprykk", "velgKategori virker med riktig lag og parameter", async function () {
       await apiGet('nullstillPoeng');
       await apiGet('resetOpprykk');
-      var start = await apiGet('startOpprykk');
+      var start = await apiGet('startOpprykk', { runde: gjeldendeRundeForTest });
       if (start.status === 'venter_uavgjort') { await apiGet('resetOpprykk'); return "hoppet over (uavgjort - dekket av forrige test)"; }
       if (start.status !== 'trekker') return "hoppet over (uventet startstatus: " + start.status + ")";
       var trekk = await apiGet('trekkKategorier');

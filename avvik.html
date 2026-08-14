@@ -387,11 +387,11 @@ var AVVIK_DATA = [
     tittel: "Regresjonstestene dekker ikke de nye API-handlingene, og startOpprykk kalles med utdatert signatur",
     omrade: "Testverktøy - test.html, test_utvidet.html",
     alvorlighet: "lav",
-    status: "apen",
+    status: "venter",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang (14.08.2026)",
     beskrivelse: "Ingen av de seks nye handlingene (paameldingStatus, registrerLagSelv, apneSelvregistrering, lukkSelvregistrering, buzzerModus, setBuzzerModus) har testdekning. Buzzer-gruppen i test_utvidet.html:606-651 setter aldri buzzer-modus og dekker dermed ikke den virtuelle stien i det hele tatt. I tillegg fikk startOpprykk parameteren runde i denne endringen, men testene (test.html:330 og 341, test_utvidet.html:525, 537 og 592) kaller den fortsatt uten - de tester altså en annen signatur enn appen bruker. index.html:98 påstår fortsatt at de 69 testene dekker buzzer.",
-    losning: "Ikke rettet. Bør utvides med tester for de seks nye handlingene, en buzzer-test som kjøres i begge moduser, og oppdatering av startOpprykk-kallene til å sende runde.",
+    losning: "Rettet i test.html og test_utvidet.html. startOpprykk kalles na med runde-parameteren, hentet fra styreData ved start av kjoringen, slik at testene bruker samme signatur som styre.html. Lagt til ti nye tester i test_utvidet.html: paameldingStatus svarer, registrerLagSelv avvises nar paameldingen er stengt og ved tomt navn, buzzerModus leses og settes begge veier, og buzzeren kjores gjennom bade virtuell og fysisk modus. Testene setter modus tilbake til utgangspunktet etterpa. Antallet gikk fra 69 til 79, og index.html er oppdatert med riktig tall og beskrivelse, med lenke til test_avvik2.html som manglet helt. apneSelvregistrering og lukkSelvregistrering nullstiller dagens lagliste og kan derfor ikke ligge i den vanlige kjoringen - de har fatt en egen knapp med bekreftelse som kjorer syv tester av hele QR-flyten, inkludert en sjekk pa om registrerLagSelv returnerer id (AVVIK-021) og at lukkSelvregistrering faktisk svarer med en liste. To tester ser dessuten etter rester i vinnerfeltene etter lukkBuzzer, slik at AVVIK-027 fanges opp automatisk neste gang testene kjores.",
     sistOppdatert: "2026-08-14"
   },
   {
