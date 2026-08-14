@@ -339,11 +339,11 @@ var AVVIK_DATA = [
     tittel: "I virtuell buzzer-modus vises BUZZ-knappen for alle lag, ikke bare finalelagene",
     omrade: "Frontend - lag.html + backend trykkBuzzer",
     alvorlighet: "middels",
-    status: "apen",
+    status: "venter",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang (14.08.2026)",
     beskrivelse: "visBuzzerLag viser buzzerdiv for enhver teamId så snart buzzerStatus er \"apen\". Det finnes ingen sjekk mot finaleStatus eller opprykkStatus for om laget faktisk deltar - til forskjell fra visOpprykkLag (lag.html:197-200), som eksplisitt sjekker erA/erB/erC. I fysisk modus er begrensningen implisitt fordi det bare finnes tre knapper; virtuell modus fjerner den. Et utslått lag som fortsatt har lag.html åpen ser BUZZ-knappen under finalen, og trykker det, vises laget som vinner på både styre.html og hovedskjerm.html.",
-    losning: "Ikke rettet. Krever at klienten vet hvem som deltar i duellen (lese finaleStatus/finaleBStatus/opprykkStatus og bare vise knappen for de tre lagene), og helst at trykkBuzzer i Kode.gs avviser lagId-er som ikke er med. Inntil videre er dette dokumentert i veiledning.html under buzzer-modus.",
+    losning: "Lost i frontend uten backend-endring: lag.html henter na finaleStatus, finaleBStatus og opprykkStatus forste gang buzzeren apnes, og viser BUZZ-knappen kun for lagene som faktisk deltar i duellen. Er ingen duell i gang (buzzeren brukes ad hoc), oppfores den som for og alle kan buzze. Deltakerlista hentes en gang per buzzerrunde, ikke ved hver polling, saa lastprofilen er uendret. Verifisert i Chromium: lag i finalen far knappen, lag 6 utenfor far den ikke, og uten aktiv finale far alle den igjen.",
     sistOppdatert: "2026-08-14"
   },
   {
@@ -519,11 +519,11 @@ var AVVIK_DATA = [
     tittel: "Finale- og B-finalevinner deler ett overlegg og en timer",
     omrade: "Frontend - hovedskjerm.html, trekning.html",
     alvorlighet: "middels",
-    status: "apen",
+    status: "venter",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
     beskrivelse: "sjekkFinaleOgBommert henter finaleStatus og finaleBStatus uavhengig, og begge kaller visVinnerOverlay som skriver til samme #vinnerOverlay og starter hver sin 7-sekunders timer. Blir begge ferdig i samme pollesyklus - typisk, siden de avgjores rett etter hverandre - overskriver B-finalen hovedfinalens overlegg umiddelbart, og hovedvinneren vises aldri for publikum. Skjer de to sekunder fra hverandre, far B-finalens overlegg bare fem sekunder for den forste timeren skjuler det. Konfetti kalles ogsa to ganger. I tillegg har #vinnerOverlay og #bommertOverlay samme z-index, saa en bommertvisning legger seg over finalevinneren.",
-    losning: "Ikke rettet. Krever en ko slik at det andre overlegget vises etter det forste i stedet for a overskrive det, og ulik z-index pa de to overleggene. E2E-testen bekreftet at ett overlegg vises korrekt, men dekker ikke sammenfallet i tid.",
+    losning: "Innfort en ko for vinneroverleggene i bade hovedskjerm.html og trekning.html: kommer B-finalen mens finalen vises, legges den i ko og vises etterpa i stedet for aa overskrive. Vinneroverlegget har ogsa fatt hoyere z-index enn bommerten. Verifisert i Chromium med begge finalene avsluttet rett etter hverandre: begge vinnerne ble vist, i riktig rekkefolge.",
     sistOppdatert: "2026-08-14"
   },
   {
@@ -531,11 +531,11 @@ var AVVIK_DATA = [
     tittel: "Administrasjonsknapper og en aktiv \"Start trekning\" staar pa projektoren hele kvelden",
     omrade: "Frontend - hovedskjerm.html",
     alvorlighet: "lav",
-    status: "apen",
+    status: "venter",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
     beskrivelse: "Navigasjonskortet med Oversikt / Stilling / Styre / Admin / Historikk / Veiledning ligger utenfor alle visnings-wrappene, og alleWrapsSkjul() rorer det ikke. Det vises i alle visninger, ogsa i \"Skjul skjerm\", der projektoren dermed viser en svart flate med en rad gule adminknapper i stedet for en tom skjerm. Verre er at hovedskjerm.html ogsa har en fungerende \"Start trekning\"-knapp som kaller trekkKategorier mot backend - er projektor-PC-en en touchskjerm, eller kommer noen borti musa, utloses en ekte ny trekning parallelt med den operatoren kjorer.",
-    losning: "Ikke rettet. Navigasjonen bor skjules i alle auto-visninger, og \"Start trekning\" bor enten fjernes fra storskjermen eller kreve en bekreftelse.",
+    losning: "Navigasjonsraden ligger na skjult med opacity 0 og pointer-events none, og dukker opp i tre sekunder nar noen beveger musa - slik at den fortsatt er tilgjengelig for operatoren uten aa vaere synlig for publikum. \"Start trekning\"-knappen er skjult helt fra storskjermen. For at publikum ikke skal miste selve trekningen, drives elimineringsanimasjonen na av statusbyttet trekker -> velger i stedet for av knappen. Verifisert i Chromium: knappene er skjult og ikke klikkbare, dukker opp ved musebevegelse og forsvinner igjen, og animasjonen kjorer med 16 eliminerte og 4 vinnerfliser uten at noen trykker noe.",
     sistOppdatert: "2026-08-14"
   },
   {
@@ -543,11 +543,11 @@ var AVVIK_DATA = [
     tittel: "Historikkens rangering og sesongtabell hviler pa arrayrekkefolgen fra backend",
     omrade: "Frontend - historikk.html",
     alvorlighet: "lav",
-    status: "apen",
+    status: "venter",
     funnetDato: "2026-08-14",
     funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
     beskrivelse: "Kveldene reverseres med kvelder.slice().reverse() ut fra en udokumentert antakelse om at API-et leverer dem eldst forst. Rangeringen innad i en kveld gjores utelukkende pa indeks: i === 0 gir gronn 1.plass og teller som kveldsseier, og PLASSPOENG tildeles etter indeks - aldri etter r.poeng. Rettes en poengsum manuelt i regnearket, viser tabellen fortsatt gammel rekkefolge og gir kveldsseieren til feil lag uten noe varsel. Sesongtabellen sorteres dessuten kun pa plasseringspoeng uten sekundaerkriterium, saa lag med lik sum far vilkarlig rekkefolge.",
-    losning: "Ikke rettet. Klienten bor sortere radene pa poeng selv i stedet for a stole pa rekkefolgen, og sesongtabellen bor ha et sekundaerkriterium.",
+    losning: "Innfort sortertPaaPoeng() som brukes bade i kveldstabellen, i rangeringen til sesongstatistikken og i sammendragslinjen, slik at plassering, gronn 1.plass og kveldsseire regnes fra poeng i stedet for fra rekkefolgen backend sendte. Sesongtabellen har fatt sekundaerkriterier: kveldsseire, deretter finaleseire, deretter lagnavn alfabetisk. Verifisert i Chromium med en kveld der backend leverte radene i feil rekkefolge: laget med 40 poeng havnet overst og ble gronnmarkert, og sammendraget oppga riktig divisjonsvinner.",
     sistOppdatert: "2026-08-14"
   }
 ];

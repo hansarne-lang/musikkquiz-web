@@ -37,6 +37,11 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3;}}
 #final{font-size:1.6em;text-align:center;margin-top:20px;}
 #wheelStage{position:relative;width:clamp(420px, 58vmin, 680px);height:clamp(420px, 58vmin, 680px);margin:30px auto;}
+/* Projektoren skal ikke vise adminknapper for publikum. Raden ligger skjult og
+   dukker opp i tre sekunder naar noen beveger musa (AVVIK-038). */
+#navRad{opacity:0;pointer-events:none;transition:opacity .25s;}
+#navRad.vis{opacity:1;pointer-events:auto;}
+#startBtn{display:none;}
 #wheelBulbRing{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;}
 .bulb{position:absolute;width:12px;height:12px;border-radius:50%;background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;transform:translate(-50%,-50%);}
 .bulb.lit{background:#fff6c8;box-shadow:0 0 10px 3px #ffe066,0 0 3px #fff;}
@@ -56,6 +61,8 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 @keyframes stagePulse{0%{transform:scale(1);}30%{transform:scale(1.045);}100%{transform:scale(1);}}
 #wheelHub{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,#ffff00 60%,#c9a600 100%);border:3px solid #000;z-index:4;box-shadow:0 0 14px #ffff00;}
 #uavgjortResultat div{margin:6px 0;color:#00ff00;}
+/* Vinneroverlegget skal ligge over bommerten, ikke omvendt (AVVIK-037). */
+#vinnerOverlay{z-index:1600;}
 .fullOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.94);z-index:1500;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;}
 .vinnerBoks h1{color:#ffff00;font-size:2.2em;margin-bottom:20px;}
 .vinnerBoks h2{color:#00ff00;font-size:3.2em;margin:0;}
@@ -81,7 +88,7 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 <div id="vinnerOverlay" class="fullOverlay" style="display:none;"></div>
 <div id="bommertOverlay" class="fullOverlay" style="display:none;"></div>
 <div class="wrap">
-<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<div class="card" id="navRad" style="display:flex;gap:10px;flex-wrap:wrap;">
 <a href="index.html"><button>Oversikt</button></a>
 <a href="stilling.html"><button>Stilling</button></a>
 <a href="styre.html"><button>Styre / Admin</button></a>
@@ -192,21 +199,31 @@ function initTrekning() {
     .catch(function (e) { console.error(e); });
 }
 
+var elimineringKjort = false;
+
 function visStatus(o) {
   var startBtn = document.getElementById('startBtn');
   var info = document.getElementById('trekkInfo');
   if (o.status === 'trekker') {
-    startBtn.disabled = false;
+    elimineringKjort = false;
+    if (startBtn) startBtn.disabled = false;
     info.innerHTML = 'Lag som trekker kategori: <b>' + escHtml(o.lagA.navn) + '</b>';
     document.getElementById('app').innerHTML = '<div class="grid" id="grid"></div><div id="final"></div>';
     renderGrid();
   } else if (o.status === 'velger') {
-    startBtn.disabled = true;
+    if (startBtn) startBtn.disabled = true;
     info.innerHTML = '';
-    var html = '<div class="card"><h2>Kategoriene er trukket</h2><ul style="font-size:1.4em">';
-    o.kandidater.forEach(function(k) { html += '<li>' + escHtml(k) + '</li>'; });
-    html += '</ul><p>Venter på at Styre-siden velger kategori.</p></div>';
-    document.getElementById('app').innerHTML = html;
+    // Naar startknappen er borte fra projektoren maa animasjonen drives av
+    // statusbyttet i stedet, ellers mister publikum hele trekningen (AVVIK-038).
+    if (!elimineringKjort && document.getElementById('grid') && Object.keys(tileEls).length) {
+      elimineringKjort = true;
+      eliminate(o.kandidater);
+    } else if (!elimineringKjort) {
+      var html = '<div class="card"><h2>Kategoriene er trukket</h2><ul style="font-size:1.4em">';
+      o.kandidater.forEach(function(k) { html += '<li>' + escHtml(k) + '</li>'; });
+      html += '</ul><p>Venter på at Styre-siden velger kategori.</p></div>';
+      document.getElementById('app').innerHTML = html;
+    }
   } else {
     startBtn.disabled = true;
     info.innerHTML = '';
@@ -777,13 +794,31 @@ var sisteFinaleStatus = null;
 var sisteFinaleBStatus = null;
 var sisteBommertTid = null;
 
+// Finalen og B-finalen avgjores rett etter hverandre. Uten en ko overskriver
+// den andre vinneren den forste umiddelbart, og hovedvinneren vises aldri for
+// publikum (AVVIK-037).
+var vinnerKo = [];
+var vinnerVises = false;
+
 function visVinnerOverlay(navn, hva) {
+  vinnerKo.push({ navn: navn, hva: hva });
+  nesteVinnerOverlay();
+}
+
+function nesteVinnerOverlay() {
+  if (vinnerVises || !vinnerKo.length) { return; }
+  var v = vinnerKo.shift();
+  vinnerVises = true;
   var ov = document.getElementById('vinnerOverlay');
-  ov.innerHTML = '<div class="vinnerBoks"><h1>🏆 ' + hva + ' er avgjort!</h1><h2>' + escHtml(navn || '') + ' vant!</h2></div>';
+  ov.innerHTML = '<div class="vinnerBoks"><h1>\u{1F3C6} ' + escHtml(v.hva) + ' er avgjort!</h1><h2>' + escHtml(v.navn || '') + ' vant!</h2></div>';
   ov.style.display = 'flex';
   confetti();
   beepWinFanfare();
-  setTimeout(function() { ov.style.display = 'none'; }, 7000);
+  setTimeout(function () {
+    ov.style.display = 'none';
+    vinnerVises = false;
+    nesteVinnerOverlay();
+  }, 7000);
 }
 
 function visBommertOverlay(o) {
@@ -824,6 +859,16 @@ function sjekkFinaleOgBommert() {
     }
   }).catch(function(e) { console.error(e); });
 }
+
+// Vis navigasjonen kort naar noen faktisk bruker musa (AVVIK-038).
+var navTimer = null;
+document.addEventListener('mousemove', function () {
+  var n = document.getElementById('navRad');
+  if (!n) { return; }
+  n.classList.add('vis');
+  if (navTimer) { clearTimeout(navTimer); }
+  navTimer = setTimeout(function () { n.classList.remove('vis'); }, 3000);
+});
 
 sjekkModus();
 setInterval(sjekkModus, 3000);

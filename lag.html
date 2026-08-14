@@ -176,6 +176,37 @@ function sjekkBuzzerModus() {
   }).catch(function (e) { console.error(e); });
 }
 
+// I fysisk modus finnes det bare tre knapper, saa bare duellagene kan buzze.
+// Virtuell modus maa gjenskape den begrensningen selv (AVVIK-022).
+// null = ingen duell kunne identifiseres -> alle far buzze, som for.
+var duellDeltakere = null;
+var duellHentet = false;
+
+function hentDuellDeltakere() {
+  return Promise.all([
+    apiGet('finaleStatus').catch(function () { return null; }),
+    apiGet('finaleBStatus').catch(function () { return null; }),
+    apiGet('opprykkStatus').catch(function () { return null; })
+  ]).then(function (svar) {
+    var f = svar[0], fb = svar[1], o = svar[2];
+    var ids = null;
+    if (f && f.status === 'pagar' && f.lag && f.lag.length) {
+      ids = f.lag.map(function (l) { return String(l.id); });
+    } else if (fb && fb.status === 'pagar' && fb.lag && fb.lag.length) {
+      ids = fb.lag.map(function (l) { return String(l.id); });
+    } else if (o && ['trekker', 'velger', 'pagar', 'uavgjort'].indexOf(o.status) !== -1) {
+      ids = [o.lagA, o.lagB, o.lagC].filter(function (l) { return l && l.id; })
+        .map(function (l) { return String(l.id); });
+    }
+    duellDeltakere = (ids && ids.length) ? ids : null;
+  }).catch(function (e) { console.error(e); duellDeltakere = null; });
+}
+
+function deltarIDuellen() {
+  if (!duellDeltakere) { return true; }   // ingen duell identifisert
+  return duellDeltakere.indexOf(String(teamId)) !== -1;
+}
+
 function lastBuzzerLag() {
   var g = buzzGenerasjon;
   apiGet('buzzerStatus').then(function (o) { visBuzzerLag(o, g); }).catch(function (e) { console.error(e); });
@@ -192,8 +223,21 @@ function visBuzzerLag(o, generasjon) {
   var tekst = document.getElementById('buzztekst');
   if (!div) return;
   if (o.status === 'ledig') {
+    // Ny duell neste gang buzzeren apnes - hent deltakerne pa nytt (AVVIK-022).
+    duellHentet = false;
+    duellDeltakere = null;
     div.style.display = 'none';
-  } else if (o.status === 'apen') {
+    return;
+  }
+  if (!duellHentet) {
+    duellHentet = true;
+    hentDuellDeltakere().then(function () { lastBuzzerLag(); });
+  }
+  if (!deltarIDuellen()) {
+    div.style.display = 'none';
+    return;
+  }
+  if (o.status === 'apen') {
     div.style.display = 'block';
     knapp.disabled = false;
     knapp.style.background = '#2ecc71';

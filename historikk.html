@@ -111,8 +111,16 @@ function vis(kvelder) {
 
 // ---- Kveldsliste ----
 
-function lagTabellHistorikk(rader, divisjon) {
-  if (!rader || !rader.length) return '<p class="tomt">Ingen lag registrert.</p>';
+// Rekkefolgen fra backend er ikke garantert, og var tidligere eneste grunnlag
+// for bade plassering, gronn 1.plass og kveldsseire (AVVIK-039).
+function sortertPaaPoeng(rader) {
+  if (!rader) return [];
+  return rader.slice().sort(function (a, b) { return (Number(b.poeng) || 0) - (Number(a.poeng) || 0); });
+}
+
+function lagTabellHistorikk(usorterte, divisjon) {
+  if (!usorterte || !usorterte.length) return '<p class="tomt">Ingen lag registrert.</p>';
+  var rader = sortertPaaPoeng(usorterte);
   var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th></tr>';
   rader.forEach(function(r, i) {
     var stil = '';
@@ -163,8 +171,9 @@ function visKveldsliste(kvelder) {
   var sortert = kvelder.slice().reverse();
   var html = '<div class="card"><h2>Tidligere kvelder (' + sortert.length + ')</h2>';
   sortert.forEach(function(k, idx) {
-    var div1Vinner = (k.div1 && k.div1[0]) ? k.div1[0].navn : '-';
-    var div2Vinner = (k.div2 && k.div2[0]) ? k.div2[0].navn : '-';
+    var d1s = sortertPaaPoeng(k.div1), d2s = sortertPaaPoeng(k.div2);
+    var div1Vinner = d1s[0] ? d1s[0].navn : '-';
+    var div2Vinner = d2s[0] ? d2s[0].navn : '-';
     var finaleTekst = k.finaleVinner ? ' · Finale: <b>' + escHtml(k.finaleVinner) + '</b>' : '';
     var finaleBTekst = k.finaleBVinner ? ' · B-finale: <b>' + escHtml(k.finaleBVinner) + '</b>' : '';
     html += '<details' + (idx === 0 ? ' open' : '') + '>';
@@ -191,8 +200,9 @@ function tomStatistikk(navn) {
   return { navn: navn, kveldsseire: 0, finaleseire: 0, finaleBseire: 0, jokerVunnet: 0, jokerBrukt: 0, plasseringspoeng: 0 };
 }
 
-function leggTilRangering(map, rader) {
-  if (!rader) return;
+function leggTilRangering(map, usorterte) {
+  if (!usorterte) return;
+  var rader = sortertPaaPoeng(usorterte);
   rader.forEach(function(r, i) {
     var key = normNavn(r.navn);
     if (!key) return;
@@ -227,7 +237,13 @@ function byggSesongStatistikk(kvelderISesong) {
       }
     });
   });
-  return Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) { return b.plasseringspoeng - a.plasseringspoeng; });
+  return Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) {
+    // Uten sekundaerkriterier fikk lag med lik sum vilkaarlig rekkefolge (AVVIK-039).
+    if (b.plasseringspoeng !== a.plasseringspoeng) return b.plasseringspoeng - a.plasseringspoeng;
+    if (b.kveldsseire !== a.kveldsseire) return b.kveldsseire - a.kveldsseire;
+    if (b.finaleseire !== a.finaleseire) return b.finaleseire - a.finaleseire;
+    return String(a.navn || '').localeCompare(String(b.navn || ''), 'no');
+  });
 }
 
 function visSesongoversikt(kvelder) {

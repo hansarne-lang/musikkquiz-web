@@ -56,6 +56,8 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 @keyframes stagePulse{0%{transform:scale(1);}30%{transform:scale(1.045);}100%{transform:scale(1);}}
 #wheelHub{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,#ffff00 60%,#c9a600 100%);border:3px solid #000;z-index:4;box-shadow:0 0 10px #ffff00;}
 #uavgjortResultat div{margin:6px 0;color:#00ff00;}
+/* Vinneroverlegget skal ligge over bommerten, ikke omvendt (AVVIK-037). */
+#vinnerOverlay{z-index:1600;}
 .fullOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.94);z-index:1500;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;}
 .vinnerBoks h1{color:#ffff00;font-size:2.2em;margin-bottom:20px;}
 .vinnerBoks h2{color:#00ff00;font-size:3.2em;margin:0;}
@@ -659,13 +661,31 @@ var sisteFinaleStatus = null;
 var sisteFinaleBStatus = null;
 var sisteBommertTid = null;
 
+// Finalen og B-finalen avgjores rett etter hverandre. Uten en ko overskriver
+// den andre vinneren den forste umiddelbart, og hovedvinneren vises aldri for
+// publikum (AVVIK-037).
+var vinnerKo = [];
+var vinnerVises = false;
+
 function visVinnerOverlay(navn, hva) {
+  vinnerKo.push({ navn: navn, hva: hva });
+  nesteVinnerOverlay();
+}
+
+function nesteVinnerOverlay() {
+  if (vinnerVises || !vinnerKo.length) { return; }
+  var v = vinnerKo.shift();
+  vinnerVises = true;
   var ov = document.getElementById('vinnerOverlay');
-  ov.innerHTML = '<div class="vinnerBoks"><h1>🏆 ' + escHtml(hva) + ' er avgjort!</h1><h2>' + escHtml(navn || '') + ' vant!</h2></div>';
+  ov.innerHTML = '<div class="vinnerBoks"><h1>\u{1F3C6} ' + escHtml(v.hva) + ' er avgjort!</h1><h2>' + escHtml(v.navn || '') + ' vant!</h2></div>';
   ov.style.display = 'flex';
   confetti();
   beepWinFanfare();
-  setTimeout(function () { ov.style.display = 'none'; }, 7000);
+  setTimeout(function () {
+    ov.style.display = 'none';
+    vinnerVises = false;
+    nesteVinnerOverlay();
+  }, 7000);
 }
 
 function visBommertOverlay(o) {
