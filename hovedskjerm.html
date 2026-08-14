@@ -180,9 +180,16 @@ function escHtml(s) {
 var allNames = [];
 var tileEls = {};
 
+var sisteTrekkStatus = null;
+
 function initTrekning() {
-  apiGet('opprykkStatus').then(visStatus).catch(function(e) { console.error(e); });
-  apiGet('alleKategoriNavn').then(function(n) { allNames = n; }).catch(function(e) { console.error(e); });
+  // Kategorinavnene maa vaere pa plass foer rutenettet tegnes, ellers blir det
+  // staaende tomt fordi renderGrid bare kalles fra visStatus (AVVIK-031).
+  apiGet('alleKategoriNavn')
+    .then(function (n) { allNames = n; })
+    .catch(function (e) { console.error(e); })
+    .then(function () { return apiGet('opprykkStatus').then(visStatus); })
+    .catch(function (e) { console.error(e); });
 }
 
 function visStatus(o) {
@@ -439,11 +446,17 @@ function autoModus() {
       if (o.status === 'trekker' || o.status === 'velger') {
         if (gjeldendeModus !== 'auto:trekning') {
           gjeldendeModus = 'auto:trekning';
+          sisteTrekkStatus = null;
           stoppIntervaller();
           alleWrapsSkjul();
           document.getElementById('trekningWrap').style.display = 'block';
           initTrekning();
+        } else if (o.status !== sisteTrekkStatus) {
+          // Uten dette blir projektoren staaende paa "Lag som trekker kategori"
+          // gjennom hele trekningen, selv om backend har gaatt videre (AVVIK-031).
+          visStatus(o);
         }
+        sisteTrekkStatus = o.status;
         return;
       }
       apiGet('buzzerStatus').then(function(b) {
@@ -485,7 +498,11 @@ function lastKlubbLogoMap() {
     (liste || []).forEach(function(k) { map[String(k.navn).toLowerCase().trim()] = k.slug; });
     KLUBB_LOGO_MAP = map;
     return map;
-  }).catch(function(e) { console.error(e); KLUBB_LOGO_MAP = {}; return KLUBB_LOGO_MAP; });
+  }).catch(function(e) {
+    // Ikke cache et tomt resultat - da forsvinner klubblogoene for resten av
+    // kvelden etter et enkelt nettverksglipp (AVVIK-033).
+    console.error(e); KLUBB_LOGO_MAP = null; return {};
+  });
 }
 
 function polarToCartesian(cx, cy, r, angleDeg) {

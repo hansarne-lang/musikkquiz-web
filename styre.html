@@ -251,7 +251,7 @@ function vis(data) {
   }
   document.getElementById('app').innerHTML = html;
   if (scoreStatus.s1 && scoreStatus.s2 && scoreStatus.s3) {
-    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Apne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Åpne runde ' + (gjeldendeRunde + 1) + '</button></div>';
   }
 }
 
@@ -268,13 +268,13 @@ function visSangResultat(sangNr, res) {
   var html = '<table><tr><th>Lag</th><th>Poeng</th></tr>';
   var sortert = res.resultater.slice().sort(function (a, b) { return b.poeng - a.poeng; });
   sortert.forEach(function (r) {
-    html += '<tr><td>' + r.navn + '</td><td>' + r.poeng + '</td></tr>';
+    html += '<tr><td>' + escHtml(r.navn) + '</td><td>' + escHtml(r.poeng) + '</td></tr>';
   });
   html += '</table>';
   document.getElementById('sangResultat' + sangNr).innerHTML = html;
   markerSangScoret(sangNr);
   if (res.status && res.status.s1 && res.status.s2 && res.status.s3) {
-    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Apne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Åpne runde ' + (gjeldendeRunde + 1) + '</button></div>';
   }
 }
 
@@ -462,7 +462,7 @@ function visOpprykk(o) {
     html = '<div class="card"><h2>Likt poeng - velg hvilket lag som rykker ned til 2. divisjon:</h2>';
     lagliste.forEach(function (lag, i) {
       if (poengliste[i] === minPoeng) {
-        html += '<button onclick="velgNed(\'' + lag.id + '\')">' + lag.navn + '</button> ';
+        html += '<button onclick="velgNed(\'' + escHtml(lag.id) + '\')">' + escHtml(lag.navn) + '</button> ';
       }
     });
     html += '</div>';
@@ -577,10 +577,10 @@ function visFinale(o) {
     html += '</ol>';
     if (o.status === 'pagar') {
       html += '<p style="font-size:0.9em;color:#aaa;">Bruk Buzzer-kortet over til å åpne/lukke runder. Gi poeng til laget som svarte riktig:</p><div>';
-      o.lag.forEach(function(l){ if (l.id) { html += '<span style="display:inline-block;margin:0 10px 6px 0;">' + l.navn + ': <button onclick="giPoengClick(' + l.id + ')">+1</button> <button onclick="angrePoengClick(' + l.id + ')" style="background:#666;">-1 (angre)</button></span>'; } });
+      o.lag.forEach(function(l){ if (l.id) { html += '<span style="display:inline-block;margin:0 10px 6px 0;">' + escHtml(l.navn) + ': <button onclick="giPoengClick(' + escHtml(l.id) + ')">+1</button> <button onclick="angrePoengClick(' + escHtml(l.id) + ')" style="background:#666;">-1 (angre)</button></span>'; } });
       html += '</div><button onclick="avsluttFinaleClick()">Avslutt finale</button>';
     } else if (o.status === 'ferdig') {
-      html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> vant finalen!</p><button onclick="nullstillFinaleClick()">Nullstill finale</button>';
+      html += '<p style="font-size:1.3em;"><b>' + escHtml(o.vinnerNavn) + '</b> vant finalen!</p><button onclick="nullstillFinaleClick()">Nullstill finale</button>';
     }
   }
   html += '</div>';
@@ -628,10 +628,10 @@ function visFinaleB(o) {
     html += '</ol>';
     if (o.status === 'pagar') {
       html += '<p style="font-size:0.9em;color:#aaa;">Gi poeng til laget som svarte riktig:</p><div>';
-      o.lag.forEach(function(l){ if (l.id) { html += '<span style="display:inline-block;margin:0 10px 6px 0;">' + l.navn + ': <button onclick="giPoengBClick(' + l.id + ')">+1</button> <button onclick="angrePoengBClick(' + l.id + ')" style="background:#666;">-1 (angre)</button></span>'; } });
+      o.lag.forEach(function(l){ if (l.id) { html += '<span style="display:inline-block;margin:0 10px 6px 0;">' + escHtml(l.navn) + ': <button onclick="giPoengBClick(' + escHtml(l.id) + ')">+1</button> <button onclick="angrePoengBClick(' + escHtml(l.id) + ')" style="background:#666;">-1 (angre)</button></span>'; } });
       html += '</div><button onclick="avsluttFinaleBClick()">Avslutt B-finale</button> <button onclick="avlysFinaleBClick()" style="background:#a33;color:#fff;">Avlys B-finale (for lite tid)</button>';
     } else if (o.status === 'ferdig') {
-      html += '<p style="font-size:1.3em;"><b>' + o.vinnerNavn + '</b> vant B-finalen!</p><button onclick="nullstillFinaleBClick()">Nullstill B-finale</button>';
+      html += '<p style="font-size:1.3em;"><b>' + escHtml(o.vinnerNavn) + '</b> vant B-finalen!</p><button onclick="nullstillFinaleBClick()">Nullstill B-finale</button>';
     }
   }
   html += '</div>';

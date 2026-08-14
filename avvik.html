@@ -417,6 +417,138 @@ var AVVIK_DATA = [
     beskrivelse: "tegnListe() satte tittel, omrade, beskrivelse, funnetAv og losning rett inn med innerHTML. Da beskrivelsen av AVVIK-012 - som naturlig nok inneholder et img-taggen med en onerror-handler som eksempel - ble lagt inn i lista, tolket nettleseren teksten som markup i stedet for tekst: img-elementet ble faktisk opprettet, ga 404, og onerror-handleren kjorte og kastet en SyntaxError i konsollen. Samme klasse feil som AVVIK-012, bare paa verktoysiden. Siden vedlikeholdes manuelt og har ingen brukerinput, saa dette er ikke en sikkerhetsrisiko - men det gjor at ethvert avvik som beskriver HTML eller JavaScript blir feil gjengitt eller odelegger kortet.",
     losning: "Innfort escape-funksjonen e() i avvik.html, og alle tekstfelter i kortene sendes naa gjennom den. Verifisert i Chromium: alle 27 kort tegnes, tellerne stemmer (5 apne / 11 venter / 11 lost), og siden laster uten en eneste JS-feil - mot en SyntaxError for rettelsen.",
     sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-029",
+    tittel: "AVVIK-012 dekket ikke alle stedene - seks lagnavn i styre.html var fortsatt uescapet",
+    omrade: "Frontend - styre.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026) - systematisk sok etter interpolerte navn",
+    beskrivelse: "Rettelsen i AVVIK-012 dekket paameldingslista, QR-kortene, buzzer-nedtrekkene og buzzervinneren, men ikke seks andre steder i samme fil der lagnavn settes inn med innerHTML: sangresultat-tabellen etter poengberegning (:271), nedrykksknappene ved uavgjort i opprykksspillet (:465), laglista i finalen (:580) og B-finalen (:631), samt vinnerteksten i begge finalene (:583, :634). Alle disse viser lagnavn som naa kommer fra publikum via QR-paamelding. Sangresultat-tabellen vises etter hver eneste poengberegning, altsa 18 ganger i lopet av en kveld.",
+    losning: "Alle seks stedene sender naa navn, id og poeng gjennom escHtml(). Funnet ved a soke systematisk etter interpolerte navnefelt i alle filer i stedet for a stole pa at forrige gjennomgang var fullstendig.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-030",
+    tittel: "trekning.html manglet escHtml helt - ondsinnet lagnavn kjorte kode",
+    omrade: "Frontend - trekning.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Full E2E-gjennomspilling i Chromium mot simulert backend (14.08.2026) - reprodusert",
+    beskrivelse: "trekning.html hadde ingen escHtml-funksjon i det hele tatt, og satte lagnavn inn med innerHTML fire steder: teksten om hvilket lag som trekker kategori (:182), vinnerlista i uavgjort-trekningen (:554), resultatet etter hver spinn av lykkehjulet (:616) og vinneroverlegget (:651). Siden ble ikke dekket av AVVIK-012. Reprodusert i Chromium: et lag med navnet <img src=x onerror=\"...\"> ble plassert som lagA i opprykksspillet, og koden kjorte da trekningssiden viste hvem som skulle trekke kategori - bekreftet med et faktisk img-element i DOM-en og flagget satt.",
+    losning: "escHtml er lagt inn i trekning.html og brukes na alle fire steder. Verifisert i Chromium med samme lagnavn i samme posisjon: ingen kode kjorer, ingen img-elementer opprettes, og navnet vises som ufarlig tekst.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-031",
+    tittel: "Storskjermen sto fast pa \"Lag som trekker kategori\" gjennom hele trekningen",
+    omrade: "Frontend - hovedskjerm.html, trekning.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Full E2E-gjennomspilling i Chromium mot simulert backend (14.08.2026) - reprodusert",
+    beskrivelse: "initTrekning() ble kun kalt ved selve modusbyttet (hovedskjerm.html:438-448). Deretter ble opprykkStatus riktignok hentet hvert 3. sekund, men resultatet ble kastet. Reprodusert i Chromium: da backend gikk fra status \"trekker\" til \"velger\", sto projektoren fortsatt og viste \"Lag som trekker kategori: Bolton\" og hele rutenettet med alle 20 kategoriene - publikum fikk aldri se elimineringen eller de fire trukne kategoriene. I tillegg ble opprykkStatus og alleKategoriNavn hentet parallelt, mens renderGrid kun kalles fra opprykkStatus-svaret; nar kategorilista var tregest ble rutenettet staaende helt tomt. Ogsa dette er reprodusert, med 600 ms forsinkelse pa kategorikallet: 0 fliser tegnet.",
+    losning: "Hovedskjermen tegner na trekningsvisningen pa nytt nar statusen endrer seg innenfor samme modus, og bade hovedskjerm.html og trekning.html henter kategorinavnene FOER opprykkStatus, slik at rutenettet alltid har data a tegne fra. trekning.html rydder ogsa sitt kategori-intervall for det settes pa nytt. Verifisert: statusbyttet slaar gjennom pa projektoren, og rutenettet tegnes med alle 20 flisene selv med treg kategoriliste.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-032",
+    tittel: "Knappen for a apne neste runde het \"Apne\" uten a",
+    omrade: "Frontend - styre.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Full E2E-gjennomspilling i Chromium mot simulert backend (14.08.2026)",
+    beskrivelse: "Knappeteksten var \"Apne runde N\" pa begge stedene den genereres (styre.html:254 og :277). Oppdaget da en test lette etter \"Apne runde 2\" og ikke fant den, til tross for at sangScoreStatus var korrekt satt for alle tre sangene.",
+    losning: "Rettet til \"Apne runde N\" med riktig a begge steder. Verifisert i Chromium: knappen dukker opp bade rett etter at siste sang scores og etter en omlasting av siden.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-033",
+    tittel: "Klubblogoene forsvant permanent etter ett feilende kall",
+    omrade: "Frontend - hovedskjerm.html, trekning.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
+    beskrivelse: "lastKlubbLogoMap() cachet resultatet i KLUBB_LOGO_MAP, men catch-grenen satte cachen til et tomt objekt. Et tomt objekt er sant i JavaScript, saa den tidlige returen traff hver gang etterpaa og kallet ble aldri forsokt pa nytt. Ett kvotebrudd eller nettverksglipp forste gang lykkehjulet ble brukt betydde altsaa at alle senere lykkehjul samme kveld ble tegnet uten klubblogoer, helt til siden ble lastet pa nytt.",
+    losning: "Cachen settes na til null ved feil, slik at neste forsok gaar mot backend igjen, mens kallet returnerer et tomt kart for den ene gangen. Rettet i begge filer.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-034",
+    tittel: "buzzertest.html fikk aldri vaktene fra AVVIK-014, og feilet stille",
+    omrade: "Testverktoy - buzzertest.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
+    beskrivelse: "AVVIK-014 la inn fire vakter i styre.html sin tastelytter. buzzertest.html hadde bare preventDefault(): den manglet e.repeat-vakten, saa en knapp som holdes inne sender rundt 30 ekte trykkBuzzer-kall i sekundet; den manglet e.target-vakten, saa tastaturnavigasjon i sidens tre nedtrekkslister utloste buzz for forrige valgte lag; og lagnavn ble satt inn i nedtrekket og i tasteloggen uten escaping, slik at et publikumsregistrert navn med anforselstegn odela lista. I tillegg hadde apneBuzzTest og lukkBuzzTest ingen feilhaandtering i det hele tatt, og pollingen svelget feil tomt - man kunne forlate siden i tro om at buzzeren var nullstilt mens den i virkeligheten sto apen. Merk at AVVIK-014 sin tekst sa at buzzertest.html \"gjorde dette riktig allerede\"; det gjaldt kun preventDefault.",
+    losning: "Lagt inn e.target- og e.repeat-vakter, escHtml pa lagnavn og tastelogg, og en felles feilvisning som skriver \"Fikk ikke kontakt med backend\" i statusfeltet i stedet for aa la teksten sta uendret. Gjenstaar som kjent begrensning: siden viser ikke hvilken buzzer-modus systemet staar i, og kan ikke teste den virtuelle stien (se AVVIK-026).",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-035",
+    tittel: "bilder.html satte klubbnavn inn uescapet, ogsa i et attributt",
+    omrade: "Frontend - bilder.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
+    beskrivelse: "bilder.html hadde ingen escHtml. Klubbnavn ble satt inn i en overskrift (:104) og i et alt-attributt (:126) uten beskyttelse - i attributtet uten engang anforselstegn-escaping, saa et navn med \" kunne bryte ut og feste en onerror-handler. Klubbnavn kan endres fra bade bilder.html og bildeadmin.html, og backend lagrer spesialtegn verbatim. Siden er foreldrelos - ingen andre sider lenker til den etter at bildeadmin.html overtok - men den ligger fortsatt publisert og kan kalle endreKlubbNavn mot produksjon.",
+    losning: "escHtml er lagt inn og brukes bade i overskriften og i alt-attributtet. Verdt a vurdere separat: siden bor enten slettes eller lenkes opp, den staar i dag i et mellomrom der ingen vedlikeholder den.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-036",
+    tittel: "Beskjaeringsvinduet hang stille ved ulesbart bilde, og cropperen ble aldri ryddet",
+    omrade: "Frontend - bildeadmin.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
+    beskrivelse: "Tre feil i samme flyt. (1) Det fantes ingen img.onerror, saa en HEIC-fil rett fra en iPhone ga en apen modal med tom grafikk, ingen feilmelding og ingen vei ut annet enn Avbryt. (2) Oppryddingen av forrige Cropper-instans sto etter at aktivCrop var satt til et nytt objekt med cropper: null, saa sjekken kunne aldri slaa til - den gamle instansen med sitt canvas og sine dokumentlyttere lekket ved hver gjenapning. (3) Ble Avbryt trykket mens et stort bilde fortsatt dekodet, satte lukkefunksjonen aktivCrop til null, og den etterfolgende onload kastet TypeError. I tillegg lastes cropper.js fra cdnjs uten reserveløsning, slik at hele beskjaeringen feiler taust hvis cdnjs er utilgjengelig.",
+    losning: "Lagt inn img.onerror med forstaaelig melding, flyttet oppryddingen av forrige cropper til for det nye objektet settes, lagt inn en null-sjekk i onload slik at et sent lastet bilde ikke krasjer etter Avbryt, og en sjekk pa at Cropper faktisk er lastet med melding om nettforbindelsen hvis den mangler.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-037",
+    tittel: "Finale- og B-finalevinner deler ett overlegg og en timer",
+    omrade: "Frontend - hovedskjerm.html, trekning.html",
+    alvorlighet: "middels",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
+    beskrivelse: "sjekkFinaleOgBommert henter finaleStatus og finaleBStatus uavhengig, og begge kaller visVinnerOverlay som skriver til samme #vinnerOverlay og starter hver sin 7-sekunders timer. Blir begge ferdig i samme pollesyklus - typisk, siden de avgjores rett etter hverandre - overskriver B-finalen hovedfinalens overlegg umiddelbart, og hovedvinneren vises aldri for publikum. Skjer de to sekunder fra hverandre, far B-finalens overlegg bare fem sekunder for den forste timeren skjuler det. Konfetti kalles ogsa to ganger. I tillegg har #vinnerOverlay og #bommertOverlay samme z-index, saa en bommertvisning legger seg over finalevinneren.",
+    losning: "Ikke rettet. Krever en ko slik at det andre overlegget vises etter det forste i stedet for a overskrive det, og ulik z-index pa de to overleggene. E2E-testen bekreftet at ett overlegg vises korrekt, men dekker ikke sammenfallet i tid.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-038",
+    tittel: "Administrasjonsknapper og en aktiv \"Start trekning\" staar pa projektoren hele kvelden",
+    omrade: "Frontend - hovedskjerm.html",
+    alvorlighet: "lav",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
+    beskrivelse: "Navigasjonskortet med Oversikt / Stilling / Styre / Admin / Historikk / Veiledning ligger utenfor alle visnings-wrappene, og alleWrapsSkjul() rorer det ikke. Det vises i alle visninger, ogsa i \"Skjul skjerm\", der projektoren dermed viser en svart flate med en rad gule adminknapper i stedet for en tom skjerm. Verre er at hovedskjerm.html ogsa har en fungerende \"Start trekning\"-knapp som kaller trekkKategorier mot backend - er projektor-PC-en en touchskjerm, eller kommer noen borti musa, utloses en ekte ny trekning parallelt med den operatoren kjorer.",
+    losning: "Ikke rettet. Navigasjonen bor skjules i alle auto-visninger, og \"Start trekning\" bor enten fjernes fra storskjermen eller kreve en bekreftelse.",
+    sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-039",
+    tittel: "Historikkens rangering og sesongtabell hviler pa arrayrekkefolgen fra backend",
+    omrade: "Frontend - historikk.html",
+    alvorlighet: "lav",
+    status: "apen",
+    funnetDato: "2026-08-14",
+    funnetAv: "Kodegjennomgang av alle sider (14.08.2026)",
+    beskrivelse: "Kveldene reverseres med kvelder.slice().reverse() ut fra en udokumentert antakelse om at API-et leverer dem eldst forst. Rangeringen innad i en kveld gjores utelukkende pa indeks: i === 0 gir gronn 1.plass og teller som kveldsseier, og PLASSPOENG tildeles etter indeks - aldri etter r.poeng. Rettes en poengsum manuelt i regnearket, viser tabellen fortsatt gammel rekkefolge og gir kveldsseieren til feil lag uten noe varsel. Sesongtabellen sorteres dessuten kun pa plasseringspoeng uten sekundaerkriterium, saa lag med lik sum far vilkarlig rekkefolge.",
+    losning: "Ikke rettet. Klienten bor sortere radene pa poeng selv i stedet for a stole pa rekkefolgen, og sesongtabellen bor ha et sekundaerkriterium.",
+    sistOppdatert: "2026-08-14"
   }
 ];
 

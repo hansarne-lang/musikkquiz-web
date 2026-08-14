@@ -93,6 +93,11 @@ Denne siden er trygg å bruke når som helst - den rører ikke lag, poeng, kateg
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
 var KNAPP_KODER = ["ControlLeft", "Space", "AltLeft"];
 
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function apiGet(action, extraParams) {
   var url = API_BASE + "?api=" + action;
   if (extraParams) {
@@ -121,7 +126,7 @@ function loggTast(e) {
   tastLogg.unshift({ navn: navn, tid: tid });
   if (tastLogg.length > 15) tastLogg.length = 15;
   var html = tastLogg.map(function (t) {
-    return '<div class="logglinje"><span class="tid">' + t.tid + '</span>' + t.navn + '</div>';
+    return '<div class="logglinje"><span class="tid">' + escHtml(t.tid) + '</span>' + escHtml(t.navn) + '</div>';
   }).join('');
   document.getElementById('tastelogg').innerHTML = html;
 }
@@ -131,7 +136,7 @@ function lastLagListe() {
   apiGet('teams').then(function (teams) {
     var opts = '<option value="">- ikke i bruk -</option>';
     for (var i = 0; i < teams.length; i++) {
-      opts += '<option value="' + teams[i].id + '">' + teams[i].navn + '</option>';
+      opts += '<option value="' + escHtml(teams[i].id) + '">' + escHtml(teams[i].navn) + '</option>';
     }
     KNAPP_KODER.forEach(function (kode) {
       var sel = document.getElementById('lag' + kode);
@@ -147,13 +152,22 @@ function lastLagListe() {
 
 // --- Del 3: full buzzer-test ---
 function apneBuzzTest() {
-  apiGet('apneBuzzer').then(visBuzzerStatus);
+  apiGet('apneBuzzer').then(visBuzzerStatus).catch(visBuzzerFeil);
 }
 function lukkBuzzTest() {
-  apiGet('lukkBuzzer').then(visBuzzerStatus);
+  apiGet('lukkBuzzer').then(visBuzzerStatus).catch(visBuzzerFeil);
 }
 function pollBuzzerStatus() {
-  apiGet('buzzerStatus').then(visBuzzerStatus).catch(function(){});
+  apiGet('buzzerStatus').then(visBuzzerStatus).catch(visBuzzerFeil);
+}
+// Uten dette staar statusteksten uendret ved feil, og man forlater siden i tro
+// om at buzzeren er nullstilt naar den fortsatt staar apen (AVVIK-034).
+function visBuzzerFeil(e) {
+  var el = document.getElementById('buzzerStatusTekst');
+  if (el) {
+    el.textContent = 'Fikk ikke kontakt med backend: ' + (e && e.message ? e.message : e);
+    el.className = 'status-lukket';
+  }
 }
 function visBuzzerStatus(o) {
   var el = document.getElementById('buzzerStatusTekst');
@@ -172,14 +186,21 @@ setInterval(pollBuzzerStatus, 1000);
 
 // --- Global tastelytter ---
 document.addEventListener('keydown', function (e) {
-  loggTast(e);
+  // Samme vakter som styre.html fikk i AVVIK-014: ikke tolk tastetrykk som buzz
+  // naar fokus staar i et skjemafelt, og ikke send 30 kall i sekundet naar en
+  // knapp holdes inne (AVVIK-034).
+  var tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
+  var iFelt = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+               (e.target && e.target.isContentEditable));
+  if (!iFelt) { loggTast(e); }
+  if (iFelt || e.repeat) { return; }
   if (KNAPP_KODER.indexOf(e.code) !== -1) {
     e.preventDefault();
     visKnappTreff(e.code);
     var sel = document.getElementById('lag' + e.code);
     var lagId = sel ? sel.value : '';
     if (lagId) {
-      apiGet('trykkBuzzer', { lagId: lagId }).then(visBuzzerStatus).catch(function(){});
+      apiGet('trykkBuzzer', { lagId: lagId }).then(visBuzzerStatus).catch(visBuzzerFeil);
     }
   }
 });

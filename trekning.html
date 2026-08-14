@@ -127,6 +127,11 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 <script>
 var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
 
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function apiGet(action, extraParams) {
   var url = API_BASE + "?api=" + action;
   if (extraParams) {
@@ -145,9 +150,15 @@ var tileEls = {};
 var katListeIntervalId = null;
 
 function initTrekning() {
-  apiGet('opprykkStatus').then(visStatus).catch(function(e) { console.error(e); });
-  apiGet('alleKategoriNavn').then(function(n) { allNames = n; }).catch(function(e) { console.error(e); });
+  // Kategorinavnene maa vaere pa plass foer visStatus kaller renderGrid, ellers
+  // blir rutenettet staaende tomt naar kategorikallet er tregest (AVVIK-031).
+  apiGet('alleKategoriNavn')
+    .then(function (n) { allNames = n; })
+    .catch(function (e) { console.error(e); })
+    .then(function () { return apiGet('opprykkStatus').then(visStatus); })
+    .catch(function (e) { console.error(e); });
   lastKatListe();
+  if (katListeIntervalId) clearInterval(katListeIntervalId);
   katListeIntervalId = setInterval(lastKatListe, 5000);
 }
 
@@ -179,7 +190,7 @@ function visStatus(o) {
   var info = document.getElementById('trekkInfo');
   if (o.status === 'trekker') {
     startBtn.disabled = false;
-    info.innerHTML = 'Lag som trekker kategori: <b>' + o.lagA.navn + '</b>';
+    info.innerHTML = 'Lag som trekker kategori: <b>' + escHtml(o.lagA.navn) + '</b>';
     document.getElementById('app').innerHTML = '<div class="grid" id="grid"></div><div id="final"></div>';
     renderGrid();
   } else if (o.status === 'velger') {
@@ -371,7 +382,9 @@ function lastKlubbLogoMap() {
     (liste || []).forEach(function (k) { map[String(k.navn).toLowerCase().trim()] = k.slug; });
     KLUBB_LOGO_MAP = map;
     return map;
-  }).catch(function (e) { console.error(e); KLUBB_LOGO_MAP = {}; return KLUBB_LOGO_MAP; });
+  }).catch(function (e) {
+    console.error(e); KLUBB_LOGO_MAP = null; return {};
+  });
 }
 
 function polarToCartesian(cx, cy, r, angleDeg) {
@@ -551,7 +564,7 @@ function initUavgjort(u) {
   if (u.status === 'trukket') {
     spinBtn.style.display = 'none';
     var resHtml = '';
-    (u.valgt || []).forEach(function (v) { resHtml += '<div>Vinner: ' + v.navn + '</div>'; });
+    (u.valgt || []).forEach(function (v) { resHtml += '<div>Vinner: ' + escHtml(v.navn) + '</div>'; });
     resHtml += '<p style="font-size:.5em;opacity:.7;margin-top:10px;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
     document.getElementById('uavgjortResultat').innerHTML = resHtml;
   } else {
@@ -613,7 +626,7 @@ function spinToNextWinner(pool) {
     landImpact();
     setTimeout(function () {
       var el = document.getElementById('uavgjortResultat');
-      el.innerHTML += '<div>Vinner: ' + winner.navn + '</div>';
+      el.innerHTML += '<div>Vinner: ' + escHtml(winner.navn) + '</div>';
       beepWinFanfare();
       if (uavgjortWinnersQueue.length) {
         pool = pool.slice();
@@ -648,7 +661,7 @@ var sisteBommertTid = null;
 
 function visVinnerOverlay(navn, hva) {
   var ov = document.getElementById('vinnerOverlay');
-  ov.innerHTML = '<div class="vinnerBoks"><h1>🏆 ' + hva + ' er avgjort!</h1><h2>' + (navn || '') + ' vant!</h2></div>';
+  ov.innerHTML = '<div class="vinnerBoks"><h1>🏆 ' + escHtml(hva) + ' er avgjort!</h1><h2>' + escHtml(navn || '') + ' vant!</h2></div>';
   ov.style.display = 'flex';
   confetti();
   beepWinFanfare();

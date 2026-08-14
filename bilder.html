@@ -82,6 +82,11 @@ var MAKS_PIKSLER = 500; // lengste side på nedskalert bilde
 
 var KLUBBER = []; // fylles fra API (klubbListe) ved oppstart
 
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function apiGet(action, extraParams) {
   var url = API_BASE + "?api=" + action;
   if (extraParams) {
@@ -101,7 +106,7 @@ function lagKort(klubb) {
   div.setAttribute('data-navn', klubb.navn.toLowerCase());
   div.setAttribute('data-slug', klubb.slug);
   div.innerHTML =
-    '<h3 id="tittel_' + klubb.slug + '">' + klubb.navn + '</h3>' +
+    '<h3 id="tittel_' + escHtml(klubb.slug) + '">' + escHtml(klubb.navn) + '</h3>' +
     '<div class="navnrad">' +
       '<input type="text" id="navninput_' + klubb.slug + '" value="' + klubb.navn.replace(/"/g, '&quot;') + '">' +
       '<button type="button" onclick="lagreNavn(\'' + klubb.slug + '\')">Lagre navn</button>' +
@@ -118,7 +123,7 @@ function lagImgboks(klubb, type) {
   var id = klubb.slug + '_' + type;
   return '<div class="imgbox" id="box_' + id + '">' +
     '<label>' + (type === 'logo' ? 'Logo (nåværende)' : 'Drakt (nåværende)') + '</label>' +
-    '<img src="' + BILDE_BASE + klubb.slug + '_' + type + '.jpg" alt="' + klubb.navn + ' ' + type + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{textContent:\'(mangler bilde)\',style:\'font-size:.7em;opacity:.6;padding:20px 0;\'}))">' +
+    '<img src="' + BILDE_BASE + klubb.slug + '_' + type + '.jpg" alt="' + escHtml(klubb.navn) + ' ' + escHtml(type) + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{textContent:\'(mangler bilde)\',style:\'font-size:.7em;opacity:.6;padding:20px 0;\'}))">' +
     '<input type="file" accept="image/*" onchange="handleFil(this, \'' + klubb.slug + '\', \'' + type + '\')">' +
     '<canvas id="canvas_' + id + '" style="display:none;"></canvas>' +
     '<a class="dlbtn" id="dl_' + id + '"><button style="width:100%;">Last ned ' + klubb.slug + '_' + type + '.jpg</button></a>' +

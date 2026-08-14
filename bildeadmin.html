@@ -292,14 +292,29 @@ function filValgt(input, slug, type) {
   if (!fil) return;
   var reader = new FileReader();
   reader.onload = function(e) {
-    aktivCrop = { slug: slug, type: type, cropper: null };
+    // Rydd bort forrige cropper FOER det nye objektet settes - ellers sjekkes
+  // alltid et ferskt null og den gamle instansen lekker (AVVIK-036).
+  if (aktivCrop && aktivCrop.cropper) { try { aktivCrop.cropper.destroy(); } catch (e) {} }
+  aktivCrop = { slug: slug, type: type, cropper: null };
     document.getElementById('modalTittel').textContent =
       'Beskjær bilde - ' + slug + ' (' + (type === 'logo' ? 'logo' : 'drakt') + ')';
     document.getElementById('resultatRad').style.display = 'none';
     var img = document.getElementById('cropImg');
+    img.onerror = function () {
+      // Uten denne staar modalen tom og taus for f.eks. en HEIC-fil (AVVIK-036).
+      document.getElementById('modalTittel').textContent =
+        'Kunne ikke lese bildet - prøv en JPG eller PNG';
+      aktivCrop = null;
+    };
     img.src = e.target.result;
     document.getElementById('modalBg').classList.add('open');
     img.onload = function() {
+      if (!aktivCrop) { return; }   // modalen ble lukket mens bildet lastet
+      if (typeof Cropper === 'undefined') {
+        document.getElementById('modalTittel').textContent =
+          'Beskjæringsverktøyet kunne ikke lastes - sjekk nettforbindelsen';
+        return;
+      }
       if (aktivCrop.cropper) aktivCrop.cropper.destroy();
       aktivCrop.cropper = new Cropper(img, {
         viewMode: 1,
