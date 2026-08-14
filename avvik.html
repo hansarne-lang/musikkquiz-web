@@ -561,6 +561,18 @@ var AVVIK_DATA = [
     beskrivelse: "Testen \"scoreRunde pa runde uten innsendte svar krasjer ikke\" sendte en fasit med bare EN sang til setFasit for den kalte scoreRunde. Det var meningsfullt da testen ble skrevet - den var nettopp det som avdekket AVVIK-001, der setFasit krasjet med ra TypeError pa et ufullstendig fasit-array. Etter at AVVIK-001 og AVVIK-005 innforte validering avviser setFasit et slikt array kontrollert med \"Fasit ma inneholde 3 sanger (artist, lat, ar) for runde 998\". Testen feilet dermed pa sin egen forutsetning og kom aldri til scoreRunde - den testet ikke lenger det den heter. Dette var den eneste roede i en ellers gronn kjoring, og var altsa en utdatert test, ikke en feil i appen.",
     losning: "Testen sender na en fullstendig fasit med tre sanger, slik at den faktisk kommer fram til scoreRunde og tester det den skal: at scoreRunde tar en runde uten innsendte svar uten a krasje. Valideringen fra AVVIK-001 og AVVIK-005 er fortsatt dekket av test_avvik.html corner case 1-5.",
     sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-041",
+    tittel: "Testsuiten kunne bare bestaa en gang - poengflagget for testrunden ble aldri nullstilt",
+    omrade: "Testverktoy - test_utvidet.html + backend Kode.gs",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Andre kjoring av test_utvidet.html mot produksjon samme dag (14.08.2026)",
+    beskrivelse: "Testen \"scoreSangMedOverstyringer gir korrekt overstyrt poeng\" feilet med \"Sang 1 i runde 999 er allerede poengberegnet\". Backend nekter helt korrekt aa poengberegne samme sang to ganger, men flagget settes av testen selv, og oppryddingen nullstilte det aldri. Forste kjoring etter en nullstilling passerte derfor, mens alle senere kjoringer feilet. Bekreftet ved aa lese sangScoreStatus for runde 999 rett etter kjoringen: s1 true, s2 og s3 false. Dette er manglende testisolasjon, ikke en feil i appen - samme klasse som AVVIK-009 og AVVIK-040. Det fantes ingen API-handling for aa nullstille poengflagget for en enkelt runde; nullstillRunder tommer hele Runder-arket og skriver runde 1-6 pa nytt, og ville slettet ekte fasit.",
+    losning: "Lagt til nullstillSangScore(runde) i Kode.gs: den tommer poengflaggene for EN runde og kaster feil for runde 1-6, slik at ekte runder ikke kan rores. Rutet som api=nullstillSangScore. test_utvidet.html nullstiller na runde 998 og 999 helt i starten av kjoringen, og har fatt en egen test som verifiserer bade at nullstillingen virker og at ekte runder avvises. Antallet gikk fra 79 til 80 tester, og index.html er oppdatert. Distribuert som versjon 85.",
+    sistOppdatert: "2026-08-14"
   }
 ];
 

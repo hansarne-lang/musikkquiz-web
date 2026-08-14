@@ -139,6 +139,13 @@ async function kjorAlle() {
     if (sd && sd.runde) { gjeldendeRundeForTest = sd.runde; }
   } catch (e) { /* faller tilbake pa 1 */ }
 
+  // Poengflaggene for testrundene ma nullstilles for kjoringen, ellers feiler
+  // scoreSangMedOverstyringer pa alt annet enn aller forste kjoring (AVVIK-041).
+  try {
+    await apiGet('nullstillSangScore', { runde: 999 });
+    await apiGet('nullstillSangScore', { runde: 998 });
+  } catch (e) { /* eldre backend uten denne handlingen - testen melder fra selv */ }
+
   var testLagIder = [];
   var testKatNavn = TEST_KAT_PREFIX + Date.now();
   var testKatNavn2 = TEST_KAT_PREFIX + "B_" + Date.now();
@@ -914,6 +921,17 @@ async function kjorAlle() {
       var liste = await apiGet('klubbListe');
       var rester = liste.filter(function (k) { return k.navn.indexOf('TEST_') === 0; });
       assert(rester.length === 0, "Fant " + rester.length + " klubber med gjenværende TEST_-navn: " + rester.map(function(k){return k.slug;}).join(', '));
+    });
+
+    await kjorTest("Opprydding", "nullstillSangScore rydder testrunden og nekter for ekte runder", async function () {
+      await apiGet('nullstillSangScore', { runde: 999 });
+      var etter = await apiGet('sangScoreStatus', { runde: 999 });
+      assert(!etter.s1 && !etter.s2 && !etter.s3,
+        "Poengflaggene for runde 999 ble ikke nullstilt: " + JSON.stringify(etter));
+      var avvist = null;
+      try { await apiGet('nullstillSangScore', { runde: 1 }); } catch (e) { avvist = e.message; }
+      assert(avvist, "nullstillSangScore godtok runde 1 - den skal nekte for ekte runder");
+      return avvist;
     });
 
     await kjorTest("Opprydding", "Sluttkontroll: 50 produksjonskategorier, 0 brukt, ingen uavgjort, buzzer ledig, skjerm auto", async function () {
