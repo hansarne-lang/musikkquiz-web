@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Meld på laget</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+.wrap{max-width:480px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+input{background:#000000;border:2px solid var(--accent2);color:var(--text);border-radius:0;padding:10px 12px;font-size:16px;font-family:'Courier New',Courier,monospace;width:100%;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:14px 20px;border-radius:0;cursor:pointer;font-size:16px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;width:100%;margin-top:12px;}
+button:hover{background:#00ff00;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+label{display:inline-block;margin-top:6px;font-size:0.9em;color:#00ffff;}
+.ok{color:#00ff00;font-weight:700;}
+.err{color:#ff6b6b;font-weight:700;}
+.small{font-size:0.85em;opacity:0.75;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz</h1>
+<div class="card">
+<h2>Meld på laget ditt</h2>
+<div id="app"><p>Sjekker om påmelding er åpen...</p></div>
+</div>
+</div>
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+
+function apiGet(action, params) {
+  var url = API_BASE + "?api=" + action;
+  if (params) {
+    Object.keys(params).forEach(function(k) {
+      url += "&" + k + "=" + encodeURIComponent(params[k]);
+    });
+  }
+  return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+function visSkjema() {
+  var html = '<label>Lagnavn</label><br>';
+  html += '<input id="navnInput" maxlength="60" placeholder="Skriv inn lagnavnet deres" autofocus>';
+  html += '<button id="meldPaKnapp" onclick="meldPa()">Meld på</button>';
+  html += '<div id="status" style="margin-top:14px;"></div>';
+  document.getElementById('app').innerHTML = html;
+  var inp = document.getElementById('navnInput');
+  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') meldPa(); });
+}
+
+function meldPa() {
+  var inp = document.getElementById('navnInput');
+  var navn = inp.value.trim();
+  var statusDiv = document.getElementById('status');
+  if (!navn) { statusDiv.innerHTML = '<p class="err">Skriv inn et lagnavn først.</p>'; return; }
+  var knapp = document.getElementById('meldPaKnapp');
+  knapp.disabled = true;
+  statusDiv.innerHTML = '<p>Melder på...</p>';
+  apiGet('registrerLagSelv', { navn: navn }).then(function (lag) {
+    statusDiv.innerHTML = '<p class="ok">' + lag.navn + ' er påmeldt!</p><p class="small">Divisjon ' + lag.divisjon + ' - Bord ' + lag.bord + '</p><p class="small">Vis dette til en arrangør, eller vent til dere blir ropt opp / får utdelt bordnummer.</p>';
+    inp.value = '';
+    knapp.disabled = false;
+  }).catch(function (e) {
+    statusDiv.innerHTML = '<p class="err">Feil: ' + (e && e.message ? e.message : e) + '</p>';
+    knapp.disabled = false;
+  });
+}
+
+function init() {
+  apiGet('paameldingStatus').then(function (s) {
+    if (s.status === 'apen') {
+      visSkjema();
+    } else {
+      document.getElementById('app').innerHTML = '<p class="err">Påmelding er ikke åpen akkurat nå.</p><p class="small">Spør en arrangør om å starte selvregistreringen, eller vent til den åpner.</p>';
+    }
+  }).catch(function (e) {
+    document.getElementById('app').innerHTML = '<p class="err">Klarte ikke å sjekke påmeldingsstatus: ' + (e && e.message ? e.message : e) + '</p>';
+  });
+}
+
+init();
+</script>
+</body>
+</html>

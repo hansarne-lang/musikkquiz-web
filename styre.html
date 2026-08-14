@@ -55,8 +55,16 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <summary>Lag-oppsett (opprett/rediger lag, generer QR-koder)</summary>
 <div id="lagDiag" style="color:#f66;font-family:monospace;font-size:12px;margin-top:8px"></div>
 <div style="margin-top:12px">
+<label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="qrPaameldingSwitch" style="width:auto;" onchange="veksleLagModus()"> QR-kode-påmelding (lag melder seg på selv i stedet for manuelt oppsett)</label>
+</div>
+<div id="lagModusManuell" style="margin-top:12px">
 <label>Antall lag (4-28)</label><br>
 <input type="number" id="lagAntall" min="4" max="28" value="6"> <button onclick="lagRader()">Generer lagrader</button>
+</div>
+<div id="lagModusQr" style="margin-top:12px;display:none;">
+<p class="small">Åpner en side der lag kan melde seg på selv med lagnavn. Nullstiller dagens lagliste.</p>
+<button onclick="startSelvregistrering()">Start selvregistrering</button>
+<div id="selvregistreringDiv"></div>
 </div>
 <div id="lagRaderDiv"></div>
 </details>
@@ -74,6 +82,11 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="uavgjort"></div>
 <div id="opprykk"></div>
 <div id="buzzer"></div>
+<div id="buzzerModusPanel" class="card">
+<h2>Buzzer-modus</h2>
+<label><input type="radio" name="buzzerModus" id="buzzerModusFysisk" onchange="settBuzzerModus()"> Fysisk (knapper hos styringsbordet)</label><br>
+<label><input type="radio" name="buzzerModus" id="buzzerModusVirtuell" onchange="settBuzzerModus()"> Virtuell (lagene buzzer fra egen side)</label>
+</div>
 <div id="fysiskBuzzerPanel" class="card" style="border:2px solid #ffff00;">
 <h2>Fysisk buzzer (knapper)</h2>
 <p style="font-size:.85em;opacity:.8;">Knapp 1 = venstre Ctrl, Knapp 2 = mellomrom, Knapp 3 = venstre Alt. Velg hvilket lag hver knapp skal styre i denne duellen.</p>
@@ -141,6 +154,13 @@ function feil(e) {
 
 function init() {
   apiGet('styreData').then(vis).catch(feil);
+  apiGet('paameldingStatus').then(function (s) {
+    if (s.status === 'apen') {
+      document.getElementById('qrPaameldingSwitch').checked = true;
+      veksleLagModus();
+      visSelvregistrering();
+    }
+  }).catch(function () {});
 }
 
 function renderAlleFasit(alleFasit, gjeldende) {
@@ -363,7 +383,7 @@ function visUavgjort(o) {
 function bekreftUavgjort(kontekst) {
   document.getElementById('uavgjort').innerHTML = '<div class="card"><p>Bekrefter...</p></div>';
   apiGet('lukkUavgjort').then(function () {
-    if (kontekst === 'opprykk') return apiGet('startOpprykk');
+    if (kontekst === 'opprykk') return apiGet('startOpprykk', { runde: gjeldendeRunde });
     if (kontekst === 'finale') return apiGet('startFinale');
     if (kontekst === 'finale_vinner') return apiGet('avsluttFinale');
     if (kontekst === 'finaleB') return apiGet('startFinaleB');
@@ -443,7 +463,7 @@ function visOpprykk(o) {
 }
 
 function startOpp() {
-  apiGet('startOpprykk').then(visOpprykk).catch(feil);
+  apiGet('startOpprykk', { runde: gjeldendeRunde }).then(visOpprykk).catch(feil);
 }
 
 function velgKat(lagId, navn) {
@@ -487,6 +507,25 @@ function apneBuzz() {
 
 function nullstillBuzz() {
   apiGet('lukkBuzzer').then(visBuzzer).catch(feil);
+}
+
+function lastBuzzerModus() {
+  apiGet('buzzerModus').then(visBuzzerModus).catch(feil);
+}
+
+function visBuzzerModus(o) {
+  var fysisk = (o.modus !== 'virtuell');
+  var fFysisk = document.getElementById('buzzerModusFysisk');
+  var fVirtuell = document.getElementById('buzzerModusVirtuell');
+  var panel = document.getElementById('fysiskBuzzerPanel');
+  if (fFysisk) fFysisk.checked = fysisk;
+  if (fVirtuell) fVirtuell.checked = !fysisk;
+  if (panel) panel.style.display = fysisk ? '' : 'none';
+}
+
+function settBuzzerModus() {
+  var virtuell = document.getElementById('buzzerModusVirtuell').checked;
+  apiGet('setBuzzerModus', { modus: virtuell ? 'virtuell' : 'fysisk' }).then(visBuzzerModus).catch(feil);
 }
 
 function lastFinale() {
@@ -775,6 +814,58 @@ window.onerror = function(msg, src, line, col, err) {
   return true;
 };
 
+var selvregistreringPoll = null;
+
+function veksleLagModus() {
+  var qr = document.getElementById('qrPaameldingSwitch').checked;
+  document.getElementById('lagModusManuell').style.display = qr ? 'none' : 'block';
+  document.getElementById('lagModusQr').style.display = qr ? 'block' : 'none';
+}
+
+function startSelvregistrering() {
+  document.getElementById('lagRaderDiv').innerHTML = '';
+  document.getElementById('lagOppsettResultat').innerHTML = '';
+  document.getElementById('selvregistreringDiv').innerHTML = '<p>Starter selvregistrering...</p>';
+  apiGet('apneSelvregistrering').then(function () {
+    visSelvregistrering();
+  }).catch(feil);
+}
+
+function visSelvregistrering() {
+  var link = siteUrl + '/registrer.html';
+  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(link);
+  var html = '<div class="qrcard" style="max-width:260px;"><h3>Skann for å melde på laget</h3><img src="' + qrUrl + '" width="220" height="220" alt="QR-kode"><p class="small">' + link + '</p></div>';
+  html += '<div id="selvregistrerteLag" style="margin-top:14px;"><p>Laster påmeldte lag...</p></div>';
+  html += '<button onclick="lukkPaamelding()" style="margin-top:14px;">Lukk påmelding</button>';
+  document.getElementById('selvregistreringDiv').innerHTML = html;
+  oppdaterSelvregistrerteLag();
+  if (selvregistreringPoll) clearInterval(selvregistreringPoll);
+  selvregistreringPoll = setInterval(oppdaterSelvregistrerteLag, 4000);
+}
+
+function oppdaterSelvregistrerteLag() {
+  apiGet('teams').then(function (teams) {
+    var div = document.getElementById('selvregistrerteLag');
+    if (!div) return;
+    if (!teams.length) { div.innerHTML = '<p>Ingen lag påmeldt ennå.</p>'; return; }
+    var html = '<table><tr><th>Lag</th><th>Divisjon</th><th>Bord</th></tr>';
+    teams.forEach(function (t) {
+      html += '<tr><td>' + t.navn + '</td><td>' + t.divisjon + '</td><td>' + t.bord + '</td></tr>';
+    });
+    html += '</table><p class="small">' + teams.length + ' lag påmeldt.</p>';
+    div.innerHTML = html;
+  });
+}
+
+function lukkPaamelding() {
+  if (selvregistreringPoll) { clearInterval(selvregistreringPoll); selvregistreringPoll = null; }
+  document.getElementById('selvregistreringDiv').innerHTML = '<p>Lukker påmelding...</p>';
+  apiGet('lukkSelvregistrering').then(function (teams) {
+    document.getElementById('selvregistreringDiv').innerHTML = '<p class="ok" style="color:#00ff00;">Påmelding lukket. ' + teams.length + ' lag påmeldt.</p>';
+    lagOppsettVisResultat(teams);
+  }).catch(feil);
+}
+
 function lagRader() {
   var n = parseInt(document.getElementById('lagAntall').value);
   document.getElementById('lagRaderDiv').innerHTML = '<p>Henter forslag til lagnavn...</p>';
@@ -936,6 +1027,7 @@ lastOpprykk();
 setInterval(lastOpprykk, 4000);
 lastBuzzer();
 setInterval(lastBuzzer, 2000);
+lastBuzzerModus();
 lastFinale();
 setInterval(lastFinale, 3000);
 lastFinaleB();

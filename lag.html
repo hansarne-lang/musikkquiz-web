@@ -28,6 +28,8 @@ button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-wei
 button:hover{background:#00ff00;filter:none;}
 button:disabled{background:#666;color:#ccc;cursor:default;}
 label{display:inline-block;margin-top:10px;font-size:0.9em;color:#00ffff;}
+#buzzknapp{font-size:1.5em;padding:20px 40px;background:#2ecc71;color:#fff;border:none;}
+#buzzknapp:disabled{background:#999;color:#fff;}
 .jokerlabel{display:flex;align-items:center;gap:8px;background:#221100;border:2px solid #ffa500;padding:10px;margin:10px 0;font-size:0.95em;color:#ffcc66;}
 .jokerlabel input{width:auto;max-width:none;height:22px;}
 </style>
@@ -41,6 +43,10 @@ label{display:inline-block;margin-top:10px;font-size:0.9em;color:#00ffff;}
 <a href="veiledning.html"><button>Veiledning</button></a>
 </div>
 <div id="app"><p>Laster...</p></div>
+<div id="buzzerdiv" class="card" style="display:none;text-align:center;">
+<button id="buzzknapp" onclick="buzz()">BUZZ!</button>
+<p id="buzztekst"></p>
+</div>
 <div id="opprykkdiv" class="card" style="display:none;border-color:#ffff00;">
 <div id="opprykkinnhold"></div>
 </div>
@@ -142,6 +148,44 @@ function sendSangInn(sangNr) {
   });
 }
 
+function sjekkBuzzerModus() {
+  apiGet('buzzerModus').then(function (o) {
+    if (o.modus === 'virtuell') {
+      lastBuzzerLag();
+      setInterval(lastBuzzerLag, 700);
+    }
+  }).catch(function (e) { console.error(e); });
+}
+
+function lastBuzzerLag() {
+  apiGet('buzzerStatus').then(visBuzzerLag).catch(function (e) { console.error(e); });
+}
+
+function visBuzzerLag(o) {
+  var div = document.getElementById('buzzerdiv');
+  var knapp = document.getElementById('buzzknapp');
+  var tekst = document.getElementById('buzztekst');
+  if (!div) return;
+  if (o.status === 'ledig') {
+    div.style.display = 'none';
+  } else if (o.status === 'apen') {
+    div.style.display = 'block';
+    knapp.disabled = false;
+    knapp.style.background = '#2ecc71';
+    tekst.textContent = '';
+  } else if (o.status === 'lukket') {
+    div.style.display = 'block';
+    knapp.disabled = true;
+    knapp.style.background = '#999';
+    tekst.textContent = (String(o.vinnerId) === String(teamId)) ? 'Dere var først!' : (o.vinnerNavn + ' var først!');
+  }
+}
+
+function buzz() {
+  document.getElementById('buzzknapp').disabled = true;
+  apiGet('trykkBuzzer', { lagId: teamId }).then(visBuzzerLag).catch(function (e) { console.error(e); });
+}
+
 function lastOpprykkLag() {
   apiGet('opprykkStatus').then(visOpprykkLag).catch(function(e) { console.error(e); });
 }
@@ -178,6 +222,7 @@ function velgKategoriSelv(navn) {
 
 init();
 if (teamId) {
+  sjekkBuzzerModus();
   lastOpprykkLag();
   setInterval(lastOpprykkLag, 1500);
 }
