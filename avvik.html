@@ -549,6 +549,18 @@ var AVVIK_DATA = [
     beskrivelse: "Kveldene reverseres med kvelder.slice().reverse() ut fra en udokumentert antakelse om at API-et leverer dem eldst forst. Rangeringen innad i en kveld gjores utelukkende pa indeks: i === 0 gir gronn 1.plass og teller som kveldsseier, og PLASSPOENG tildeles etter indeks - aldri etter r.poeng. Rettes en poengsum manuelt i regnearket, viser tabellen fortsatt gammel rekkefolge og gir kveldsseieren til feil lag uten noe varsel. Sesongtabellen sorteres dessuten kun pa plasseringspoeng uten sekundaerkriterium, saa lag med lik sum far vilkarlig rekkefolge.",
     losning: "Innfort sortertPaaPoeng() som brukes bade i kveldstabellen, i rangeringen til sesongstatistikken og i sammendragslinjen, slik at plassering, gronn 1.plass og kveldsseire regnes fra poeng i stedet for fra rekkefolgen backend sendte. Sesongtabellen har fatt sekundaerkriterier: kveldsseire, deretter finaleseire, deretter lagnavn alfabetisk. Verifisert i Chromium med en kveld der backend leverte radene i feil rekkefolge: laget med 40 poeng havnet overst og ble gronnmarkert, og sammendraget oppga riktig divisjonsvinner.",
     sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-040",
+    tittel: "Utdatert test feilet paa sitt eget oppsett etter at setFasit fikk validering",
+    omrade: "Testverktoy - test_utvidet.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-14",
+    funnetAv: "Full kjoring av test_utvidet.html mot produksjon (14.08.2026) - 78 av 79 bestatt",
+    beskrivelse: "Testen \"scoreRunde pa runde uten innsendte svar krasjer ikke\" sendte en fasit med bare EN sang til setFasit for den kalte scoreRunde. Det var meningsfullt da testen ble skrevet - den var nettopp det som avdekket AVVIK-001, der setFasit krasjet med ra TypeError pa et ufullstendig fasit-array. Etter at AVVIK-001 og AVVIK-005 innforte validering avviser setFasit et slikt array kontrollert med \"Fasit ma inneholde 3 sanger (artist, lat, ar) for runde 998\". Testen feilet dermed pa sin egen forutsetning og kom aldri til scoreRunde - den testet ikke lenger det den heter. Dette var den eneste roede i en ellers gronn kjoring, og var altsa en utdatert test, ikke en feil i appen.",
+    losning: "Testen sender na en fullstendig fasit med tre sanger, slik at den faktisk kommer fram til scoreRunde og tester det den skal: at scoreRunde tar en runde uten innsendte svar uten a krasje. Valideringen fra AVVIK-001 og AVVIK-005 er fortsatt dekket av test_avvik.html corner case 1-5.",
+    sistOppdatert: "2026-08-14"
   }
 ];
 

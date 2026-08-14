@@ -294,7 +294,12 @@ async function kjorAlle() {
 
     await kjorTest("scoreRunde / svar", "scoreRunde på runde uten innsendte svar krasjer ikke", async function () {
       var TOM_TESTRUNDE = 998;
-      var fasit = [{ artist: "X", latt: "Y", aar: "2020" }];
+      // Fasiten ma ha alle tre sangene. Testen sendte tidligere kun en, og feilet
+      // derfor pa sitt eget oppsett etter at setFasit fikk validering i AVVIK-001
+      // og AVVIK-005 - den testet altsa ikke lenger det den heter (AVVIK-040).
+      var fasit = [{ artist: "X", latt: "Y", aar: "2020" },
+                   { artist: "X2", latt: "Y2", aar: "2020" },
+                   { artist: "X3", latt: "Y3", aar: "2020" }];
       await apiGet('setFasit', { runde: TOM_TESTRUNDE, fasit: JSON.stringify(fasit) });
       var res = await apiGet('scoreRunde', { runde: TOM_TESTRUNDE });
       assert(Array.isArray(res), "scoreRunde på tom runde ga ikke en gyldig liste tilbake");
