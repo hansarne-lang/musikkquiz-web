@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Corner case-tester 3 (QR, buzzer, validering)</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+.warn{border:3px solid #ff0000;background:#330000;padding:16px;margin-bottom:20px;}
+.warn h2{color:#ff6b6b;}
+.testrow{padding:8px 10px;border-bottom:1px solid #333;font-size:14px;display:flex;gap:10px;align-items:baseline;}
+.testrow .navn{flex:1;}
+.ok{color:#00ff00;font-weight:700;}
+.feilet{color:#ff6b6b;font-weight:700;}
+.venter{color:#888;}
+.gruppe{margin-top:18px;font-size:0.85em;color:#00ffff;text-transform:uppercase;border-bottom:1px solid #00ffff;padding-bottom:4px;}
+#sammendrag{font-size:1.1em;margin-top:16px;}
+.melding{font-size:12px;color:#aaa;margin-left:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Corner case-tester 3</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="avvik.html"><button style="background:#00ffff;">Avviksside</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="test_utvidet.html"><button style="background:#ff6b6b;color:#fff;">Utvidet testverkt&oslash;y</button></a>
+<a href="test_avvik.html"><button style="background:#ff6b6b;color:#fff;">Corner case 1</button></a>
+<a href="test_avvik2.html"><button style="background:#ff6b6b;color:#fff;">Corner case 2</button></a>
+<a href="test_regresjon.html"><button style="background:#00ff00;color:#000;">Avviksregresjon</button></a>
+</div>
+
+<div class="warn">
+<h2>&#9888;&#65039; Ikke bruk under en p&aring;g&aring;ende quizkveld!</h2>
+<p>30 nye corner cases som d&aelig;kker omr&aring;dene de to f&oslash;rste ikke tar: QR-selvregistrering (navnevalidering, duplikater, 60-tegnsgrensen, fem samtidige p&aring;meldinger), samspillet mellom apneRunde og p&aring;meldingen, buzzer-modus og buzzerens vinnerfelt, nullstillSangScore med beskyttelse av ekte runder, skjermoverstyring og bommert med ekstremverdier, samt ugyldige lag-id-er mot finale, opprykk og svarinnsending.</p>
+<p><b>Testene sletter laglisten.</b> De avbryter hvis det allerede ligger lag der. Isolerte testrunder 970 og 971, testlag med prefiks TEST_CC3. Buzzer-modus, p&aring;meldingsstatus og skjermoverstyring huskes ved start og settes tilbake i en finally-blokk. Kj&oslash;r kun mellom quizkvelder.</p>
+</div>
+
+<div class="card">
+<button id="kjorAlleBtn" onclick="kjorAlle()">Kj&oslash;r alle 30 corner cases</button>
+<button onclick="ryddOppManuelt()" style="background:#666;">N&oslash;dopprydding (kj&oslash;r hvis noe gikk galt)</button>
+<div id="sammendrag"></div>
+</div>
+
+<div class="card">
+<div id="resultater"><p class="venter">Ingen tester kj&oslash;rt enn&aring;.</p></div>
+</div>
+</div>
+
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+
+// Egne rundenummer, adskilt fra test_avvik (995-997), test_avvik2 (980-994)
+// og test_utvidet (998-999), slik at sidene ikke kolliderer.
+var TEST_RUNDE = 970;
+var URORT_RUNDE = 971;
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function (k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+// Rått kall som IKKE sender med en gitt parameter i det hele tatt
+function apiGetUtenParam(action, params) {
+  var url = API_BASE + "?api=" + action;
+  Object.keys(params).forEach(function (k) {
+    url += "&" + k + "=" + encodeURIComponent(params[k]);
+  });
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+var resultater = [];
+var gjeldendeGruppe = "";
+var kjorer = false;
+
+function logg(gruppe, navn, ok, melding) {
+  if (gruppe !== gjeldendeGruppe) {
+    gjeldendeGruppe = gruppe;
+    resultater.push({ type: "gruppe", navn: gruppe });
+  }
+  resultater.push({ type: "test", navn: navn, ok: ok, melding: melding || "" });
+  tegn();
+}
+
+function tegn() {
+  var html = "";
+  resultater.forEach(function (r) {
+    if (r.type === "gruppe") {
+      html += '<div class="gruppe">' + r.navn + '</div>';
+    } else {
+      html += '<div class="testrow"><span class="navn">' + r.navn + '</span><span class="' + (r.ok ? 'ok">✓ OK' : 'feilet">✗ FEILET') + '</span>' + (r.melding ? '<span class="melding">' + r.melding + '</span>' : '') + '</div>';
+    }
+  });
+  document.getElementById('resultater').innerHTML = html || '<p class="venter">Ingen tester kjørt ennå.</p>';
+  var antall = resultater.filter(function (r) { return r.type === 'test'; }).length;
+  var feilet = resultater.filter(function (r) { return r.type === 'test' && !r.ok; }).length;
+  document.getElementById('sammendrag').innerHTML = antall ? ('<b>' + (antall - feilet) + ' / ' + antall + ' tester bestått.</b>' + (feilet ? ' <span class="feilet">' + feilet + ' feilet.</span>' : '')) : '';
+  window.__testResultater = resultater;
+}
+
+function assert(betingelse, meldingHvisFeil) {
+  if (!betingelse) throw new Error(meldingHvisFeil || 'Assertion feilet');
+}
+
+async function kjorTest(gruppe, navn, fn) {
+  try {
+    var melding = await fn();
+    logg(gruppe, navn, true, melding || "");
+  } catch (e) {
+    logg(gruppe, navn, false, (e && e.message) ? e.message : String(e));
+  }
+}
+
+
+async function kjorAlle() {
+  if (kjorer) return;
+  kjorer = true;
+  document.getElementById('kjorAlleBtn').disabled = true;
+  resultater = [];
+  gjeldendeGruppe = "";
+  tegn();
+
+  var lagA = null, lagB = null;
+  var opprinneligModus = null, opprinneligPaamelding = null;
+  var gyldigFasit = [{ artist: 'A1', latt: 'L1', aar: '2001' },
+                     { artist: 'A2', latt: 'L2', aar: '2002' },
+                     { artist: 'A3', latt: 'L3', aar: '2003' }];
+
+  try {
+    // ========== Gruppe: Oppsett ==========
+    await kjorTest("Oppsett", "Husk gjeldende buzzer-modus og paameldingsstatus", async function () {
+      opprinneligModus = (await apiGet('buzzerModus')).modus;
+      opprinneligPaamelding = (await apiGet('paameldingStatus')).status;
+      return "modus=" + opprinneligModus + ", paamelding=" + opprinneligPaamelding;
+    });
+
+    await kjorTest("Oppsett", "Laglisten er tom for vi begynner", async function () {
+      var lag = await apiGet('teams');
+      if (lag.length) {
+        throw new Error("Det ligger " + lag.length + " lag i lista. Testene sletter laglisten - avbryt hvis dette er en ekte kveld.");
+      }
+      return "0 lag";
+    });
+
+    // ========== Gruppe: QR-paamelding (11) ==========
+    await kjorTest("QR-paamelding", "#1 apneSelvregistrering apner paameldingen og tommer laglisten", async function () {
+      await apiGet('apneSelvregistrering');
+      var s = await apiGet('paameldingStatus');
+      assert(s.status === 'apen', "Forventet 'apen', fikk " + s.status);
+      var lag = await apiGet('teams');
+      assert(lag.length === 0, "Laglisten var ikke tom etter apning: " + lag.length);
+    });
+
+    await kjorTest("QR-paamelding", "#2 Tomt lagnavn avvises", async function () {
+      var feil = null;
+      try { await apiGet('registrerLagSelv', { navn: '' }); } catch (e) { feil = e.message; }
+      assert(feil, "Tomt lagnavn ble godtatt");
+      return feil;
+    });
+
+    await kjorTest("QR-paamelding", "#3 Lagnavn med kun mellomrom avvises", async function () {
+      var feil = null;
+      try { await apiGet('registrerLagSelv', { navn: '     ' }); } catch (e) { feil = e.message; }
+      assert(feil, "Lagnavn med kun mellomrom ble godtatt");
+      return feil;
+    });
+
+    await kjorTest("QR-paamelding", "#4 Lagnavn paa noyaktig 60 tegn godtas", async function () {
+      var navn = 'TEST_CC3_' + new Array(60 - 9 + 1).join('X');
+      assert(navn.length === 60, "Testnavnet ble " + navn.length + " tegn, ikke 60");
+      var lag = await apiGet('registrerLagSelv', { navn: navn });
+      assert(lag && lag.navn === navn, "60-tegns navn ble ikke lagret riktig");
+      return "godtatt, id=" + lag.id;
+    });
+
+    await kjorTest("QR-paamelding", "#5 Lagnavn paa 61 tegn avvises", async function () {
+      var navn = 'TEST_CC3_' + new Array(61 - 9 + 1).join('Y');
+      assert(navn.length === 61, "Testnavnet ble " + navn.length + " tegn, ikke 61");
+      var feil = null;
+      try { await apiGet('registrerLagSelv', { navn: navn }); } catch (e) { feil = e.message; }
+      assert(feil, "61-tegns navn ble godtatt - grensen holder ikke");
+      return feil;
+    });
+
+    await kjorTest("QR-paamelding", "#6 registrerLagSelv returnerer id, divisjon og bord", async function () {
+      lagA = await apiGet('registrerLagSelv', { navn: 'TEST_CC3_A' });
+      assert(lagA.id, "Svaret mangler id - da far laget ikke lenken til svarsiden (AVVIK-021)");
+      assert(lagA.divisjon, "Svaret mangler divisjon");
+      assert(lagA.bord, "Svaret mangler bord");
+      return "id=" + lagA.id + " divisjon=" + lagA.divisjon + " bord=" + lagA.bord;
+    });
+
+    await kjorTest("QR-paamelding", "#7 Duplikat lagnavn avvises (uavhengig av store bokstaver)", async function () {
+      var feil = null;
+      try { await apiGet('registrerLagSelv', { navn: 'test_cc3_a' }); } catch (e) { feil = e.message; }
+      assert(feil, "Et lag med samme navn i andre bokstavstorrelse ble godtatt");
+      return feil;
+    });
+
+    await kjorTest("QR-paamelding", "#8 Fem samtidige paameldinger gir fem unike id-er og bord", async function () {
+      var kall = [];
+      for (var i = 0; i < 5; i++) {
+        kall.push(apiGet('registrerLagSelv', { navn: 'TEST_CC3_S' + i }).catch(function (e) { return { feil: e.message }; }));
+      }
+      var svar = await Promise.all(kall);
+      var ok = svar.filter(function (s) { return s && s.id; });
+      var ider = ok.map(function (s) { return String(s.id); });
+      var bord = ok.map(function (s) { return String(s.bord); });
+      assert(ok.length === 5, "Bare " + ok.length + " av 5 samtidige paameldinger gikk gjennom: " +
+        JSON.stringify(svar.map(function (s) { return s.feil || s.id; })));
+      assert(new Set(ider).size === 5, "Fikk duplikate lag-id-er: " + ider.join(','));
+      assert(new Set(bord).size === 5, "Fikk duplikate bordnummer: " + bord.join(','));
+      return "id-er " + ider.join(',') + " / bord " + bord.join(',');
+    });
+
+    await kjorTest("QR-paamelding", "#9 Lagnavn med HTML lagres verbatim (frontend maa escape)", async function () {
+      var stygt = 'TEST_CC3_<b>x</b>';
+      var lag = await apiGet('registrerLagSelv', { navn: stygt });
+      assert(lag.navn === stygt, "Navnet ble endret av backend: " + lag.navn);
+      var alle = await apiGet('teams');
+      var funnet = alle.filter(function (t) { return t.navn === stygt; });
+      assert(funnet.length === 1, "Fant ikke laget igjen i teams-lista");
+      return "lagret som skrevet - frontend maa escape (AVVIK-012/029/030)";
+    });
+
+    await kjorTest("QR-paamelding", "#10 lukkSelvregistrering returnerer en liste og stenger", async function () {
+      var liste = await apiGet('lukkSelvregistrering');
+      assert(Array.isArray(liste), "lukkSelvregistrering svarte ikke med en liste - styre.html viser da 'undefined lag pameldt'");
+      var s = await apiGet('paameldingStatus');
+      assert(s.status !== 'apen', "Paameldingen er fortsatt apen: " + s.status);
+      return liste.length + " lag i lista";
+    });
+
+    await kjorTest("QR-paamelding", "#11 registrerLagSelv avvises naar paameldingen er stengt", async function () {
+      var feil = null;
+      try { await apiGet('registrerLagSelv', { navn: 'TEST_CC3_ETTER' }); } catch (e) { feil = e.message; }
+      assert(feil, "Et lag ble pameldt selv om paameldingen var stengt");
+      return feil;
+    });
+
+    // ========== Gruppe: apneRunde og paamelding (2) ==========
+    await kjorTest("apneRunde", "#12 apneRunde lukker en apen paamelding (AVVIK-024)", async function () {
+      await apiGet('apneSelvregistrering');
+      var foer = (await apiGet('paameldingStatus')).status;
+      assert(foer === 'apen', "Fikk ikke apnet paameldingen for testen");
+      var runde = (await apiGet('styreData')).runde;
+      await apiGet('apneRunde', { runde: runde });
+      var etter = (await apiGet('paameldingStatus')).status;
+      assert(etter !== 'apen', "Paameldingen sto fortsatt apen etter apneRunde - sent pameldte lag havner i nedrykkstrekningen");
+      return foer + " -> " + etter;
+    });
+
+    await kjorTest("apneRunde", "#13 apneRunde endrer ikke gjeldende rundenummer naar samme runde apnes", async function () {
+      var foer = (await apiGet('styreData')).runde;
+      await apiGet('apneRunde', { runde: foer });
+      var etter = (await apiGet('styreData')).runde;
+      assert(foer === etter, "Rundenummeret endret seg fra " + foer + " til " + etter);
+      return "runde " + etter;
+    });
+
+    // ========== Gruppe: Buzzer-modus og buzzer (6) ==========
+    await kjorTest("Buzzer", "#14 buzzerModus returnerer fysisk eller virtuell", async function () {
+      var o = await apiGet('buzzerModus');
+      assert(o.modus === 'fysisk' || o.modus === 'virtuell', "Uventet modus: " + JSON.stringify(o));
+      return o.modus;
+    });
+
+    await kjorTest("Buzzer", "#15 setBuzzerModus med tullverdi gir ikke en tredje modus", async function () {
+      var satt = await apiGet('setBuzzerModus', { modus: 'tull' });
+      assert(satt.modus === 'fysisk' || satt.modus === 'virtuell',
+        "setBuzzerModus godtok en ugyldig verdi: " + JSON.stringify(satt));
+      var lest = await apiGet('buzzerModus');
+      assert(lest.modus === satt.modus, "buzzerModus leste noe annet enn det som ble satt");
+      return "falt tilbake til " + satt.modus;
+    });
+
+    await kjorTest("Buzzer", "#16 setBuzzerModus uten parameter krasjer ikke", async function () {
+      var satt = await apiGet('setBuzzerModus');
+      assert(satt && (satt.modus === 'fysisk' || satt.modus === 'virtuell'),
+        "Uventet svar uten modus-parameter: " + JSON.stringify(satt));
+      return "modus = " + satt.modus;
+    });
+
+    await kjorTest("Buzzer", "#17 trykkBuzzer naar buzzeren er ledig endrer ingenting", async function () {
+      await apiGet('lukkBuzzer');
+      var foer = await apiGet('buzzerStatus');
+      assert(foer.status === 'ledig', "Fikk ikke buzzeren til 'ledig' for testen");
+      await apiGet('trykkBuzzer', { lagId: lagA ? lagA.id : 'ukjent' });
+      var etter = await apiGet('buzzerStatus');
+      assert(etter.status === 'ledig', "Status endret seg til " + etter.status + " selv om buzzeren var ledig");
+      assert(!etter.vinnerNavn, "Det ble satt en vinner selv om buzzeren var ledig: " + etter.vinnerNavn);
+    });
+
+    await kjorTest("Buzzer", "#18 lukkBuzzer tommer vinnerfeltene (AVVIK-027)", async function () {
+      await apiGet('apneBuzzer');
+      await apiGet('trykkBuzzer', { lagId: lagA ? lagA.id : 'x' });
+      var etter = await apiGet('lukkBuzzer');
+      assert(etter.status === 'ledig', "lukkBuzzer ga status " + etter.status);
+      assert(!etter.vinnerNavn && !etter.vinnerId,
+        "vinnerNavn/vinnerId ble ikke tomt: " + etter.vinnerNavn + " / " + etter.vinnerId);
+    });
+
+    await kjorTest("Buzzer", "#19 apneBuzzer nullstiller en tidligere vinner", async function () {
+      await apiGet('apneBuzzer');
+      await apiGet('trykkBuzzer', { lagId: lagA ? lagA.id : 'x' });
+      var apnetIgjen = await apiGet('apneBuzzer');
+      assert(apnetIgjen.status === 'apen', "Fikk ikke apnet buzzeren pa nytt");
+      assert(!apnetIgjen.vinnerNavn, "Gammel vinner hang igjen etter ny apning: " + apnetIgjen.vinnerNavn);
+      await apiGet('lukkBuzzer');
+    });
+
+    // ========== Gruppe: nullstillSangScore (4) ==========
+    await kjorTest("nullstillSangScore", "#20 Avviser ekte runder (1-6)", async function () {
+      var avvist = 0, meldinger = [];
+      for (var r = 1; r <= 6; r++) {
+        try { await apiGet('nullstillSangScore', { runde: r }); }
+        catch (e) { avvist++; meldinger.push(e.message); }
+      }
+      assert(avvist === 6, "Bare " + avvist + " av 6 ekte runder ble avvist - ekte data kan slettes");
+      return meldinger[0];
+    });
+
+    await kjorTest("nullstillSangScore", "#21 Avviser rundenummer som ikke er tall", async function () {
+      var feil = null;
+      try { await apiGet('nullstillSangScore', { runde: 'abc' }); } catch (e) { feil = e.message; }
+      assert(feil, "nullstillSangScore godtok runde='abc'");
+      return feil;
+    });
+
+    await kjorTest("nullstillSangScore", "#22 Trygg paa en runde som aldri har vaert brukt", async function () {
+      var svar = await apiGet('nullstillSangScore', { runde: URORT_RUNDE });
+      assert(svar === true || svar, "Uventet svar for urort runde: " + JSON.stringify(svar));
+      var st = await apiGet('sangScoreStatus', { runde: URORT_RUNDE });
+      assert(!st.s1 && !st.s2 && !st.s3, "Urort runde hadde poengflagg satt: " + JSON.stringify(st));
+    });
+
+    await kjorTest("nullstillSangScore", "#23 Nullstiller faktisk etter en poengberegning", async function () {
+      await apiGet('nullstillSangScore', { runde: TEST_RUNDE });
+      await apiGet('setFasit', { runde: TEST_RUNDE, fasit: JSON.stringify(gyldigFasit) });
+      await apiGet('scoreSang', { runde: TEST_RUNDE, sangNr: 1 });
+      var etterScoring = await apiGet('sangScoreStatus', { runde: TEST_RUNDE });
+      assert(etterScoring.s1, "Sang 1 ble ikke markert som scoret - testen kan ikke verifisere nullstillingen");
+      await apiGet('nullstillSangScore', { runde: TEST_RUNDE });
+      var etterNullstilling = await apiGet('sangScoreStatus', { runde: TEST_RUNDE });
+      assert(!etterNullstilling.s1, "Poengflagget sto igjen etter nullstilling: " + JSON.stringify(etterNullstilling));
+      return "s1 true -> false";
+    });
+
+    // ========== Gruppe: Skjerm og bommert (4) ==========
+    await kjorTest("Skjerm", "#24 setSkjermOverride med ukjent modus gir ikke en udefinert tilstand", async function () {
+      var foer = await apiGet('skjermOverride');
+      await apiGet('setSkjermOverride', { modus: 'finnesikke', tekst: '' });
+      var etter = await apiGet('skjermOverride');
+      assert(typeof etter.modus === 'string', "skjermOverride mistet modus-feltet: " + JSON.stringify(etter));
+      await apiGet('setSkjermOverride', { modus: foer.modus || 'auto', tekst: foer.tekst || '' });
+      return "satt til '" + etter.modus + "', tilbakestilt til '" + (foer.modus || 'auto') + "'";
+    });
+
+    await kjorTest("Skjerm", "#25 Svaert lang pausetekst hakker ikke opp svaret", async function () {
+      var lang = new Array(1200).join('a');
+      await apiGet('setSkjermOverride', { modus: 'pause', tekst: lang });
+      var etter = await apiGet('skjermOverride');
+      assert(typeof etter.tekst === 'string', "Teksten kom ikke tilbake som streng");
+      await apiGet('setSkjermOverride', { modus: 'auto', tekst: '' });
+      return "sendte " + lang.length + " tegn, fikk " + etter.tekst.length + " tilbake";
+    });
+
+    await kjorTest("Bommert", "#26 visBommertPaStorskjerm med manglende felter krasjer ikke", async function () {
+      await apiGet('visBommertPaStorskjerm', { lagNavn: 'TEST_CC3_BOMMERT' });
+      var o = await apiGet('bommertVisning');
+      assert(o && o.tid, "Bommerten ble ikke registrert: " + JSON.stringify(o));
+      await apiGet('skjulBommert');
+      return "registrert uten sangtekst/svar";
+    });
+
+    await kjorTest("Bommert", "#27 skjulBommert to ganger paa rad er trygt", async function () {
+      await apiGet('skjulBommert');
+      await apiGet('skjulBommert');
+      var o = await apiGet('bommertVisning');
+      assert(!o || !o.tid, "Bommerten var fortsatt aktiv etter to skjul: " + JSON.stringify(o));
+    });
+
+    // ========== Gruppe: Finale og opprykk (3) ==========
+    await kjorTest("Finale", "#28 giFinalePoeng med ugyldig lagId krasjer ikke", async function () {
+      var status = await apiGet('finaleStatus');
+      if (status.status === 'pagar') return "hoppet over (en finale pagar - rorer den ikke)";
+      try {
+        await apiGet('giFinalePoeng', { lagId: 'TEST_CC3_FINNES_IKKE' });
+      } catch (e) {
+        return "avvist kontrollert: " + e.message;
+      }
+      var etter = await apiGet('finaleStatus');
+      assert(etter && typeof etter.status === 'string', "finaleStatus svarte ikke normalt etterpa");
+      return "godtatt stille, status uendret (" + etter.status + ")";
+    });
+
+    await kjorTest("Opprykk", "#29 velgKategori med ukjent kategorinavn haandteres", async function () {
+      var o = await apiGet('opprykkStatus');
+      if (o.status === 'velger' || o.status === 'pagar') return "hoppet over (opprykksspill pagar)";
+      try {
+        await apiGet('velgKategori', { lagId: 'TEST_CC3_X', navn: 'FINNES_IKKE_KATEGORI_CC3' });
+      } catch (e) {
+        return "avvist kontrollert: " + e.message;
+      }
+      var etter = await apiGet('opprykkStatus');
+      assert(etter && typeof etter.status === 'string', "opprykkStatus svarte ikke normalt etterpa");
+      return "status uendret (" + etter.status + ")";
+    });
+
+    await kjorTest("Svar", "#30 sendSvarForSang med lagId som ikke finnes", async function () {
+      await apiGet('nullstillSangScore', { runde: TEST_RUNDE });
+      try {
+        await apiGet('sendSvarForSang', { lagId: 'TEST_CC3_FINNES_IKKE', runde: TEST_RUNDE, sangNr: 1,
+                                          artist: 'X', latt: 'Y', aar: 2000 });
+      } catch (e) {
+        return "avvist kontrollert: " + e.message;
+      }
+      var svar = await apiGet('svarForSang', { runde: TEST_RUNDE, sangNr: 1 });
+      assert(Array.isArray(svar), "svarForSang svarte ikke med en liste etterpa");
+      return "godtatt stille - svaret vises ikke for noe ekte lag";
+    });
+
+  } finally {
+    // ========== Gruppe: Opprydding ==========
+    await kjorTest("Opprydding", "Sett buzzer-modus og paameldingsstatus tilbake", async function () {
+      if (opprinneligModus) await apiGet('setBuzzerModus', { modus: opprinneligModus });
+      if (opprinneligPaamelding === 'apen') { await apiGet('apneSelvregistrering'); }
+      else { await apiGet('lukkSelvregistrering').catch(function () {}); }
+      await apiGet('lukkBuzzer');
+      await apiGet('setSkjermOverride', { modus: 'auto', tekst: '' });
+      await apiGet('skjulBommert').catch(function () {});
+      var modus = (await apiGet('buzzerModus')).modus;
+      assert(modus === opprinneligModus, "Buzzer-modus ble ikke satt tilbake (" + modus + " vs " + opprinneligModus + ")");
+      return "modus=" + modus;
+    });
+
+    await kjorTest("Opprydding", "Fjern testlagene og nullstill testrundene", async function () {
+      await apiGet('resetTeams');
+      await apiGet('nullstillSangScore', { runde: TEST_RUNDE }).catch(function () {});
+      await apiGet('nullstillSangScore', { runde: URORT_RUNDE }).catch(function () {});
+      var lag = await apiGet('teams');
+      var rester = lag.filter(function (t) { return String(t.navn).indexOf('TEST_CC3') === 0; });
+      assert(rester.length === 0, "Fant " + rester.length + " gjenvaerende testlag");
+      assert(lag.length === 0, "Laglisten er ikke tom: " + lag.length + " lag igjen");
+    });
+
+    await kjorTest("Opprydding", "Sluttkontroll: buzzer ledig, skjerm auto, ingen bommert", async function () {
+      var b = await apiGet('buzzerStatus');
+      assert(b.status === 'ledig', "Buzzeren er ikke ledig: " + b.status);
+      assert(!b.vinnerNavn && !b.vinnerId, "Buzzeren har rester i vinnerfeltene: " + b.vinnerNavn);
+      var s = await apiGet('skjermOverride');
+      assert((s.modus || 'auto') === 'auto', "Skjermoverstyringen star igjen pa " + s.modus);
+      var bo = await apiGet('bommertVisning');
+      assert(!bo || !bo.tid, "En bommert star fortsatt til visning");
+    });
+
+    kjorer = false;
+    document.getElementById('kjorAlleBtn').disabled = false;
+  }
+}
+
+async function ryddOppManuelt() {
+  document.getElementById('sammendrag').innerHTML = 'Rydder opp...';
+  try {
+    await apiGet('resetTeams').catch(function () {});
+    await apiGet('lukkBuzzer').catch(function () {});
+    await apiGet('setBuzzerModus', { modus: 'fysisk' }).catch(function () {});
+    await apiGet('setSkjermOverride', { modus: 'auto', tekst: '' }).catch(function () {});
+    await apiGet('skjulBommert').catch(function () {});
+    await apiGet('lukkSelvregistrering').catch(function () {});
+    await apiGet('nullstillSangScore', { runde: TEST_RUNDE }).catch(function () {});
+    await apiGet('nullstillSangScore', { runde: URORT_RUNDE }).catch(function () {});
+    var lag = await apiGet('teams');
+    var rester = lag.filter(function (t) { return String(t.navn).indexOf('TEST_CC3') === 0; });
+    document.getElementById('sammendrag').innerHTML = rester.length
+      ? ('Advarsel: ' + rester.length + ' testlag ligger fortsatt igjen.')
+      : 'N&oslash;dopprydding fullf&oslash;rt: laglisten tom, buzzer ledig, skjerm auto, p&aring;melding stengt.';
+  } catch (e) {
+    document.getElementById('sammendrag').innerHTML = 'N&oslash;dopprydding feilet: ' + (e && e.message ? e.message : e);
+  }
+}
+
+tegn();
+</script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Avviksregresjon</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+button{background:var(--accent2);border:2px solid #ffffff;color:#000000;font-weight:700;padding:12px 20px;border-radius:0;cursor:pointer;font-size:15px;font-family:'Courier New',Courier,monospace;text-transform:uppercase;box-shadow:none;}
+button:hover{background:#00ff00;filter:none;}
+button:disabled{background:#666;color:#ccc;cursor:default;}
+.warn{border:3px solid #ff0000;background:#330000;padding:16px;margin-bottom:20px;}
+.warn h2{color:#ff6b6b;}
+.testrow{padding:8px 10px;border-bottom:1px solid #333;font-size:14px;display:flex;gap:10px;align-items:baseline;}
+.testrow .navn{flex:1;}
+.ok{color:#00ff00;font-weight:700;}
+.feilet{color:#ff6b6b;font-weight:700;}
+.venter{color:#888;}
+.gruppe{margin-top:18px;font-size:0.85em;color:#00ffff;text-transform:uppercase;border-bottom:1px solid #00ffff;padding-bottom:4px;}
+#sammendrag{font-size:1.1em;margin-top:16px;}
+.melding{font-size:12px;color:#aaa;margin-left:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Avviksregresjon</h1>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="index.html"><button>Oversikt</button></a>
+<a href="avvik.html"><button style="background:#00ffff;">Avviksside</button></a>
+<a href="styre.html"><button>Styre / Admin</button></a>
+<a href="test_utvidet.html"><button style="background:#ff6b6b;color:#fff;">Utvidet testverkt&oslash;y</button></a>
+<a href="test_avvik3.html"><button style="background:#ff6b6b;color:#fff;">Corner case 3</button></a>
+</div>
+
+<div class="card" style="border-color:#00ff00;">
+<h2 style="color:#00ff00;">Trygg &aring; kj&oslash;re</h2>
+<p>Denne siden sjekker at de rettede avvikene fortsatt er rettet. Den laster hver av de ekte sidene i en skjult ramme og kontrollerer at rettelsene er p&aring; plass - escaping, tastevakter, feilh&aring;ndtering, polling og skjuling av adminknapper. <b>Ingen data endres:</b> kallene mot backend er rene lesekall, og de to unntakene (nullstillSangScore mot runde 1, registrerLagSelv mot stengt p&aring;melding) er tester p&aring; at backend <i>avviser</i> dem.</p>
+<p>Kj&oslash;r denne etter hver opplasting til GitHub Pages. Sl&aring;r noe ut, er et gammelt avvik p&aring; vei tilbake - avviksnummeret st&aring;r i testnavnet.</p>
+</div>
+
+<div class="card">
+<button id="kjorAlleBtn" onclick="kjorAlle()">Kj&oslash;r avviksregresjonen</button>
+<div id="sammendrag"></div>
+</div>
+
+<div class="card">
+<div id="resultater"><p class="venter">Ingen tester kj&oslash;rt enn&aring;.</p></div>
+</div>
+</div>
+
+<script>
+var API_BASE = "https://script.google.com/macros/s/AKfycbzrbI15cIHxU_ccXhcriPwGwuksnPs2K5DDPTCHxhVrur-vU3KEpIiGbPnazh-K6i0rzQ/exec";
+
+function apiGet(action, extraParams) {
+  var url = API_BASE + "?api=" + action;
+  if (extraParams) {
+    Object.keys(extraParams).forEach(function (k) {
+      url += "&" + k + "=" + encodeURIComponent(extraParams[k]);
+    });
+  }
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+// Rått kall som IKKE sender med en gitt parameter i det hele tatt
+function apiGetUtenParam(action, params) {
+  var url = API_BASE + "?api=" + action;
+  Object.keys(params).forEach(function (k) {
+    url += "&" + k + "=" + encodeURIComponent(params[k]);
+  });
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (data && data.error) { throw new Error(data.error); }
+    return data;
+  });
+}
+
+var resultater = [];
+var gjeldendeGruppe = "";
+var kjorer = false;
+
+function logg(gruppe, navn, ok, melding) {
+  if (gruppe !== gjeldendeGruppe) {
+    gjeldendeGruppe = gruppe;
+    resultater.push({ type: "gruppe", navn: gruppe });
+  }
+  resultater.push({ type: "test", navn: navn, ok: ok, melding: melding || "" });
+  tegn();
+}
+
+function tegn() {
+  var html = "";
+  resultater.forEach(function (r) {
+    if (r.type === "gruppe") {
+      html += '<div class="gruppe">' + r.navn + '</div>';
+    } else {
+      html += '<div class="testrow"><span class="navn">' + r.navn + '</span><span class="' + (r.ok ? 'ok">✓ OK' : 'feilet">✗ FEILET') + '</span>' + (r.melding ? '<span class="melding">' + r.melding + '</span>' : '') + '</div>';
+    }
+  });
+  document.getElementById('resultater').innerHTML = html || '<p class="venter">Ingen tester kjørt ennå.</p>';
+  var antall = resultater.filter(function (r) { return r.type === 'test'; }).length;
+  var feilet = resultater.filter(function (r) { return r.type === 'test' && !r.ok; }).length;
+  document.getElementById('sammendrag').innerHTML = antall ? ('<b>' + (antall - feilet) + ' / ' + antall + ' tester bestått.</b>' + (feilet ? ' <span class="feilet">' + feilet + ' feilet.</span>' : '')) : '';
+  window.__testResultater = resultater;
+}
+
+function assert(betingelse, meldingHvisFeil) {
+  if (!betingelse) throw new Error(meldingHvisFeil || 'Assertion feilet');
+}
+
+async function kjorTest(gruppe, navn, fn) {
+  try {
+    var melding = await fn();
+    logg(gruppe, navn, true, melding || "");
+  } catch (e) {
+    logg(gruppe, navn, false, (e && e.message) ? e.message : String(e));
+  }
+}
+
+
+// Laster en ekte side i en skjult iframe og kjorer en sjekk mot den.
+// Sidene ligger pa samme domene, saa vi naar bade DOM og funksjonene deres.
+function medSide(fil, ventMs, fn) {
+  return new Promise(function (resolve, reject) {
+    var ifr = document.createElement('iframe');
+    ifr.setAttribute('aria-hidden', 'true');
+    ifr.style.cssText = 'position:absolute;left:-10000px;top:0;width:1280px;height:800px;border:0;';
+    var ferdig = false;
+    var rydd = function () { try { ifr.remove(); } catch (e) {} };
+    var timeout = setTimeout(function () {
+      if (ferdig) return;
+      ferdig = true; rydd(); reject(new Error('Siden ' + fil + ' lastet ikke innen 20 sekunder'));
+    }, 20000);
+    ifr.onload = function () {
+      setTimeout(function () {
+        if (ferdig) return;
+        ferdig = true;
+        clearTimeout(timeout);
+        var w = ifr.contentWindow, d = ifr.contentDocument;
+        Promise.resolve()
+          .then(function () { return fn(w, d); })
+          .then(function (r) { rydd(); resolve(r); })
+          .catch(function (e) { rydd(); reject(e); });
+      }, ventMs || 2500);
+    };
+    ifr.src = fil;
+    document.body.appendChild(ifr);
+  });
+}
+
+// Sjekker at en funksjon finnes og at kildekoden inneholder alle merkene.
+function harMerker(w, funksjonsnavn, merker) {
+  var f = w[funksjonsnavn];
+  if (typeof f !== 'function') { throw new Error('Fant ikke funksjonen ' + funksjonsnavn + ' - er siden endret?'); }
+  var kilde = f.toString();
+  var mangler = merker.filter(function (m) { return kilde.indexOf(m) === -1; });
+  if (mangler.length) {
+    throw new Error(funksjonsnavn + ' mangler: ' + mangler.join(' | '));
+  }
+  return true;
+}
+
+// Kaller sidens egen escHtml med en fiendtlig streng.
+function escaperTrygt(w, navn) {
+  var f = w[navn || 'escHtml'];
+  if (typeof f !== 'function') { throw new Error('Siden har ingen ' + (navn || 'escHtml') + '-funksjon'); }
+  var ut = f('<img src=x onerror="x">&"');
+  if (ut.indexOf('<') !== -1 || ut.indexOf('>') !== -1) {
+    throw new Error('Vinkelparenteser slapp gjennom: ' + ut);
+  }
+  if (ut.indexOf('"') !== -1) { throw new Error('Anforselstegn slapp gjennom: ' + ut); }
+  return ut.slice(0, 60);
+}
+
+var SIDER = [
+  { fil: 'index.html', globaler: [], vent: 800 },
+  { fil: 'styre.html', globaler: ['escHtml', 'lokalFeil', 'fysiskTastNed', 'visBuzzerModus'], vent: 3000 },
+  { fil: 'lag.html', globaler: ['escHtml', 'sjekkBuzzerModus', 'visBuzzerLag'], vent: 2500 },
+  { fil: 'registrer.html', globaler: ['escHtml', 'meldPa', 'init'], vent: 2500 },
+  { fil: 'stilling.html', globaler: ['escHtml', 'vis'], vent: 2500 },
+  { fil: 'trekning.html', globaler: ['escHtml', 'visStatus', 'buildWheel'], vent: 3000 },
+  { fil: 'hovedskjerm.html', globaler: ['escHtml', 'visStatus', 'visVinnerOverlay'], vent: 3000 },
+  { fil: 'historikk.html', globaler: ['escHtml', 'sortertPaaPoeng'], vent: 2500 },
+  { fil: 'buzzertest.html', globaler: ['escHtml', 'visBuzzerFeil'], vent: 2500 },
+  { fil: 'avvik.html', globaler: ['e', 'tegnListe'], vent: 1500 }
+];
+
+async function kjorAlle() {
+  if (kjorer) return;
+  kjorer = true;
+  document.getElementById('kjorAlleBtn').disabled = true;
+  resultater = [];
+  gjeldendeGruppe = "";
+  tegn();
+
+  try {
+    // ========== Gruppe: Sidelast ==========
+    for (var s = 0; s < SIDER.length; s++) {
+      var side = SIDER[s];
+      await kjorTest("Sidelast", "R1." + (s + 1) + " " + side.fil + " laster og har funksjonene sine",
+        (function (side) {
+          return async function () {
+            return await medSide(side.fil, side.vent, function (w, d) {
+              var mangler = side.globaler.filter(function (g) { return typeof w[g] !== 'function'; });
+              if (mangler.length) {
+                throw new Error('Manglende funksjoner (tyder pa en JS-feil ved lasting): ' + mangler.join(', '));
+              }
+              if (!d.body || d.body.children.length === 0) { throw new Error('Siden har tom body'); }
+              return side.globaler.length ? (side.globaler.length + ' funksjoner pa plass') : 'lastet';
+            });
+          };
+        })(side));
+    }
+
+    // ========== Gruppe: Escaping (AVVIK-012, 028, 029, 030, 034, 035) ==========
+    var escSider = [
+      { fil: 'styre.html', avvik: 'AVVIK-012/029', vent: 3000, navn: 'escHtml' },
+      { fil: 'stilling.html', avvik: 'AVVIK-012', vent: 2000, navn: 'escHtml' },
+      { fil: 'lag.html', avvik: 'AVVIK-012', vent: 2000, navn: 'escHtml' },
+      { fil: 'registrer.html', avvik: 'AVVIK-012', vent: 2000, navn: 'escHtml' },
+      { fil: 'trekning.html', avvik: 'AVVIK-030', vent: 2500, navn: 'escHtml' },
+      { fil: 'buzzertest.html', avvik: 'AVVIK-034', vent: 2000, navn: 'escHtml' },
+      { fil: 'bilder.html', avvik: 'AVVIK-035', vent: 2500, navn: 'escHtml' },
+      { fil: 'avvik.html', avvik: 'AVVIK-028', vent: 1500, navn: 'e' }
+    ];
+    for (var k = 0; k < escSider.length; k++) {
+      var es = escSider[k];
+      await kjorTest("Escaping", "R2." + (k + 1) + " " + es.fil + " escaper lagnavn (" + es.avvik + ")",
+        (function (es) {
+          return async function () {
+            return await medSide(es.fil, es.vent, function (w) { return escaperTrygt(w, es.navn); });
+          };
+        })(es));
+    }
+
+    await kjorTest("Escaping", "R2.9 styre.html bruker escHtml i sangresultat og finale (AVVIK-029)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'visSangResultat', ['escHtml(r.navn)']);
+        harMerker(w, 'visFinale', ['escHtml(l.navn)', 'escHtml(o.vinnerNavn)']);
+        harMerker(w, 'visFinaleB', ['escHtml(l.navn)', 'escHtml(o.vinnerNavn)']);
+        return 'alle tre stedene escaper';
+      });
+    });
+
+    await kjorTest("Escaping", "R2.10 trekning.html escaper laget som trekker (AVVIK-030)", async function () {
+      return await medSide('trekning.html', 3000, function (w) {
+        harMerker(w, 'visStatus', ['escHtml']);
+        return 'visStatus escaper';
+      });
+    });
+
+    // ========== Gruppe: Buzzer (AVVIK-013, 014, 019, 022, 034) ==========
+    await kjorTest("Buzzer", "R3.1 styre.html sin tastelytter har alle fire vaktene (AVVIK-014)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'fysiskTastNed',
+          ["gjeldendeBuzzerModus === 'virtuell'", 'TEXTAREA', 'e.repeat', 'preventDefault']);
+        return 'modus-, felt-, repeat- og preventDefault-vakt';
+      });
+    });
+
+    await kjorTest("Buzzer", "R3.2 styre.html nullstiller fysisk-avhukingen i virtuell modus (AVVIK-014)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'visBuzzerModus', ['aktivBoks', 'checked = false']);
+        return 'avhukingen nullstilles';
+      });
+    });
+
+    await kjorTest("Buzzer", "R3.3 lag.html poller buzzer-modus (AVVIK-013)", async function () {
+      return await medSide('lag.html', 2500, function (w) {
+        harMerker(w, 'sjekkBuzzerModus', ['buzzerPoll', 'clearInterval']);
+        return 'modus pollers og pollingen kan stoppes';
+      });
+    });
+
+    await kjorTest("Buzzer", "R3.4 lag.html viser BUZZ kun for duelldeltakerne (AVVIK-022)", async function () {
+      return await medSide('lag.html', 2500, function (w) {
+        if (typeof w.deltarIDuellen !== 'function') { throw new Error('deltarIDuellen mangler'); }
+        harMerker(w, 'hentDuellDeltakere', ['finaleStatus', 'finaleBStatus', 'opprykkStatus']);
+        harMerker(w, 'visBuzzerLag', ['deltarIDuellen']);
+        return 'alle tre duellkildene sjekkes';
+      });
+    });
+
+    await kjorTest("Buzzer", "R3.5 lag.html forkaster foreldede pollesvar etter egen buzz (AVVIK-019)", async function () {
+      return await medSide('lag.html', 2500, function (w) {
+        harMerker(w, 'buzz', ['buzzGenerasjon', 'disabled']);
+        harMerker(w, 'visBuzzerLag', ['generasjon']);
+        return 'generasjonsvakt pa plass';
+      });
+    });
+
+    await kjorTest("Buzzer", "R3.6 buzzertest.html har feilvisning og escaping (AVVIK-034)", async function () {
+      return await medSide('buzzertest.html', 2000, function (w) {
+        if (typeof w.visBuzzerFeil !== 'function') { throw new Error('visBuzzerFeil mangler'); }
+        harMerker(w, 'apneBuzzTest', ['visBuzzerFeil']);
+        harMerker(w, 'lukkBuzzTest', ['visBuzzerFeil']);
+        return 'begge knappene melder fra ved feil';
+      });
+    });
+
+    // ========== Gruppe: Feilhaandtering (AVVIK-015, 018) ==========
+    await kjorTest("Feilhaandtering", "R4.1 styre.html skriver feil lokalt, ikke over hele panelet (AVVIK-015)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        if (typeof w.lokalFeil !== 'function') { throw new Error('lokalFeil mangler'); }
+        harMerker(w, 'lastBuzzerModus', ['lokalFeil']);
+        harMerker(w, 'apneBuzz', ['lokalFeil']);
+        harMerker(w, 'nullstillBuzz', ['lokalFeil']);
+        return 'buzzer- og moduskallene bruker lokalFeil';
+      });
+    });
+
+    await kjorTest("Feilhaandtering", "R4.2 Pollingen av pameldte lag har feilhaandtering (AVVIK-018)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'oppdaterSelvregistrerteLag', ['catch']);
+        return 'catch pa plass';
+      });
+    });
+
+    await kjorTest("Feilhaandtering", "R4.3 Selvregistrering krever bekreftelse (AVVIK-017)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'startSelvregistrering', ['confirm(']);
+        harMerker(w, 'visSelvregistrering', ['startSelvregKnapp']);
+        return 'confirm og skjuling av knappen';
+      });
+    });
+
+    await kjorTest("Feilhaandtering", "R4.4 registrer.html har Enter-vakt og poller status (AVVIK-016, 020)", async function () {
+      return await medSide('registrer.html', 2500, function (w) {
+        harMerker(w, 'meldPa', ['knapp.disabled']);
+        if (typeof w.statusPoll === 'undefined') { throw new Error('statusPoll mangler - siden apner seg ikke selv'); }
+        return 'Enter-vakt og polling';
+      });
+    });
+
+    // ========== Gruppe: Storskjerm (AVVIK-031, 033, 037, 038) ==========
+    await kjorTest("Storskjerm", "R5.1 Trekningsvisningen oppdateres ved statusbytte (AVVIK-031)", async function () {
+      return await medSide('hovedskjerm.html', 3000, function (w) {
+        if (typeof w.sisteTrekkStatus === 'undefined') { throw new Error('sisteTrekkStatus mangler'); }
+        harMerker(w, 'initTrekning', ['alleKategoriNavn', 'opprykkStatus']);
+        var kilde = w.initTrekning.toString();
+        if (kilde.indexOf('alleKategoriNavn') > kilde.indexOf('opprykkStatus')) {
+          throw new Error('Kategorinavnene hentes ikke for opprykkStatus - rutenettet kan bli tomt');
+        }
+        return 'kategorinavn hentes forst';
+      });
+    });
+
+    await kjorTest("Storskjerm", "R5.2 Vinneroverleggene koes i stedet for a overskrive (AVVIK-037)", async function () {
+      return await medSide('hovedskjerm.html', 3000, function (w) {
+        harMerker(w, 'visVinnerOverlay', ['vinnerKo']);
+        if (typeof w.nesteVinnerOverlay !== 'function') { throw new Error('nesteVinnerOverlay mangler'); }
+        return 'ko pa plass';
+      });
+    });
+
+    await kjorTest("Storskjerm", "R5.3 Adminknappene og Start trekning er skjult (AVVIK-038)", async function () {
+      return await medSide('hovedskjerm.html', 3000, function (w, d) {
+        var nav = d.getElementById('navRad');
+        if (!nav) { throw new Error('navRad mangler'); }
+        var st = w.getComputedStyle(nav);
+        if (st.opacity !== '0' || st.pointerEvents !== 'none') {
+          throw new Error('Navigasjonen er synlig: opacity=' + st.opacity + ' pointer-events=' + st.pointerEvents);
+        }
+        var sb = d.getElementById('startBtn');
+        if (sb && w.getComputedStyle(sb).display !== 'none') {
+          throw new Error('Start trekning-knappen er synlig pa projektoren');
+        }
+        return 'begge skjult';
+      });
+    });
+
+    await kjorTest("Storskjerm", "R5.4 Klubblogoene caches ikke som tomme ved feil (AVVIK-033)", async function () {
+      var res = [];
+      res.push(await medSide('hovedskjerm.html', 3000, function (w) {
+        harMerker(w, 'lastKlubbLogoMap', ['KLUBB_LOGO_MAP = null']);
+        return 'hovedskjerm';
+      }));
+      res.push(await medSide('trekning.html', 3000, function (w) {
+        harMerker(w, 'lastKlubbLogoMap', ['KLUBB_LOGO_MAP = null']);
+        return 'trekning';
+      }));
+      return res.join(' + ');
+    });
+
+    // ========== Gruppe: Ovrig (AVVIK-032, 036, 039) ==========
+    await kjorTest("Ovrig", "R6.1 Historikken rangerer pa poeng, ikke pa rekkefolge (AVVIK-039)", async function () {
+      return await medSide('historikk.html', 2500, function (w) {
+        var inn = [{ navn: 'Sist', poeng: 3 }, { navn: 'Forst', poeng: 40 }, { navn: 'Midten', poeng: 12 }];
+        var ut = w.sortertPaaPoeng(inn);
+        if (!ut || ut[0].navn !== 'Forst' || ut[2].navn !== 'Sist') {
+          throw new Error('sortertPaaPoeng sorterte feil: ' + JSON.stringify((ut || []).map(function (r) { return r.navn; })));
+        }
+        if (inn[0].navn !== 'Sist') { throw new Error('sortertPaaPoeng endret det opprinnelige arrayet'); }
+        return 'sorterer riktig og lar originalen vaere';
+      });
+    });
+
+    await kjorTest("Ovrig", "R6.2 Knappen heter 'Apne runde' med a (AVVIK-032)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        var kilde = w.vis.toString();
+        if (kilde.indexOf('Åpne runde') === -1) {
+          throw new Error('Fant ikke "Åpne runde" - skrivefeilen er tilbake');
+        }
+        return 'riktig skrivemate';
+      });
+    });
+
+    await kjorTest("Ovrig", "R6.3 Beskjaeringsvinduet takler ulesbare bilder (AVVIK-036)", async function () {
+      return await medSide('bildeadmin.html', 3000, function (w) {
+        harMerker(w, 'filValgt', ['img.onerror', "typeof Cropper === 'undefined'"]);
+        return 'onerror og Cropper-sjekk';
+      });
+    });
+
+    // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
+    await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
+      var b = await apiGet('buzzerStatus');
+      if (b.status === 'ledig') {
+        assert(!b.vinnerNavn && !b.vinnerId,
+          "Buzzeren er ledig, men vinnerfeltene er satt: " + b.vinnerNavn + " / " + b.vinnerId);
+        return 'ledig og ryddig';
+      }
+      return 'hoppet over (buzzeren er ' + b.status + ' akkurat na)';
+    });
+
+    await kjorTest("Backend", "R7.2 nullstillSangScore finnes og beskytter ekte runder (AVVIK-041)", async function () {
+      var feil = null;
+      try { await apiGet('nullstillSangScore', { runde: 1 }); } catch (e) { feil = e.message; }
+      assert(feil, "nullstillSangScore godtok runde 1 - eller mangler helt");
+      assert(feil.indexOf('Ukjent api-handling') === -1,
+        "nullstillSangScore finnes ikke i backend - er versjon 85 distribuert?");
+      return feil;
+    });
+
+    await kjorTest("Backend", "R7.3 registrerLagSelv avvises naar pameldingen er stengt", async function () {
+      var s = await apiGet('paameldingStatus');
+      if (s.status === 'apen') { return 'hoppet over (pameldingen er apen - ville opprettet et ekte lag)'; }
+      var feil = null;
+      try { await apiGet('registrerLagSelv', { navn: 'TEST_REGRESJON' }); } catch (e) { feil = e.message; }
+      assert(feil, "Et lag ble pameldt selv om pameldingen var stengt");
+      return feil;
+    });
+
+  } finally {
+    kjorer = false;
+    document.getElementById('kjorAlleBtn').disabled = false;
+  }
+}
+
+tegn();
+</script>
+</body>
+</html>
