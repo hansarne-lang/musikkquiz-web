@@ -616,6 +616,17 @@ async function kjorAlle() {
       });
     });
 
+    await kjorTest("Ytelse", "R9.11 Panelet takler at backend ikke er distribuert (AVVIK-051)", async function () {
+      return await medSide('styre.html', 3000, function (w, d) {
+        harMerker(w, 'pollAlt', ['brukSamlekall', 'Ukjent api-handling', 'pollEnkeltvis']);
+        assert(typeof w.pollEnkeltvis === 'function', 'pollEnkeltvis mangler');
+        harMerker(w, 'pollEnkeltvis',
+          ['buzzerStatus', 'opprykkStatus', 'finaleBStatus', 'skjermOverride', 'bakoverkompatibelt']);
+        assert(d.getElementById('bakoverkompatibelt'), 'plassen for varselet mangler');
+        return 'reservevei og varsel pa plass';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

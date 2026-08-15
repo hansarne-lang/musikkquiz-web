@@ -78,6 +78,7 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="kategoriListe" style="margin-top:12px"><p style="opacity:.7;">Apne panelet for a hente kategoriene.</p></div>
 </details>
 
+<div id="bakoverkompatibelt"></div>
 <div id="uavgjort"></div>
 <div id="app"><p>Laster...</p></div>
 <div id="opprykk"></div>
@@ -1222,8 +1223,35 @@ function arkiverKveld() {
 // tilstanden i ETT kall (AVVIK-045). De enkelte last*-funksjonene star igjen
 // slik at handlinger kan oppdatere sitt eget kort med en gang.
 var pollFeilPaaRad = 0;
+// Samlekallet kom med Kode.gs versjon 87. Er ikke den distribuert enda, svarer
+// backend "Ukjent api-handling" - og da ville hele panelet statt tomt. Panelet
+// faller derfor tilbake til de gamle enkeltkallene av seg selv, og sier fra om
+// at distribusjonen mangler (AVVIK-051).
+var brukSamlekall = true;
+
+function pollEnkeltvis() {
+  return Promise.all([
+    apiGet('buzzerStatus').then(visBuzzer),
+    apiGet('buzzerModus').then(visBuzzerModus),
+    apiGet('opprykkStatus').then(visOpprykk),
+    apiGet('finaleStatus').then(visFinale),
+    apiGet('finaleBStatus').then(visFinaleB),
+    apiGet('skjermOverride').then(visSkjermOverride),
+    lastUavgjort()
+  ]).then(function () {
+    pollFeilPaaRad = 0;
+    var el = document.getElementById('bakoverkompatibelt');
+    if (el) {
+      el.innerHTML = '<div class="card" style="border-color:#ffff00;">' +
+        '<p style="margin:0;color:#ffff00;">Backend kjører en eldre versjon (mangler styrePoll). ' +
+        'Panelet virker, men henter tilstanden i sju separate kall og blir tregere. ' +
+        'Distribuer Kode.gs versjon 87 for å rette det.</p></div>';
+    }
+  });
+}
 
 function pollAlt() {
+  if (!brukSamlekall) { return pollEnkeltvis(); }
   return apiGet('styrePoll').then(function (o) {
     pollFeilPaaRad = 0;
     visBuzzer(o.buzzer);
@@ -1235,6 +1263,11 @@ function pollAlt() {
     visFinaleB(o.finaleB);
     visSkjermOverride(o.skjerm);
   }).catch(function (e) {
+    var m = String(e && e.message ? e.message : e);
+    if (/Ukjent api-handling/i.test(m)) {
+      brukSamlekall = false;
+      return pollEnkeltvis();
+    }
     pollFeilPaaRad++;
     // Et enkelt bomkall skal ikke fylle panelet med feilmeldinger - Apps Script
     // ryker innimellom. Forst etter tre pa rad sier vi fra.

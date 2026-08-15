@@ -681,6 +681,18 @@ var AVVIK_DATA = [
     beskrivelse: "Nar en kategori var valgt og de fem sangene ble spilt, sto opprykksraden i status pagar. Verken hovedskjerm.html eller trekning.html hadde en visning for den statusen - begge falt tilbake til buzzer- eller stillingsvisningen. Publikum sa altsa ingenting om kategorien mens den pagikk, og fikk heller aldri vite hvordan den endte: da status ble ferdig, gikk skjermene rett videre. Styringspanelet viste bare hvilken sang som gikk og hvem som kunne fa poeng, aldri stillingen mellom de tre lagene. Poengene la i opprykkStatus (poengA, poengB, poengC) hele tiden og ble aldri vist noe sted.",
     losning: "Ny felles poengtavle pa begge storskjermene: kategorinavn, hvilken sang av fem som gar, og et kort per lag med poengsummen i stort. Lederen markeres gront, og tallet slar ut nar et lag far poeng. Nar kategorien er ferdig sorteres kortene etter poeng, vinneren markeres gult med VANT KATEGORIEN og laget som ryker markeres rodt med RYKKER NED. Resultatet star i 30 sekunder for skjermen gar tilbake til stillingen - uten en tidsgrense ville den blitt staende, siden status ferdig varer til neste opprykk starter. Styringspanelet har fatt den samme stillingen som en tabell, bade under spillet og i sluttkortet.",
     sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-051",
+    tittel: "Styringspanelet sto tomt fordi frontend ble lagt ut for backend var distribuert",
+    omrade: "Styringspanel - styre.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Kontroll av produksjon etter opplasting",
+    beskrivelse: "AVVIK-045 gjorde om panelet til a hente hele tilstanden i ett styrePoll-kall. Frontend ble lastet opp til GitHub Pages, men Kode.gs versjon 87 var ikke distribuert enda, sa backend svarte \"Ukjent api-handling: styrePoll\" pa hvert forsok. Resultatet var at buzzer-, opprykk-, finale-, B-finale- og uavgjortkortene alle sto tomme, og panelet viste en rod \"Mistet kontakten med backend\"-melding. Malt i produksjon: 12 mislykkede forsok pa 30 sekunder. Feilen er sekvensen - en frontend som er hardt avhengig av et endepunkt som ikke finnes enda - ikke selve sammenslaingen.",
+    losning: "pollAlt kjenner igjen \"Ukjent api-handling\" og faller da tilbake til de sju gamle enkeltkallene resten av okten. Panelet virker dermed uansett hvilken rekkefolge frontend og backend legges ut i. Nar reserveveien er i bruk star det en gul melding overst om at backend kjorer en eldre versjon og at versjon 87 bor distribueres, slik at det ikke blir en stille treghet ingen forstar. Testet begge veier i sandkassen med en simulator som kan late som den mangler styrePoll: 10 tester, alle gronne.",
+    sistOppdatert: "2026-08-15"
   }
 ];
 
