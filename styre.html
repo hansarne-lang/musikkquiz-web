@@ -587,11 +587,32 @@ function visOpprykk(o) {
     html += '<button onclick="registrer(' + attr(o.lagB.id) + ')">' + escHtml(o.lagB.navn) + '</button> ';
     html += '<button onclick="registrer(' + attr(o.lagC.id) + ')">' + escHtml(o.lagC.navn) + '</button> ';
     html += '<button onclick="hopp()">Ingen riktig / hopp over...</button></div>';
+  } else if (o.status === 'omspill') {
+    // Kategorien er tom for ordinaere sanger, men to eller tre lag star likt
+    // nederst. Da spilles en ekstra sang av gangen, bare mellom dem.
+    var iOmspill = (o.omspillLag || []).map(String);
+    var deltakere = [o.lagA, o.lagB, o.lagC].filter(function (l) { return l && iOmspill.indexOf(String(l.id)) !== -1; });
+    html = '<div class="card" style="border-color:#ff00ff;"><h2>Omspill: ' + escHtml(o.valgtKategori) + '</h2>';
+    html += '<p style="color:#ff00ff;">' + deltakere.map(function (l) { return escHtml(l.navn); }).join(' og ') +
+      ' står likt nederst. Ekstra sang til én av dem er ute.</p>';
+    html += '<p><b>Omspillsang ' + (o.sangIndex - 4) + '</b> (sang ' + (o.sangIndex + 1) + ' i kategorien)</p>';
+    if (o.gjeldendeSang) {
+      html += '<p>Fasit: ' + escHtml(o.gjeldendeSang.artist) + ' - ' + escHtml(o.gjeldendeSang.latt) +
+        ' (' + escHtml(o.gjeldendeSang.aar) + ')</p>';
+      html += spotifyKnapp(o.gjeldendeSang);
+    }
+    html += opprykkStilling(o, false);
+    html += '<p>Hvem svarte riktig?</p>';
+    deltakere.forEach(function (l) {
+      html += '<button onclick="registrer(' + attr(l.id) + ')">' + escHtml(l.navn) + '</button> ';
+    });
+    html += '<button onclick="hopp()">Ingen riktig - ny omspillsang</button></div>';
   } else if (o.status === 'uavgjort') {
     var lagliste = [o.lagA, o.lagB, o.lagC];
     var poengliste = [o.poengA, o.poengB, o.poengC];
     var minPoeng = Math.min(poengliste[0], poengliste[1], poengliste[2]);
-    html = '<div class="card"><h2>Likt poeng - velg hvilket lag som rykker ned til 2. divisjon:</h2>';
+    html = '<div class="card" style="border-color:#ff6b6b;"><h2>Likt poeng - velg hvilket lag som rykker ned til 2. divisjon:</h2>';
+    html += '<p style="font-size:.9em;opacity:.8;">Kategorien er tom for sanger, også omspillsangene. Da må du avgjøre det selv.</p>';
     lagliste.forEach(function (lag, i) {
       if (poengliste[i] === minPoeng) {
         html += '<button onclick="velgNed(\'' + escHtml(lag.id) + '\')">' + escHtml(lag.navn) + '</button> ';

@@ -705,6 +705,30 @@ var AVVIK_DATA = [
     beskrivelse: "Speilingen i AVVIK-048 kjenner igjen at NOEN ANDRE har trukket ved at listen lokaleVinnere er tom. Den listen ble bare fylt inne i lokken som merker av en omgang i planstripa - fant den ingen aapen omgang, ble ingenting registrert. Er planen tom (uavgjortPlan svarte ikke, eller backend fant ingen steg for konteksten) trodde siden derfor at den selv aldri hadde snurret. Ved neste polling, tre sekunder etter landing, speilet den sin egen trekning: nullstilte resultatteksten og snurret hjulet en gang til - i lokke. Publikum ville sett hjulet snurre igjen og igjen uten at vinneren ble staaende. Reprodusert i sandkassen: teksten \"Vinner: ...\" var borte etter tre sekunder, og bade E15 og F9 rapporterte tom vinner.",
     losning: "lokaleVinnere fylles na for lokken, uavhengig av om planstripa har en aapen omgang. I tillegg husker siden hvilken rad den allerede har speilet (speiletRadKey), slik at samme rad aldri speiles to ganger uansett. Verifisert ved at E15 og F9 gaar gronne igjen. Verifisert i produksjon 15.08.2026: filen ligger ute paa GitHub Pages, og rettelsen er dekket av regresjonssuiten (59/59 gronne mot den publiserte siden).",
     sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-053",
+    tittel: "Uavgjort i kategoriomgangen ble avgjort av quizmasteren, ikke av spillet",
+    omrade: "Opp-/nedrykk - Kode.gs + styre.html + storskjermene",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Sporsmal fra quizmaster om hva som skjer nar flere star likt",
+    beskrivelse: "Finalene og B-finalen oppdager uavgjort selv og sender det til lykkehjulet. Kategoriomgangen i opp-/nedrykket gjorde ikke det: fullforOpprykk_ satte status til uavgjort, og sa matte quizmasteren klikke selv hvilket lag som skulle rykke ned. Det er akkurat der det svir mest, siden et lag faktisk degraderes, og avgjorelsen la pa en person foran salen uten noen mekanisme bak. Tilfellet er ikke sjeldent heller: to lag deler bunnplassen, eller alle tre star likt - typisk 0-0-0 hvis ingen svarer riktig pa noen av de fem sangene.",
+    losning: "Star flere lag likt nederst etter de fem sangene, gar spillet na til OMSPILL: en ekstra sang av gangen, og bare mellom lagene som star likt. Tar ett av dem sangen, er de ute av faresonen, og omspillet fortsetter mellom de gjenvaerende til en star alene nederst. Kategoriene har fatt sang 6 og 7 i bakhand til nettopp dette. Backend: ny kolonne OmspillLag i Opprykk-arket, status omspill, og registrerOpprykkPoeng/hoppOverSang som avviser lag utenfor omspillet. Styringspanelet far et eget lyserosa omspillskort med bare de aktuelle lagene, fasit og Spotify-knapp; storskjermene viser OMSPILL over poengtavla og markerer lagene som er med. Gar ogsa omspillsangene tomme uten at det loser seg, faller vi tilbake til manuelt valg som for - med en forklaring pa hvorfor. 10 enhetstester og 12 ende-til-ende-tester.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-054",
+    tittel: "Stillingstabellen oppga verken sesong eller runde",
+    omrade: "Storskjerm - stilling.html + hovedskjerm.html + Kode.gs",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Stillingssiden viste en liten linje med rundenummeret og ellers bare de to divisjonstabellene. Sesongen fantes i backend (AKTIV_SESONG, brukt av jokeren og lagret i historikken), men ble aldri vist noe sted utenom historikksiden. Publikum kunne altsa ikke se hvilken sesong de var i, og pa storskjermen sto det ikke engang hvilken runde.",
+    losning: "getStandings returnerer na sesong sammen med runde (runde la der fra for, men ble ikke brukt pa storskjermen). Bade stilling.html og hovedskjermens stillingsvisning har fatt en linje som viser \"Sesong 3 - Runde 4 av 6\". Mellom to runder, nar backend melder runde 0, star det \"Mellom rundene\" i stedet for et misvisende tall.",
+    sistOppdatert: "2026-08-15"
   }
 ];
 

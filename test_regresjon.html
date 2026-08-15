@@ -640,6 +640,46 @@ async function kjorAlle() {
       });
     });
 
+    await kjorTest("Ovrig", "R9.13 Omspill i kategoriomgangen (AVVIK-053)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'visOpprykk', ["=== 'omspill'", 'omspillLag', 'ny omspillsang']);
+        return 'omspillskort pa plass';
+      });
+    });
+
+    await kjorTest("Storskjerm", "R9.14 Storskjermene viser omspill (AVVIK-053)", async function () {
+      var sider = ['hovedskjerm.html', 'trekning.html'];
+      for (var i = 0; i < sider.length; i++) {
+        await medSide(sider[i], 3000, function (w) {
+          harMerker(w, 'tegnKategoriTavle', ['omspill', 'I OMSPILL']);
+          return true;
+        });
+      }
+      return 'omspill markert pa begge';
+    });
+
+    await kjorTest("Storskjerm", "R9.15 Stillingen viser sesong og runde (AVVIK-054)", async function () {
+      await medSide('stilling.html', 2500, function (w) {
+        assert(typeof w.sesongOgRunde === 'function', 'sesongOgRunde mangler i stilling.html');
+        assert(/Sesong 3/.test(w.sesongOgRunde({ sesong: 3, runde: 4 })), 'sesongen kom ikke med');
+        assert(/Runde 4 av 6/.test(w.sesongOgRunde({ sesong: 3, runde: 4 })), 'runden kom ikke med');
+        assert(/Mellom rundene/.test(w.sesongOgRunde({ sesong: 1, runde: 0 })), 'runde 0 ble ikke oversatt');
+        return true;
+      });
+      return await medSide('hovedskjerm.html', 3000, function (w, d) {
+        assert(d.getElementById('stillingSesong'), 'stillingSesong mangler i hovedskjerm.html');
+        harMerker(w, 'visStilling', ['sesong', 'Runde ', 'Mellom rundene']);
+        return 'begge sider viser sesong og runde';
+      });
+    });
+
+    await kjorTest("Backend", "R9.16 stilling svarer med sesong og runde (AVVIK-054)", async function () {
+      var st = await apiGet('stilling');
+      assert(st && typeof st.sesong !== 'undefined', 'stilling mangler sesong: ' + JSON.stringify(st).slice(0, 100));
+      assert(typeof st.runde !== 'undefined', 'stilling mangler runde');
+      return 'sesong ' + st.sesong + ', runde ' + st.runde;
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

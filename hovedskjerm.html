@@ -83,6 +83,9 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 .katLag.ned{border-color:#ff2f4d;background:#160000;}
 .katLag.ned .poeng{color:#ff2f4d;}
 .katLag.ned .merke{color:#ff2f4d;}
+.katLag.omspill{border-color:#ff00ff;}
+.katLag.omspill .poeng{color:#ff00ff;}
+.katLag.omspill .merke{color:#ff00ff;}
 .katLag.pling{animation:katPling .8s ease-out;}
 @keyframes katPling{0%{transform:scale(1);}35%{transform:scale(1.14);}100%{transform:scale(1);}}
 #katFot{margin-top:26px;font-size:1.5em;color:#ffffff;}
@@ -176,6 +179,7 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 
 <div id="stillingWrap" style="display:none;">
 <h1>Stilling</h1>
+<p id="stillingSesong" style="font-size:1.5em;color:#00ffff;letter-spacing:2px;margin:0 0 14px;"></p>
 <div id="stillingInnhold"><p>Laster...</p></div>
 <div class="card" style="font-size:0.85em;">
 <span style="background:#00cc00;color:#000;padding:2px 8px;font-weight:bold;">&nbsp;&nbsp;</span> 1. plass &nbsp;&nbsp;
@@ -390,6 +394,13 @@ function lastStilling() {
   apiGet('stilling').then(visStilling).catch(function(e) { console.error(e); });
 }
 function visStilling(data) {
+  var el = document.getElementById('stillingSesong');
+  if (el) {
+    var r = Number(data.runde);
+    var rt = (r >= 1 && r <= 6) ? 'Runde ' + r + ' av 6'
+           : (r === 0 ? 'Mellom rundene' : 'Runde ' + data.runde);
+    el.textContent = (data.sesong ? 'Sesong ' + data.sesong + ' \u00b7 ' : '') + rt;
+  }
   var html = '<div class="card"><h2>1. divisjon</h2>' + lagTabell(data.div1, 1) + '</div>' +
     '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2, 2) + '</div>';
   document.getElementById('stillingInnhold').innerHTML = html;
@@ -501,9 +512,9 @@ function autoModus() {
     }
     apiGet('opprykkStatus').then(function(o) {
       if (o.status === 'ferdig') { katMerkFerdig(o); }
-      else if (o.status !== 'pagar') { katNullstill(); }
+      else if (o.status !== 'pagar' && o.status !== 'omspill') { katNullstill(); }
       // Kategorispillet og resultatet har egen visning (AVVIK-050).
-      if (o.status === 'pagar' || (o.status === 'ferdig' && katResultatSkalVises())) {
+      if (o.status === 'pagar' || o.status === 'omspill' || (o.status === 'ferdig' && katResultatSkalVises())) {
         settModusTakt(1500);
         if (gjeldendeModus !== 'auto:kategori') {
           gjeldendeModus = 'auto:kategori';
@@ -717,9 +728,12 @@ function tegnKategoriTavle(o, ferdig) {
   var visning = ferdig ? lag.slice().sort(function (a, b) { return b.poeng - a.poeng; }) : lag;
 
   document.getElementById('katTittel').textContent = o.valgtKategori || 'Kategori';
+  var iOmspill = (o.status === 'omspill');
   document.getElementById('katSang').textContent = ferdig
     ? 'Alle 5 sangene er spilt'
-    : 'Sang ' + (Number(o.sangIndex || 0) + 1) + ' av 5';
+    : (iOmspill
+        ? 'OMSPILL - ekstra sang ' + (Number(o.sangIndex || 0) - 4)
+        : 'Sang ' + (Number(o.sangIndex || 0) + 1) + ' av 5');
 
   var h = '';
   visning.forEach(function (l) {
@@ -729,6 +743,8 @@ function tegnKategoriTavle(o, ferdig) {
       if (nedId !== null && String(l.id) === nedId) { klasse += ' ned'; merke = 'RYKKER NED'; }
       else if (l.poeng === maks) { klasse += ' vant'; merke = 'VANT KATEGORIEN'; }
       else { merke = 'BLIR I 1. DIVISJON'; }
+    } else if (iOmspill && (o.omspillLag || []).map(String).indexOf(String(l.id)) !== -1) {
+      klasse += ' omspill'; merke = 'I OMSPILL';
     } else if (l.poeng === maks && maks > min) {
       klasse += ' leder'; merke = 'LEDER';
     }
@@ -748,6 +764,8 @@ function tegnKategoriTavle(o, ferdig) {
     var nedNavn = '';
     lag.forEach(function (l) { if (nedId !== null && String(l.id) === nedId) { nedNavn = l.navn; } });
     fot = nedNavn ? escHtml(nedNavn) + ' rykker ned til 2. divisjon.' : 'Venter på avgjørelse.';
+  } else if (iOmspill) {
+    fot = 'Uavgjort nederst - ekstra sang avgjør hvem som rykker ned.';
   } else {
     fot = 'Riktig svar gir 1 poeng.';
   }

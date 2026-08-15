@@ -73,8 +73,18 @@ function last() {
     });
 }
 
+// Sesongen kommer fra backend (AKTIV_SESONG), runden er den som er apen naa.
+// Er runden 0, staar vi mellom to runder - da er opp-/nedrykket i gang.
+function sesongOgRunde(data) {
+  var s = data.sesong ? 'Sesong ' + escHtml(data.sesong) : '';
+  var r = Number(data.runde);
+  var rt = (r >= 1 && r <= 6) ? 'Runde ' + r + ' av 6'
+         : (r === 0 ? 'Mellom rundene' : 'Runde ' + escHtml(data.runde));
+  return (s ? s + ' \u00b7 ' : '') + rt;
+}
+
 function vis(data) {
-  var html = '<p>Runde ' + data.runde + '</p>' +
+  var html = '<p style="font-size:1.2em;color:#00ffff;letter-spacing:1px;">' + sesongOgRunde(data) + '</p>' +
     '<div class="card"><h2>1. divisjon</h2>' + lagTabell(data.div1, 1) + '</div>' +
     '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2, 2) + '</div>' +
     '<div class="card" style="font-size:0.85em;">' +
