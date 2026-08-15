@@ -595,7 +595,9 @@ function visOpprykk(o) {
     html = '<div class="card" style="border-color:#ff00ff;"><h2>Omspill: ' + escHtml(o.valgtKategori) + '</h2>';
     html += '<p style="color:#ff00ff;">' + deltakere.map(function (l) { return escHtml(l.navn); }).join(' og ') +
       ' står likt nederst. Ekstra sang til én av dem er ute.</p>';
-    html += '<p><b>Omspillsang ' + (o.sangIndex - 4) + '</b> (sang ' + (o.sangIndex + 1) + ' i kategorien)</p>';
+    var nr = Number(o.omspillBrukt || 0) + 1;
+    var tot = Number(o.omspillTotalt || 0);
+    html += '<p><b>Omspillsang ' + nr + '</b>' + (tot ? ' av ' + tot + ' i omspillslista' : '') + '</p>';
     if (o.gjeldendeSang) {
       html += '<p>Fasit: ' + escHtml(o.gjeldendeSang.artist) + ' - ' + escHtml(o.gjeldendeSang.latt) +
         ' (' + escHtml(o.gjeldendeSang.aar) + ')</p>';

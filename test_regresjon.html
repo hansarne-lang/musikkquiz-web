@@ -680,6 +680,14 @@ async function kjorAlle() {
       return 'sesong ' + st.sesong + ', runde ' + st.runde;
     });
 
+    await kjorTest("Backend", "R9.17 Omspillslista finnes og har sanger (AVVIK-053)", async function () {
+      var o = await apiGet('omspillStatus');
+      assert(o && typeof o.antall === 'number', 'omspillStatus svarte uten antall: ' + JSON.stringify(o).slice(0, 90));
+      assert(o.antall > 0, 'omspillslista er tom - da faller omspillet tilbake til manuelt valg');
+      assert(o.sanger[0] && o.sanger[0].artist && o.sanger[0].latt, 'forste omspillsang mangler artist eller tittel');
+      return o.antall + ' sanger, ' + o.brukt + ' brukt';
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

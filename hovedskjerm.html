@@ -732,7 +732,7 @@ function tegnKategoriTavle(o, ferdig) {
   document.getElementById('katSang').textContent = ferdig
     ? 'Alle 5 sangene er spilt'
     : (iOmspill
-        ? 'OMSPILL - ekstra sang ' + (Number(o.sangIndex || 0) - 4)
+        ? 'OMSPILL - ekstra sang ' + (Number(o.omspillBrukt || 0) + 1)
         : 'Sang ' + (Number(o.sangIndex || 0) + 1) + ' av 5');
 
   var h = '';
