@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Kjøreplan for kvelden</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --gronn:#00ff00;
+  --blaa:#0000aa;
+  --text:#ffffff;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:.4px;}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 14px 60px;}
+h1{color:#ffff00;background:var(--blaa);padding:8px 14px;display:inline-block;border:2px solid #ffffff;
+   font-size:1.5em;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;}
+.ingress{font-size:.9em;line-height:1.5;opacity:.85;max-width:70ch;margin:0 0 22px;}
+.ingress a{color:var(--gronn);}
+
+/* ---------- kolonneoverskrifter ---------- */
+.baner{display:grid;grid-template-columns:150px 1fr 1fr 1fr;gap:8px;position:sticky;top:0;z-index:5;
+       background:var(--bg);padding:6px 0 8px;border-bottom:2px solid var(--accent);}
+.baner div{font-size:.72em;text-transform:uppercase;font-weight:700;letter-spacing:1px;padding:6px 8px;border:2px solid;}
+.b0{color:#888;border-color:#444 !important;}
+.b1{color:#000;background:var(--accent2);border-color:#ffffff !important;}
+.b2{color:#000;background:var(--gronn);border-color:#ffffff !important;}
+.b3{color:#000;background:var(--accent);border-color:#ffffff !important;}
+
+/* ---------- en fase ---------- */
+.fase{display:grid;grid-template-columns:150px 1fr 1fr 1fr;gap:8px;margin-top:8px;
+      page-break-inside:avoid;break-inside:avoid;}
+.fasenr{border:2px solid var(--accent);padding:10px;background:#000;}
+.fasenr .nr{color:var(--accent2);font-size:1.6em;font-weight:700;line-height:1;}
+.fasenr .tit{color:var(--accent2);font-size:.8em;font-weight:700;text-transform:uppercase;margin-top:6px;line-height:1.3;}
+.fasenr .nar{color:var(--gronn);font-size:.68em;margin-top:8px;line-height:1.35;}
+.boks{border:2px solid #333;padding:10px;font-size:.74em;line-height:1.5;background:#000;}
+.boks.qm{border-color:var(--accent2);}
+.boks.ss{border-color:var(--gronn);}
+.boks.lag{border-color:var(--accent);}
+.boks.tom{border-style:dashed;opacity:.4;}
+.boks b{color:#fff;}
+.boks .knapp{display:inline-block;background:var(--accent2);color:#000;padding:0 5px;font-weight:700;
+             margin:1px 0;white-space:nowrap;}
+.boks .fil{color:var(--gronn);}
+.boks ul{margin:0;padding-left:15px;}
+.boks li{margin-bottom:5px;}
+.boks li:last-child{margin-bottom:0;}
+.varsel{display:block;margin-top:7px;border-left:4px solid #ff5555;padding:5px 7px;background:#1a0000;color:#ff9999;font-size:.95em;}
+
+/* framheving av kveldens hoydepunkt */
+.fase.gull .fasenr{border-color:var(--accent2);background:#1a1a00;}
+.fase.gull .fasenr .nr{color:#fff;}
+
+/* ---------- loekke ---------- */
+.loop{grid-column:1 / -1;border:2px dashed var(--accent2);color:var(--accent2);padding:7px 10px;
+      font-size:.74em;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-top:8px;
+      page-break-inside:avoid;break-inside:avoid;}
+
+/* ---------- sidebokser ---------- */
+.naarsomhelst{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.naarsomhelst section{border:2px solid #ff00ff;padding:12px;font-size:.76em;line-height:1.5;
+                      page-break-inside:avoid;break-inside:avoid;}
+.naarsomhelst h2{color:#ff00ff;font-size:.95em;text-transform:uppercase;margin:0 0 8px;letter-spacing:1px;}
+.naarsomhelst ul{margin:0;padding-left:16px;}
+.naarsomhelst li{margin-bottom:5px;}
+
+.bunn{margin-top:26px;font-size:.72em;opacity:.6;line-height:1.6;}
+.bunn a{color:var(--gronn);}
+
+@media (max-width:900px){
+  .baner{display:none;}
+  .fase{grid-template-columns:1fr;}
+  .boks{font-size:.82em;}
+  .boks::before{display:block;font-size:.85em;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+                margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid currentColor;}
+  .boks.qm::before{content:'Quizmaster';color:var(--accent2);}
+  .boks.ss::before{content:'Storskjerm';color:var(--gronn);}
+  .boks.lag::before{content:'Lagene';color:var(--accent);}
+  .boks.tom{display:none;}
+  .naarsomhelst{grid-template-columns:1fr;}
+}
+
+/* ---------- utskrift: A4 liggende ---------- */
+@media print{
+  @page{size:A4 landscape;margin:8mm;}
+  body{background:#fff;color:#000;}
+  .wrap{max-width:none;padding:0;}
+  h1{background:#fff;color:#000;border:1px solid #000;font-size:.95em;padding:2px 6px;margin-bottom:5px;}
+  .ingress{display:none;}
+  .baner{position:static;background:#fff;border-bottom:1px solid #000;padding:0 0 2px;}
+  .baner div{font-size:6pt;padding:1px 4px;border:1px solid #000 !important;color:#000 !important;background:#fff !important;}
+  .fase{gap:3px;margin-top:2px;grid-template-columns:112px 1fr 1fr 1fr;}
+  .baner{grid-template-columns:112px 1fr 1fr 1fr;}
+  .fasenr,.boks{border:1px solid #000 !important;background:#fff !important;padding:2px 4px;}
+  .fase.gull .fasenr{background:#fff !important;border:2px solid #000 !important;}
+  .fasenr .nr{color:#000 !important;font-size:1em;}
+  .fasenr .tit{color:#000 !important;font-size:6pt;margin-top:1px;}
+  .fasenr .nar{color:#333 !important;font-size:5.2pt;margin-top:2px;line-height:1.25;}
+  .boks{font-size:5.4pt;line-height:1.2;}
+  .boks b,.boks .fil{color:#000;}
+  .boks ul{padding-left:11px;}
+  .boks li{margin-bottom:1px;}
+  .boks .knapp{background:#e8e8e8;color:#000;border:1px solid #999;padding:0 3px;}
+  .boks.tom{display:none;}
+  .varsel{border-left:2px solid #000;background:#f0f0f0;color:#000;padding:1px 4px;margin-top:2px;}
+  .loop{border:1px dashed #000;color:#000;font-size:5.4pt;padding:1px;margin-top:2px;}
+  .naarsomhelst{margin-top:4px;gap:4px;}
+  .naarsomhelst section{border:1px solid #000;font-size:5.4pt;padding:2px 5px;line-height:1.2;}
+  .naarsomhelst h2{color:#000;font-size:6.4pt;margin-bottom:2px;}
+  .naarsomhelst ul{padding-left:11px;}
+  .naarsomhelst li{margin-bottom:1px;}
+  .bunn{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Kjøreplan for quizkvelden</h1>
+<p class="ingress">Hele kvelden på ett ark. Hver rad er en fase, og de tre kolonnene viser hva som skjer
+samtidig hos <b>quizmasteren</b> (styringspanelet), på <b>storskjermen</b> og hos <b>lagene</b> på mobil.
+Skriv den ut i A4 liggende og legg den ved siden av PC-en &mdash; utskriften er allerede satt opp for det.
+Detaljene ligger i <a href="veiledning.html">veiledningen</a>.</p>
+
+<div class="baner">
+  <div class="b0">Fase</div>
+  <div class="b1">Quizmaster &mdash; styre.html</div>
+  <div class="b2">Storskjerm</div>
+  <div class="b3">Lagene &mdash; mobil</div>
+</div>
+
+<!-- ============ 0 ============ -->
+<div class="fase">
+  <div class="fasenr">
+    <div class="nr">0</div>
+    <div class="tit">Klargjøring</div>
+    <div class="nar">Ca. 30 min før dørene åpner</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li>Åpne <span class="fil">styre.html</span> og sjekk at kveldens kategorier og sanger ligger inne.</li>
+    <li>Velg <b>buzzer-modus</b> &mdash; fysisk eller virtuell.</li>
+    <li>Fysisk: koble til USB-buzzeren og tildel knapp 1, 2 og 3.</li>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li><span class="fil">hovedskjerm.html</span> i fullskjerm på projektoren.</li>
+    <li><span class="fil">stilling.html</span> på en skjerm alle kan se.</li>
+    <li>Adminknappene skjuler seg selv &mdash; beveg musa for å hente dem fram.</li>
+  </ul></div>
+  <div class="boks tom"></div>
+</div>
+
+<!-- ============ 1 ============ -->
+<div class="fase">
+  <div class="fasenr">
+    <div class="nr">1</div>
+    <div class="tit">Påmelding</div>
+    <div class="nar">Dørene åpner<br>ca. 15 min</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li>Huk av <b>QR-kode-påmelding</b> og trykk <span class="knapp">Start selvregistrering</span>. Én felles QR-kode vises.</li>
+    <li>Lista over påmeldte lag fyller seg mens de registrerer seg.</li>
+    <li><span class="knapp">Lukk påmelding</span> når alle er inne.</li>
+    <li>Alternativt: opprett lagene manuelt med navn, divisjon og bord.</li>
+    <span class="varsel">«Start selvregistrering» nullstiller dagens lagliste. Bare helt i starten &mdash; og lukk påmeldingen før runde 1 åpnes.</span>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li>Vis den felles QR-koden så alle bordene ser den.</li>
+  </ul></div>
+  <div class="boks lag"><ul>
+    <li>Skanner QR-koden &rarr; <span class="fil">registrer.html</span>.</li>
+    <li>Skriver inn lagnavn og får divisjon og bordnummer tildelt automatisk.</li>
+    <li>Siden går selv videre til lagsiden når påmeldingen lukkes.</li>
+  </ul></div>
+</div>
+
+<!-- ============ 2 ============ -->
+<div class="fase">
+  <div class="fasenr">
+    <div class="nr">2</div>
+    <div class="tit">Runde &mdash; 3 sanger</div>
+    <div class="nar">Runde 1 er åpen fra start</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li>Spill av sangen.</li>
+    <li>Trykk <span class="knapp">Beregn poeng sang X</span> med én gang &mdash; ikke vent på de to andre.</li>
+    <li>Tvilstilfeller: <span class="knapp">Vurder svar med Claude først</span>, lim inn vurderingen, beregn.</li>
+    <li>Grønt <b>SCORET</b>-merke viser hvilke sanger som er gjort. Runden lukkes selv når alle tre er scoret.</li>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li>Stillingen oppdaterer seg <b>etter hver sang</b>, ikke bare når runden er ferdig.</li>
+    <li>Grønt = ledende lag, gult = lagene som ryker inn i opp-/nedrykket.</li>
+    <li>Mellom sangene: <b>Beste bommert</b> som overlegg.</li>
+  </ul></div>
+  <div class="boks lag"><ul>
+    <li>Fyller inn <b>artist</b>, <b>låt</b> og <b>årstall</b> &rarr; <span class="knapp">Send svar sang X</span>.</li>
+    <li>Feltene låses, og neste sang åpner seg. Sang 3 krever at sang 2 er sendt.</li>
+    <li><b>Joker</b> hukes av før innsending &mdash; én per sesong, dobler poengene hvis alt er riktig.</li>
+  </ul></div>
+</div>
+
+<!-- ============ 3 ============ -->
+<div class="fase">
+  <div class="fasenr">
+    <div class="nr">3</div>
+    <div class="tit">Opp-/nedrykk</div>
+    <div class="nar">Etter <b>hver</b> av runde 1&ndash;5</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li><span class="knapp">Start opprykksspill</span> &mdash; de tre lagene vises.</li>
+    <li><span class="knapp">Åpne trekningsside</span> (ny fane &rarr; storskjerm).</li>
+    <li>Klikk kategorien laget velger, og registrer riktig lag for hver av de 5 sangene.</li>
+    <li>Så dukker <span class="knapp">Åpne runde X+1</span> opp.</li>
+    <span class="varsel">Systemet nekter å åpne neste runde før opp-/nedrykket er fullført.</span>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li><span class="fil">trekning.html</span>: 4 kategorier trekkes med animasjon og lyd.</li>
+    <li>Brukte kategorier krysses av automatisk og kan ikke trekkes igjen.</li>
+  </ul></div>
+  <div class="boks lag"><ul>
+    <li>Ser på. Involvert: de to nederste i 1. divisjon og nr. 2 i 2. divisjon &mdash; ut fra stillingen akkurat da.</li>
+  </ul></div>
+  <div class="loop">&#8635; Fase 2 og 3 gjentas for runde 1, 2, 3, 4 og 5</div>
+</div>
+
+<!-- ============ 4 ============ -->
+<div class="fase">
+  <div class="fasenr">
+    <div class="nr">4</div>
+    <div class="tit">Runde 6</div>
+    <div class="nar">Siste ordinære runde</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li>Spilles og poengberegnes akkurat som fase 2.</li>
+    <li><b>Ingen opp-/nedrykk etterpå</b> &mdash; det går rett til B-finalen.</li>
+    <li>Vil du kåre divisjonsvinnere: <span class="knapp">Sjekk divisjonsvinner</span>.</li>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li>Sluttstillingen blir stående &mdash; den avgjør hvem som går til B-finale og finale.</li>
+  </ul></div>
+  <div class="boks lag"><ul>
+    <li>Svarer som vanlig, sang for sang.</li>
+  </ul></div>
+</div>
+
+<!-- ============ 5 ============ -->
+<div class="fase">
+  <div class="fasenr">
+    <div class="nr">5</div>
+    <div class="tit">B-finale</div>
+    <div class="nar">Topp 3 i 2. divisjon<br>Spilles før finalen</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li><span class="knapp">Start B-finale</span> &mdash; nullstiller poengene og lukker buzzeren.</li>
+    <li>Les spørsmålet &rarr; <span class="knapp">Åpne buzzer</span> &rarr; <span class="knapp">+1</span> til laget som svarer riktig &rarr; lukk buzzeren &rarr; nytt spørsmål.</li>
+    <li><span class="knapp">Avslutt B-finale</span> kårer vinneren. Blir det tidsnød: <span class="knapp">Avlys B-finale</span>.</li>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li>Ingen egen storskjermside for spørsmålene &mdash; alt styres fra panelet.</li>
+    <li>Ved uavgjort dukker lykkehjulet opp på trekningssiden.</li>
+  </ul></div>
+  <div class="boks lag"><ul>
+    <li><b>Fysisk buzzer:</b> de tre lagene bruker knapp 1, 2 og 3 ved pulten.</li>
+    <li><b>Virtuell buzzer:</b> BUZZ-knappen dukker opp på lagsiden &mdash; kun hos de tre som er med i duellen.</li>
+  </ul></div>
+</div>
+
+<!-- ============ 6 ============ -->
+<div class="fase gull">
+  <div class="fasenr">
+    <div class="nr">6</div>
+    <div class="tit">Finale</div>
+    <div class="nar">Topp 3 i 1. divisjon<br>Kveldens høydepunkt</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li><span class="knapp">Start finale</span> &mdash; samme mekanikk som B-finalen.</li>
+    <li>Spørsmål &rarr; buzzer &rarr; <span class="knapp">+1</span> &rarr; lukk &rarr; gjenta.</li>
+    <li><span class="knapp">Avslutt finale</span> kårer kveldens vinner.</li>
+    <li><span class="knapp">Nullstill finale</span> hvis noe må gjøres om.</li>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li>Vinneroverlegget vises når finalen avsluttes.</li>
+    <li>Er B-finalen også ferdig, vises begge vinnerne etter hverandre.</li>
+  </ul></div>
+  <div class="boks lag"><ul>
+    <li>Samme buzzer som i B-finalen &mdash; nå for de tre lagene i 1. divisjon.</li>
+  </ul></div>
+</div>
+
+<!-- ============ 7 ============ -->
+<div class="fase gull">
+  <div class="fasenr">
+    <div class="nr">7</div>
+    <div class="tit">Avslutning</div>
+    <div class="nar">Etter siste buzz</div>
+  </div>
+  <div class="boks qm"><ul>
+    <li><span class="knapp">Avslutt kveld og arkiver</span> &mdash; kvelden legges i historikken.</li>
+    <li>Ny sesong (ikke ny kveld): <span class="knapp">Start ny sesong</span> gir alle lag ny joker.</li>
+  </ul></div>
+  <div class="boks ss"><ul>
+    <li>Vinnerne står på skjermen.</li>
+    <li><span class="fil">historikk.html</span> viser kvelden sammen med alle tidligere.</li>
+  </ul></div>
+  <div class="boks lag"><ul>
+    <li>Ferdig. Lagsidene kan lukkes.</li>
+  </ul></div>
+</div>
+
+<div class="naarsomhelst">
+  <section>
+    <h2>&#9888; Uavgjort &mdash; kan slå inn når som helst</h2>
+    <ul>
+      <li>Systemet stopper <b>selv</b> opp ved uavgjort om opp-/nedrykksplass, finaleplass, B-finaleplass eller om selve seieren. Et lyserosa kort dukker opp i panelet.</li>
+      <li>Trykk <b>Åpne lykkehjulet</b> &rarr; storskjermen bytter til hjulvisning av seg selv.</li>
+      <li><b>Drei hjulet</b> på storskjermen. Trengs flere vinnere, gjentas trekningen automatisk.</li>
+      <li>Tilbake i panelet: <b>Bekreft og fortsett</b>. Spillet fortsetter der det stoppet.</li>
+      <li>1. plass-kåringen er kosmetisk og sjekkes manuelt når du vil.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>&#9889; Buzzer-modus</h2>
+    <ul>
+      <li>Velges på <b>Buzzer-modus</b>-kortet og gjelder for alle. Lagsidene oppdager byttet selv innen fem sekunder &mdash; ingen trenger å laste siden på nytt.</li>
+      <li><b>Fysisk:</b> USB-enhet på admin-PC-en. Knapp 1 = venstre Ctrl, knapp 2 = mellomrom, knapp 3 = venstre Alt. Husk å huke av «Lytt etter fysiske buzzer-trykk».</li>
+      <li><b>Virtuell:</b> BUZZ-knapp på lagets egen side, uten ekstra utstyr. Vises kun for lagene som er med i duellen.</li>
+      <li>Bytter du til virtuell, slås lyttingen etter fysiske trykk av automatisk.</li>
+    </ul>
+  </section>
+</div>
+
+<p class="bunn">
+Musikkquiz &mdash; kjøreplan. Utfyllende beskrivelse i <a href="veiledning.html">veiledningen</a>,
+sider og lenker i <a href="index.html">oversikten</a>.
+</p>
+
+</div>
+</body>
+</html>
