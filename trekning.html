@@ -769,11 +769,11 @@ function tegnPlanStripe() {
 }
 
 function merkNestePlanOmgang(navn) {
+  lokaleVinnere.push(navn);
   for (var i = 0; i < planOmganger.length; i++) {
     if (!planOmganger[i].ferdig) {
       planOmganger[i].ferdig = true;
       planOmganger[i].navn = navn;
-      lokaleVinnere.push(navn);
       break;
     }
   }
@@ -811,7 +811,7 @@ function initUavgjort(u) {
     initBulbRing();
   });
   var spinBtn = document.getElementById('spinBtn');
-  if (u.status === 'trukket' && !lokaleVinnere.length && !wheelSpinning) {
+  if (u.status === 'trukket' && !lokaleVinnere.length && !wheelSpinning && speiletRadKey !== radKey) {
     // Raden star som trukket, men det var ikke vi som snurret - speil den
     // samme snurren sa skjermene viser det samme (AVVIK-048).
     spinBtn.style.display = 'none';
@@ -821,6 +821,7 @@ function initUavgjort(u) {
       setBulbsChasing(true);
       uavgjortWinnersQueue = speilVinnere;
       speilerAndres = true;
+      speiletRadKey = radKey;
       var speilPool = (u.kandidater || wheelKandidater).slice();
       setTimeout(function () { spinToNextWinner(speilPool); }, 600);
       return;
@@ -918,6 +919,7 @@ function spinToNextWinner(pool) {
 // slipper turen innom PC-en mellom hver, og bekrefter en gang helt til slutt.
 var autoSnurrNeste = false;
 var speilerAndres = false;
+var speiletRadKey = null;
 
 function finishSpin() {
   if (speilerAndres) {

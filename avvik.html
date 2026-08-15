@@ -693,6 +693,18 @@ var AVVIK_DATA = [
     beskrivelse: "AVVIK-045 gjorde om panelet til a hente hele tilstanden i ett styrePoll-kall. Frontend ble lastet opp til GitHub Pages, men Kode.gs versjon 87 var ikke distribuert enda, sa backend svarte \"Ukjent api-handling: styrePoll\" pa hvert forsok. Resultatet var at buzzer-, opprykk-, finale-, B-finale- og uavgjortkortene alle sto tomme, og panelet viste en rod \"Mistet kontakten med backend\"-melding. Malt i produksjon: 12 mislykkede forsok pa 30 sekunder. Feilen er sekvensen - en frontend som er hardt avhengig av et endepunkt som ikke finnes enda - ikke selve sammenslaingen.",
     losning: "pollAlt kjenner igjen \"Ukjent api-handling\" og faller da tilbake til de sju gamle enkeltkallene resten av okten. Panelet virker dermed uansett hvilken rekkefolge frontend og backend legges ut i. Nar reserveveien er i bruk star det en gul melding overst om at backend kjorer en eldre versjon og at versjon 87 bor distribueres, slik at det ikke blir en stille treghet ingen forstar. Testet begge veier i sandkassen med en simulator som kan late som den mangler styrePoll: 10 tester, alle gronne.",
     sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-052",
+    tittel: "Lykkehjulet snurret om igjen og slettet resultatet nar planen var tom",
+    omrade: "Storskjerm - trekning.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Full testkjoring - de eldre ende-til-ende-suitene (e2e.js E15, e2e2.js F9)",
+    beskrivelse: "Speilingen i AVVIK-048 kjenner igjen at NOEN ANDRE har trukket ved at listen lokaleVinnere er tom. Den listen ble bare fylt inne i lokken som merker av en omgang i planstripa - fant den ingen aapen omgang, ble ingenting registrert. Er planen tom (uavgjortPlan svarte ikke, eller backend fant ingen steg for konteksten) trodde siden derfor at den selv aldri hadde snurret. Ved neste polling, tre sekunder etter landing, speilet den sin egen trekning: nullstilte resultatteksten og snurret hjulet en gang til - i lokke. Publikum ville sett hjulet snurre igjen og igjen uten at vinneren ble staaende. Reprodusert i sandkassen: teksten \"Vinner: ...\" var borte etter tre sekunder, og bade E15 og F9 rapporterte tom vinner.",
+    losning: "lokaleVinnere fylles na for lokken, uavhengig av om planstripa har en aapen omgang. I tillegg husker siden hvilken rad den allerede har speilet (speiletRadKey), slik at samme rad aldri speiles to ganger uansett. Verifisert ved at E15 og F9 gaar gronne igjen.",
+    sistOppdatert: "2026-08-15"
   }
 ];
 

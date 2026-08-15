@@ -627,6 +627,19 @@ async function kjorAlle() {
       });
     });
 
+    await kjorTest("Lykkehjul", "R9.12 Egen trekning speiles ikke om igjen (AVVIK-052)", async function () {
+      return await medSide('trekning.html', 3000, function (w) {
+        // lokaleVinnere ma fylles for lokken, ellers tror siden at noen andre trakk
+        var kode = String(w.merkNestePlanOmgang);
+        var iPush = kode.indexOf('lokaleVinnere.push');
+        var iFor = kode.indexOf('for (');
+        assert(iPush !== -1 && iFor !== -1 && iPush < iFor,
+          'lokaleVinnere.push ligger inne i lokken - da registreres ingen vinner nar planen er tom');
+        harMerker(w, 'initUavgjort', ['speiletRadKey']);
+        return 'vinneren registreres uavhengig av planen';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');
