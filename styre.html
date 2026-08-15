@@ -532,6 +532,31 @@ function spotifyKnapp(sang) {
 // Lagnavnene kommer fra QR-paameldingen og ble satt rett inn i innerHTML her,
 // og kategorinavn ble limt inn i onclick uten hensyn til apostrofer
 // (AVVIK-046).
+// Stillingen i kategorien, vist bade underveis og til slutt (AVVIK-050).
+function opprykkStilling(o, ferdig) {
+  var lag = [
+    { id: o.lagA ? o.lagA.id : '', navn: o.lagA ? o.lagA.navn : '', poeng: Number(o.poengA || 0) },
+    { id: o.lagB ? o.lagB.id : '', navn: o.lagB ? o.lagB.navn : '', poeng: Number(o.poengB || 0) },
+    { id: o.lagC ? o.lagC.id : '', navn: o.lagC ? o.lagC.navn : '', poeng: Number(o.poengC || 0) }
+  ];
+  var maks = Math.max(lag[0].poeng, lag[1].poeng, lag[2].poeng);
+  var min = Math.min(lag[0].poeng, lag[1].poeng, lag[2].poeng);
+  var nedId = (ferdig && o.resultat) ? String(o.resultat.nedrykket) : null;
+  var rader = ferdig ? lag.slice().sort(function (a, b) { return b.poeng - a.poeng; }) : lag;
+  var h = '<table style="margin-top:10px;"><tr><th>Lag</th><th style="width:70px;">Poeng</th><th></th></tr>';
+  rader.forEach(function (l) {
+    var merke = '', farge = '';
+    if (ferdig) {
+      if (nedId !== null && String(l.id) === nedId) { merke = 'Rykker ned'; farge = 'color:#ff6b6b;'; }
+      else if (l.poeng === maks) { merke = 'Vant kategorien'; farge = 'color:#ffff00;'; }
+      else { merke = 'Blir i 1. divisjon'; farge = 'color:#00ff00;'; }
+    } else if (l.poeng === maks && maks > min) { merke = 'Leder'; farge = 'color:#00ff00;'; }
+    h += '<tr style="' + farge + '"><td>' + escHtml(l.navn) + '</td><td><b>' + l.poeng +
+      '</b></td><td>' + merke + '</td></tr>';
+  });
+  return h + '</table>';
+}
+
 function visOpprykk(o) {
   var html = '';
   if (o.status === 'venter_uavgjort') {
@@ -555,6 +580,7 @@ function visOpprykk(o) {
     html += '<p><b>Sang ' + (o.sangIndex + 1) + '</b> av 5</p>';
     html += '<p>Fasit: ' + escHtml(o.gjeldendeSang.artist) + ' - ' + escHtml(o.gjeldendeSang.latt) + ' (' + escHtml(o.gjeldendeSang.aar) + ')</p>';
     html += spotifyKnapp(o.gjeldendeSang);
+    html += opprykkStilling(o, false);
     html += '<p>Hvem svarte riktig?</p>';
     html += '<button onclick="registrer(' + attr(o.lagA.id) + ')">' + escHtml(o.lagA.navn) + '</button> ';
     html += '<button onclick="registrer(' + attr(o.lagB.id) + ')">' + escHtml(o.lagB.navn) + '</button> ';
@@ -576,7 +602,10 @@ function visOpprykk(o) {
     if (o.resultat && String(o.resultat.nedrykket) === String(o.lagA.id)) nedNavn = o.lagA.navn;
     else if (o.resultat && String(o.resultat.nedrykket) === String(o.lagB.id)) nedNavn = o.lagB.navn;
     else if (o.resultat && String(o.resultat.nedrykket) === String(o.lagC.id)) nedNavn = o.lagC.navn;
-    html = '<div class="card"><h2>Ferdig!</h2><p><b>' + escHtml(nedNavn) + '</b> rykker ned til 2. divisjon. De to andre spiller i 1. divisjon.</p></div>';
+    html = '<div class="card"><h2>Kategorien er ferdig: ' + escHtml(o.valgtKategori || '') + '</h2>';
+    html += opprykkStilling(o, true);
+    html += '<p style="margin-top:12px;"><b>' + escHtml(nedNavn) + '</b> rykker ned til 2. divisjon. De to andre spiller i 1. divisjon.</p>';
+    html += '<p style="font-size:.85em;opacity:.7;">Resultatet står på storskjermen i 30 sekunder.</p></div>';
   }
   document.getElementById('opprykk').innerHTML = html;
 }

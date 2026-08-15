@@ -590,6 +590,32 @@ async function kjorAlle() {
       });
     });
 
+    await kjorTest("Storskjerm", "R9.9 Storskjermene har poengtavle for kategorispillet (AVVIK-050)", async function () {
+      var sider = ['hovedskjerm.html', 'trekning.html'];
+      for (var i = 0; i < sider.length; i++) {
+        await medSide(sider[i], 3000, function (w, d) {
+          assert(d.getElementById('katWrap'), 'katWrap mangler i ' + sider[i]);
+          assert(d.getElementById('katTavle'), 'katTavle mangler i ' + sider[i]);
+          assert(typeof w.tegnKategoriTavle === 'function', 'tegnKategoriTavle mangler i ' + sider[i]);
+          harMerker(w, 'katLagListe', ['poengA', 'poengB', 'poengC']);
+          harMerker(w, 'tegnKategoriTavle', ['RYKKER NED', 'VANT KATEGORIEN', 'escHtml(l.navn)', 'sangIndex']);
+          // resultatet ma ha en tidsgrense, ellers blir skjermen staende
+          harMerker(w, 'katResultatSkalVises', ['KAT_RESULTAT_MS']);
+          return true;
+        });
+      }
+      return 'tavle pa begge storskjermene';
+    });
+
+    await kjorTest("Ovrig", "R9.10 Styringspanelet viser stillingen i kategorien (AVVIK-050)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        assert(typeof w.opprykkStilling === 'function', 'opprykkStilling mangler');
+        harMerker(w, 'opprykkStilling', ['poengA', 'Rykker ned', 'Vant kategorien', 'escHtml(l.navn)']);
+        harMerker(w, 'visOpprykk', ['opprykkStilling(o, false)', 'opprykkStilling(o, true)']);
+        return 'stilling bade underveis og til slutt';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

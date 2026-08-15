@@ -65,6 +65,28 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 @keyframes stagePulse{0%{transform:scale(1);}30%{transform:scale(1.045);}100%{transform:scale(1);}}
 #wheelHub{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,#ffff00 60%,#c9a600 100%);border:3px solid #000;z-index:4;box-shadow:0 0 14px #ffff00;}
 #uavgjortResultat div{margin:6px 0;color:#00ff00;}
+/* ---- Poengtavle for kategorispillet i opp-/nedrykket (AVVIK-050) ---- */
+#katWrap{text-align:center;}
+#katTittel{color:#ffff00;font-size:2.4em;text-transform:uppercase;letter-spacing:2px;margin:0 0 6px;}
+#katSang{color:#00ffff;font-size:1.4em;margin:0 0 22px;letter-spacing:2px;}
+#katTavle{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;}
+.katLag{border:4px solid #00ffff;background:#000;padding:22px 26px;min-width:230px;}
+.katLag .navn{font-size:1.5em;color:#ffffff;margin-bottom:10px;word-break:break-word;}
+.katLag .poeng{font-size:4.2em;line-height:1;color:#00ffff;font-weight:700;}
+.katLag .merke{font-size:1em;letter-spacing:2px;margin-top:10px;min-height:1.2em;}
+.katLag.leder{border-color:#00ff00;}
+.katLag.leder .poeng{color:#00ff00;}
+.katLag.leder .merke{color:#00ff00;}
+.katLag.vant{border-color:#ffff00;background:#161600;}
+.katLag.vant .poeng{color:#ffff00;}
+.katLag.vant .merke{color:#ffff00;}
+.katLag.ned{border-color:#ff2f4d;background:#160000;}
+.katLag.ned .poeng{color:#ff2f4d;}
+.katLag.ned .merke{color:#ff2f4d;}
+.katLag.pling{animation:katPling .8s ease-out;}
+@keyframes katPling{0%{transform:scale(1);}35%{transform:scale(1.14);}100%{transform:scale(1);}}
+#katFot{margin-top:26px;font-size:1.5em;color:#ffffff;}
+
 /* ---- Retrofigurer: egne 8-bits sprites som spaserer over nederste kant.
    Tegnet fra bunnen av her, ikke kopier av figurer fra kjente spill. ---- */
 #retroBane{position:fixed;left:0;right:0;bottom:8px;height:60px;pointer-events:none;z-index:900;overflow:hidden;}
@@ -124,6 +146,14 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 </div>
 </div>
 
+<div id="katWrap" style="display:none;">
+<div class="card">
+<h1 id="katTittel"></h1>
+<p id="katSang"></p>
+<div id="katTavle"></div>
+<p id="katFot"></p>
+</div>
+</div>
 <div id="uavgjortWrap" style="display:none;text-align:center;">
 <div class="card">
 <h1 style="color:#ff00ff;">LYKKEHJULET</h1>
@@ -411,7 +441,7 @@ var lastUavgjortKey = '';
 var wheelSpinning = false;
 
 function alleWrapsSkjul() {
-  ['trekningWrap', 'buzzerWrap', 'uavgjortWrap', 'stillingWrap', 'velkomstWrap', 'pauseWrap', 'sluttresultatWrap', 'skjulWrap'].forEach(function(id) {
+  ['trekningWrap', 'buzzerWrap', 'uavgjortWrap', 'katWrap', 'stillingWrap', 'velkomstWrap', 'pauseWrap', 'sluttresultatWrap', 'skjulWrap'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -470,6 +500,20 @@ function autoModus() {
       return;
     }
     apiGet('opprykkStatus').then(function(o) {
+      if (o.status === 'ferdig') { katMerkFerdig(o); }
+      else if (o.status !== 'pagar') { katNullstill(); }
+      // Kategorispillet og resultatet har egen visning (AVVIK-050).
+      if (o.status === 'pagar' || (o.status === 'ferdig' && katResultatSkalVises())) {
+        settModusTakt(1500);
+        if (gjeldendeModus !== 'auto:kategori') {
+          gjeldendeModus = 'auto:kategori';
+          stoppIntervaller();
+          alleWrapsSkjul();
+          document.getElementById('katWrap').style.display = 'block';
+        }
+        tegnKategoriTavle(o, o.status === 'ferdig');
+        return;
+      }
       if (o.status === 'trekker' || o.status === 'velger') {
         settModusTakt(1000);
         if (gjeldendeModus !== 'auto:trekning') {
@@ -646,6 +690,86 @@ function planleggNesteRetro() {
 // Forste figur kommer etter 20-45 sekunder, slik at den ikke krasjer med
 // innlastingen av siden.
 setTimeout(slippLosRetroFigur, (20 + Math.random() * 25) * 1000);
+
+
+// ==== Poengtavle for kategorispillet i opp-/nedrykket ====
+// Under 'pagar' viste storskjermene ingenting om kategorien i det hele tatt -
+// de falt tilbake til buzzer- eller stillingsvisningen. Na folger publikum
+// stillingen sang for sang, og ser resultatet nar kategorien er ferdig
+// (AVVIK-050).
+var katForrigePoeng = {};
+var katFerdigFraMs = null;
+var KAT_RESULTAT_MS = 30000;
+
+function katLagListe(o) {
+  return [
+    { id: o.lagA ? o.lagA.id : '', navn: o.lagA ? o.lagA.navn : '', poeng: Number(o.poengA || 0) },
+    { id: o.lagB ? o.lagB.id : '', navn: o.lagB ? o.lagB.navn : '', poeng: Number(o.poengB || 0) },
+    { id: o.lagC ? o.lagC.id : '', navn: o.lagC ? o.lagC.navn : '', poeng: Number(o.poengC || 0) }
+  ];
+}
+
+function tegnKategoriTavle(o, ferdig) {
+  var lag = katLagListe(o);
+  var maks = Math.max(lag[0].poeng, lag[1].poeng, lag[2].poeng);
+  var min = Math.min(lag[0].poeng, lag[1].poeng, lag[2].poeng);
+  var nedId = (ferdig && o.resultat) ? String(o.resultat.nedrykket) : null;
+  var visning = ferdig ? lag.slice().sort(function (a, b) { return b.poeng - a.poeng; }) : lag;
+
+  document.getElementById('katTittel').textContent = o.valgtKategori || 'Kategori';
+  document.getElementById('katSang').textContent = ferdig
+    ? 'Alle 5 sangene er spilt'
+    : 'Sang ' + (Number(o.sangIndex || 0) + 1) + ' av 5';
+
+  var h = '';
+  visning.forEach(function (l) {
+    var klasse = 'katLag';
+    var merke = '';
+    if (ferdig) {
+      if (nedId !== null && String(l.id) === nedId) { klasse += ' ned'; merke = 'RYKKER NED'; }
+      else if (l.poeng === maks) { klasse += ' vant'; merke = 'VANT KATEGORIEN'; }
+      else { merke = 'BLIR I 1. DIVISJON'; }
+    } else if (l.poeng === maks && maks > min) {
+      klasse += ' leder'; merke = 'LEDER';
+    }
+    // fikk laget poeng siden forrige tegning? da skal tallet sla ut
+    if (!ferdig && katForrigePoeng[l.id] !== undefined && l.poeng > katForrigePoeng[l.id]) {
+      klasse += ' pling';
+    }
+    katForrigePoeng[l.id] = l.poeng;
+    h += '<div class="' + klasse + '"><div class="navn">' + escHtml(l.navn) + '</div>' +
+      '<div class="poeng">' + l.poeng + '</div>' +
+      '<div class="merke">' + merke + '</div></div>';
+  });
+  document.getElementById('katTavle').innerHTML = h;
+
+  var fot = '';
+  if (ferdig) {
+    var nedNavn = '';
+    lag.forEach(function (l) { if (nedId !== null && String(l.id) === nedId) { nedNavn = l.navn; } });
+    fot = nedNavn ? escHtml(nedNavn) + ' rykker ned til 2. divisjon.' : 'Venter på avgjørelse.';
+  } else {
+    fot = 'Riktig svar gir 1 poeng.';
+  }
+  document.getElementById('katFot').innerHTML = fot;
+}
+
+// Skal resultatet fortsatt vises? 'ferdig' blir staende til neste opprykk
+// starter, sa uten en tidsgrense ville storskjermen aldri kommet tilbake til
+// stillingen.
+function katResultatSkalVises() {
+  if (katFerdigFraMs === null) { return false; }
+  return (Date.now() - katFerdigFraMs) < KAT_RESULTAT_MS;
+}
+
+function katMerkFerdig(o) {
+  if (katFerdigFraMs === null) { katFerdigFraMs = Date.now(); }
+}
+
+function katNullstill() {
+  katFerdigFraMs = null;
+  katForrigePoeng = {};
+}
 
 // ==== Lykkehjul (uavgjort-trekning) ====
 var WHEEL_COLORS = ['#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6b6b', '#3a86ff', '#ffa500', '#ff1493'];

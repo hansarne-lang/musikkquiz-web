@@ -669,6 +669,18 @@ var AVVIK_DATA = [
     beskrivelse: "Opp-/nedrykket kan utlose flere trekninger etter hverandre - typisk en for divisjon 1 og en for divisjon 2. Hver av dem stoppet hjulet helt: quizmasteren matte ga til styringspanelet, trykke 'Bekreft og fortsett', og sa tilbake til storskjermen for neste. Med publikum i salen ble det lange, dode opphold midt i det som skulle vaere kveldens dramatikk.",
     losning: "Ny nesteUavgjort() i Kode.gs som lukker den ferdig trukne raden og henter fram neste trekning i samme operasjon. Den forer ALDRI spillet videre - er det ingen flere trekninger igjen, blir raden staende som trukket sa quizmasteren far bekrefte som for. Trekningssiden kaller den fire sekunder etter at hjulet har landet, og snurrer neste omgang av seg selv 2,5 sekunder etter at det nye hjulet er tegnet. Hele opp-/nedrykket avgjores dermed i en sammenhengende sekvens pa storskjermen, med en bekreftelse helt til slutt.",
     sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-050",
+    tittel: "Kategorispillet i opp-/nedrykket var usynlig for publikum",
+    omrade: "Storskjerm - hovedskjerm.html + trekning.html + styre.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Rapportert av quizmaster",
+    beskrivelse: "Nar en kategori var valgt og de fem sangene ble spilt, sto opprykksraden i status pagar. Verken hovedskjerm.html eller trekning.html hadde en visning for den statusen - begge falt tilbake til buzzer- eller stillingsvisningen. Publikum sa altsa ingenting om kategorien mens den pagikk, og fikk heller aldri vite hvordan den endte: da status ble ferdig, gikk skjermene rett videre. Styringspanelet viste bare hvilken sang som gikk og hvem som kunne fa poeng, aldri stillingen mellom de tre lagene. Poengene la i opprykkStatus (poengA, poengB, poengC) hele tiden og ble aldri vist noe sted.",
+    losning: "Ny felles poengtavle pa begge storskjermene: kategorinavn, hvilken sang av fem som gar, og et kort per lag med poengsummen i stort. Lederen markeres gront, og tallet slar ut nar et lag far poeng. Nar kategorien er ferdig sorteres kortene etter poeng, vinneren markeres gult med VANT KATEGORIEN og laget som ryker markeres rodt med RYKKER NED. Resultatet star i 30 sekunder for skjermen gar tilbake til stillingen - uten en tidsgrense ville den blitt staende, siden status ferdig varer til neste opprykk starter. Styringspanelet har fatt den samme stillingen som en tabell, bade under spillet og i sluttkortet.",
+    sistOppdatert: "2026-08-15"
   }
 ];
 
