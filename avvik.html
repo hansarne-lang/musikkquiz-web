@@ -573,6 +573,102 @@ var AVVIK_DATA = [
     beskrivelse: "Testen \"scoreSangMedOverstyringer gir korrekt overstyrt poeng\" feilet med \"Sang 1 i runde 999 er allerede poengberegnet\". Backend nekter helt korrekt aa poengberegne samme sang to ganger, men flagget settes av testen selv, og oppryddingen nullstilte det aldri. Forste kjoring etter en nullstilling passerte derfor, mens alle senere kjoringer feilet. Bekreftet ved aa lese sangScoreStatus for runde 999 rett etter kjoringen: s1 true, s2 og s3 false. Dette er manglende testisolasjon, ikke en feil i appen - samme klasse som AVVIK-009 og AVVIK-040. Det fantes ingen API-handling for aa nullstille poengflagget for en enkelt runde; nullstillRunder tommer hele Runder-arket og skriver runde 1-6 pa nytt, og ville slettet ekte fasit.",
     losning: "Lagt til nullstillSangScore(runde) i Kode.gs: den tommer poengflaggene for EN runde og kaster feil for runde 1-6, slik at ekte runder ikke kan rores. Rutet som api=nullstillSangScore. test_utvidet.html nullstiller na runde 998 og 999 helt i starten av kjoringen, og har fatt en egen test som verifiserer bade at nullstillingen virker og at ekte runder avvises. Antallet gikk fra 79 til 80 tester, og index.html er oppdatert. Distribuert som versjon 85.",
     sistOppdatert: "2026-08-14"
+  },
+  {
+    id: "AVVIK-042",
+    tittel: "Uavgjort-kortet dukket opp UNDER 'Apne runde X+1' i styringspanelet",
+    omrade: "Styringspanel - styre.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Rapportert av quizmaster etter bruk",
+    beskrivelse: "Nar opp-/nedrykket stoppet opp pa en uavgjort, ble kortet \"Uavgjort-trekning - lykkehjulet venter\" tegnet i div#uavgjort, som la ETTER div#app i dokumentet. Rundekortet med knappen \"Apne runde X+1\" ligger inne i #app, sa uavgjort-kortet havnet under knappen. Det leste seg som om trekningen var noe som kom etter at runden var apnet, mens den i virkeligheten sperrer for den: backend nekter aa apne neste runde for opp-/nedrykket er fullfort. Knappen sto dessuten igjen som klikkbar og ga bare en feilmelding.",
+    losning: "Flyttet div#uavgjort over div#app, slik at trekningen alltid star overst pa siden. I tillegg sperres innholdet i #apneNesteWrap sa lenge en uavgjort venter eller er trukket, og erstattes av en linje som peker pa kortet overst; det opprinnelige innholdet legges i data-lagret og settes tilbake nar trekningen er avgjort. Sperren gjelder begge stedene knappen tegnes (visStyre og visSangResultat). Dekket av regresjonstest R8.1 og R8.2.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-043",
+    tittel: "Lagnavn i uavgjort-kortet ble satt inn uten escaping",
+    omrade: "Styringspanel - styre.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Kodegjennomgang under arbeidet med AVVIK-042",
+    beskrivelse: "visUavgjort() bygde kortet med o.label, o.kandidater[].navn og o.valgt[].navn rett inn i innerHTML uten escHtml. Lagnavnene kommer fra QR-selvregistreringen, altsa fra publikum. Dette er samme hull som AVVIK-012 og AVVIK-029/030, men i en funksjon de gjennomgangene ikke traff. Reprodusert i sandkassen: et lag med navnet <img src=x onerror=...> kjorte JavaScript i styringspanelet med en gang uavgjort-kortet ble tegnet.",
+    losning: "escHtml() lagt pa alle tre stedene i visUavgjort, og pa label, kandidat- og vinnernavn i den nye planStripe(). Feilmeldingen i lastUavgjort escapes ogsa. Verifisert med et lagnavn som forsoker aa kjore kode: ingen img-node havner i kortet, og window-flagget blir aldri satt. Dekket av regresjonstest R8.3.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-044",
+    tittel: "Lykkehjulet oppga ikke hvor mange omganger som skulle kjores",
+    omrade: "Storskjerm - trekning.html + styre.html + backend Kode.gs",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Hjulet snurret en gang per vinner som skulle trekkes, og opp-/nedrykket kan i tillegg utlose opptil tre trekninger etter hverandre (hvem fra divisjon 1, hvem er nr. 1 og 2 i divisjon 2, og hvem av de to som ma utfordre). Verken publikum eller quizmasteren fikk vite hvor mange snurrer som gjensto - hjulet bare stoppet, og sa dukket det opp et nytt. Tallet var kjent i backend hele tiden (trengerAntall), men ble aldri sendt ut, og de etterfolgende trekningene ble forst regnet ut nar den forrige var bekreftet.",
+    losning: "Ny funksjon uavgjortPlan() i Kode.gs regner ut hele planen for den pagaende operasjonen: hvilke trekninger som trengs, hvor mange omganger hver av dem krever, hvilke som allerede er avgjort og hvem som ble trukket. Den er ren lesing og skriver ingenting. trekning.html viser planen som en stripe med en rute per omgang - gronn med vinnernavn nar den er avgjort, lyserosa og pulserende pa den som star for tur - og fyller inn resultatet i det hjulet lander. styre.html viser den samme planen som en nummerert liste i uavgjort-kortet. Backend-logikken er enhetstestet med 12 tester (testplan.js), frontend med 16 ende-til-ende-tester (e2e4.js), og dekket av regresjonstest R8.4 til R8.7. Krever distribusjon av Kode.gs versjon 86.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-045",
+    tittel: "Styringspanelet lagde sin egen ko - kategoriene ventet bak sju pollere",
+    omrade: "Styringspanel - styre.html + backend Kode.gs",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Rapportert av quizmaster: kategoriene bruker veldig lang tid pa a laste",
+    beskrivelse: "Malt mot produksjon fra nettleser: hvert kall mot Apps Script tar 1,3-5,3 sekunder uansett hva det gjelder - det er grunnprisen, ikke noe med kategoriene spesielt (kategorier alene: 1,4 s). Panelet hadde derimot SJU uavhengige pollere gaende samtidig: buzzerStatus hvert 2. sekund, uavgjortStatus, finaleStatus og finaleBStatus hvert 3., opprykkStatus og skjermOverride hvert 4., buzzerModus hvert 5. Telt opp: 46 kall pa 46 sekunder, altsa ett i sekundet. Koen var full hele tiden, og alt annet - deriblant kategoriene - sto og ventet bak. I tillegg ble kategorisvaret pa rundt 35 kB hentet ved hver sidelast selv om panelet var lukket, og lest fra arket pa nytt hver gang.",
+    losning: "Tre grep: (1) ny styrePoll() i Kode.gs som svarer med buzzer, buzzer-modus, uavgjort, plan, opprykk, finale, B-finale og skjermoverstyring i ETT kall - planen tas bare med nar et hjul faktisk venter, sa den ikke koster en ekstra arklesing hvert sekund. styre.html poller den hvert 2,5. sekund i stedet for sju endepunkter. (2) Kategoriene hentes forst nar panelet apnes. (3) getKategorier_ cacher resultatet i CacheService i seks timer, og cachen tommes i skrivKategorier_ sa lagring og sletting slar gjennom med en gang. Malt i sandkassen: fra 39 kall pa 14 sekunder til 10. Tre bomkall pa rad kreves for panelet melder fra om kontaktbrudd, slik at et enkelt hikk fra Apps Script ikke fyller skjermen med feilmeldinger.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-046",
+    tittel: "Lagnavn og kategorinavn i opp-/nedrykkskortet ble ikke escapet",
+    omrade: "Styringspanel - styre.html",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Kodegjennomgang under arbeidet med Spotify-knappen",
+    beskrivelse: "visOpprykk() satte lagnavn, kategorinavn, valgt kategori og fasit rett inn i innerHTML uten escHtml - i alle tilstandene trekker, velger, pagar og ferdig. Lagnavnene kommer fra QR-selvregistreringen. I tillegg ble kategorinavnet limt inn i en onclick-attributt (velgKat) uten hensyn til apostrofer, sa en kategori som het noe med apostrof i brakk knappen helt, og et konstruert navn kunne kjore kode. Dette er tredje runde med samme klasse feil (AVVIK-012, 029/030, 043) - denne funksjonen var ikke med i noen av de tidligere gjennomgangene.",
+    losning: "escHtml pa alle interpolasjonene i visOpprykk, og en ny attr()-hjelper som bade escaper som HTML og rommer verdien som en JS-streng nar den skal inn i en onclick. Brukt pa lagId og kategorinavn i velgKat og registrer.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-047",
+    tittel: "Ingen mate a spille av sangen pa under opp-/nedrykket",
+    omrade: "Styringspanel - styre.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Kategoriarket har en egen kolonne med Spotify-lenke per sang, og lenken folger allerede med i gjeldendeSang fra opprykkStatus. Den ble aldri vist noe sted, sa quizmasteren matte finne sangen manuelt mens de tre lagene sto og ventet.",
+    losning: "Knappen 'Spill av i Spotify' vises pa sangkortet under opp-/nedrykket. Bade full open.spotify.com-adresse og spotify:track:-URI godtas og gjores om til en apen lenke; alt annet innhold i feltet ignoreres, slik at tilfeldig tekst ikke blir til en lenke. Mangler lenken, star det at sangen ikke har en. Lenken apnes i ny fane med rel=noopener.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-048",
+    tittel: "Storskjermen viste ikke samme lykkehjul-animasjon som trekningssiden",
+    omrade: "Storskjerm - hovedskjerm.html + trekning.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Rapportert av quizmaster",
+    beskrivelse: "Begge sidene hadde sin egen 'Drei hjulet!'-knapp og kalte trekkUavgjort selv. Trakk trekningssiden, sa storskjermen bare at status ble 'trukket' og skrev ut vinneren som tekst - hjulet der snurret aldri. Publikum pa storskjermen fikk altsa fasiten uten trekningen. Ble begge knappene brukt, ville det andre kallet dessuten feilet, siden raden ikke lenger sto som 'venter'. Kategori-trekningen hadde samme skjevhet i mindre grad: storskjermen oppdaget statusbyttet forst ved neste polling, opptil tre sekunder etter.",
+    losning: "Trekningssiden er na eneste sted som trekker. Storskjermens hjulknapp er skjult, og oppdager den at raden star som 'trukket' uten at den selv har snurret, kjorer den noyaktig samme snurr mot de samme vinnerne fra raden - uten a rore backend. Trekningssiden speiler tilsvarende hvis noen andre skulle ha trukket. Speiling forer aldri spillet videre. Storskjermen poller dessuten hvert sekund i stedet for hvert tredje sa lenge et hjul eller en kategoritrekning pagar, slik at animasjonene starter tilnaermet samtidig.",
+    sistOppdatert: "2026-08-15"
+  },
+  {
+    id: "AVVIK-049",
+    tittel: "Lykkehjulet krevde en tur innom styringspanelet mellom hver trekning",
+    omrade: "Storskjerm - trekning.html + backend Kode.gs",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-15",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Opp-/nedrykket kan utlose flere trekninger etter hverandre - typisk en for divisjon 1 og en for divisjon 2. Hver av dem stoppet hjulet helt: quizmasteren matte ga til styringspanelet, trykke 'Bekreft og fortsett', og sa tilbake til storskjermen for neste. Med publikum i salen ble det lange, dode opphold midt i det som skulle vaere kveldens dramatikk.",
+    losning: "Ny nesteUavgjort() i Kode.gs som lukker den ferdig trukne raden og henter fram neste trekning i samme operasjon. Den forer ALDRI spillet videre - er det ingen flere trekninger igjen, blir raden staende som trukket sa quizmasteren far bekrefte som for. Trekningssiden kaller den fire sekunder etter at hjulet har landet, og snurrer neste omgang av seg selv 2,5 sekunder etter at det nye hjulet er tegnet. Hele opp-/nedrykket avgjores dermed i en sammenhengende sekvens pa storskjermen, med en bekreftelse helt til slutt.",
+    sistOppdatert: "2026-08-15"
   }
 ];
 

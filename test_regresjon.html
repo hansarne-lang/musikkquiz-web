@@ -427,6 +427,169 @@ async function kjorAlle() {
       });
     });
 
+    // ========== Gruppe: Lykkehjul (AVVIK-042, 043, 044) ==========
+    await kjorTest("Lykkehjul", "R8.1 Uavgjort-kortet ligger over rundekortet i panelet (AVVIK-042)", async function () {
+      return await medSide('styre.html', 3000, function (w, d) {
+        var u = d.getElementById('uavgjort');
+        var a = d.getElementById('app');
+        assert(u && a, "Fant ikke #uavgjort og #app i styre.html");
+        var pos = u.compareDocumentPosition(a);
+        assert((pos & 4) !== 0,
+          "#uavgjort kommer etter #app - uavgjort-kortet havner da under 'Apne runde X+1'");
+        return 'uavgjort forst i dokumentet';
+      });
+    });
+
+    await kjorTest("Lykkehjul", "R8.2 Apne runde sperres mens en uavgjort venter (AVVIK-042)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        assert(typeof w.oppdaterApneNesteSperre === 'function',
+          "oppdaterApneNesteSperre mangler i styre.html");
+        harMerker(w, 'oppdaterApneNesteSperre', ['uavgjortAktiv', 'data-sperret', 'data-lagret']);
+        harMerker(w, 'visUavgjort', ['uavgjortAktiv =']);
+        return 'sperre og gjenoppretting pa plass';
+      });
+    });
+
+    await kjorTest("Lykkehjul", "R8.3 Lagnavn i uavgjort-kortet escapes (AVVIK-043)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'visUavgjort', ['escHtml(o.label)', 'escHtml(k.navn)', 'escHtml(v.navn)']);
+        harMerker(w, 'planStripe', ['escHtml(st.label)', 'escHtml(v.navn)', 'escHtml(k.navn)']);
+        return 'label, kandidater og vinnere escapes';
+      });
+    });
+
+    await kjorTest("Lykkehjul", "R8.4 Panelet henter hele hjulplanen (AVVIK-044)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'lastUavgjort', ['uavgjortPlan']);
+        harMerker(w, 'planStripe', ['antallOmganger', 'antallTrekninger', 'gjeldendeIndex']);
+        return 'planen hentes og tegnes';
+      });
+    });
+
+    await kjorTest("Lykkehjul", "R8.5 Storskjermen viser alle omgangene for forste snurr (AVVIK-044)", async function () {
+      return await medSide('trekning.html', 3000, function (w, d) {
+        assert(d.getElementById('planStripe'), "planStripe mangler i trekning.html");
+        assert(d.getElementById('planTittel'), "planTittel mangler i trekning.html");
+        harMerker(w, 'byggPlanOmganger', ['trengerAntall', 'lost', 'valgt']);
+        harMerker(w, 'tegnPlanStripe', ['antallTrekninger', 'planPille']);
+        harMerker(w, 'initUavgjort', ['uavgjortPlan']);
+        return 'stripe, tittel og oppbygging pa plass';
+      });
+    });
+
+    await kjorTest("Lykkehjul", "R8.6 Stripa fylles inn per snurr og overlever polling (AVVIK-044)", async function () {
+      return await medSide('trekning.html', 3000, function (w) {
+        harMerker(w, 'merkNestePlanOmgang', ['lokaleVinnere']);
+        harMerker(w, 'spinToNextWinner', ['merkNestePlanOmgang']);
+        // uten radKey-sjekken nullstiller pollingen stripa rett etter landing
+        harMerker(w, 'initUavgjort', ['planRadKey', 'lokaleVinnere = []']);
+        harMerker(w, 'byggPlanOmganger', ['lokaleVinnere']);
+        return 'lokale vinnere huskes til backend har logget dem';
+      });
+    });
+
+    await kjorTest("Lykkehjul", "R8.7 uavgjortPlan svarer fra backend (AVVIK-044)", async function () {
+      var p = await apiGet('uavgjortPlan');
+      assert(p && typeof p.antallOmganger === 'number' && Array.isArray(p.steg),
+        "uavgjortPlan svarte uten antallOmganger/steg: " + JSON.stringify(p));
+      return 'antallOmganger = ' + p.antallOmganger + ', trekninger = ' + p.antallTrekninger;
+    });
+
+    // ========== Gruppe: Ytelse og speiling (AVVIK-045 til 049) ==========
+    await kjorTest("Ytelse", "R9.1 Panelet poller ETT endepunkt, ikke sju (AVVIK-045)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        assert(typeof w.pollAlt === 'function', "pollAlt mangler i styre.html");
+        harMerker(w, 'pollAlt', ['styrePoll', 'visBuzzer', 'visUavgjort', 'visFinaleB', 'visSkjermOverride']);
+        return 'ett samlekall';
+      });
+    });
+
+    await kjorTest("Ytelse", "R9.2 Kategoriene hentes forst nar panelet apnes (AVVIK-045)", async function () {
+      return await medSide('styre.html', 3000, function (w, d) {
+        var panel = d.getElementById('kategoriPanel');
+        assert(panel, "kategoriPanel mangler");
+        assert(String(panel.getAttribute('ontoggle') || '').indexOf('kategoriPanelByttet') !== -1,
+          "panelet har ingen ontoggle som henter kategoriene");
+        assert(typeof w.kategoriPanelByttet === 'function', "kategoriPanelByttet mangler");
+        assert(!panel.open, "kategoripanelet star apent fra start - da hentes 35 kB ved hver sidelast");
+        return 'lat lasting pa plass';
+      });
+    });
+
+    await kjorTest("Ytelse", "R9.3 styrePoll svarer med hele tilstanden (AVVIK-045)", async function () {
+      var p = await apiGet('styrePoll');
+      ['buzzer', 'buzzerModus', 'uavgjort', 'opprykk', 'finale', 'finaleB', 'skjerm'].forEach(function (k) {
+        assert(p && (k in p), "styrePoll mangler feltet " + k + ": " + JSON.stringify(p).slice(0, 120));
+      });
+      return 'alle feltene pa plass';
+    });
+
+    await kjorTest("Escaping", "R9.4 Opp-/nedrykkskortet escaper lagnavn og kategorier (AVVIK-046)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        harMerker(w, 'visOpprykk', ['escHtml(o.lagA.navn)', 'escHtml(o.valgtKategori)', 'attr(navn)']);
+        assert(typeof w.attr === 'function', "attr-hjelperen mangler");
+        var ut = w.attr("a'b<c");
+        assert(ut.indexOf('<') === -1 && ut.indexOf("\\'") !== -1,
+          "attr() escaper ikke apostrof og vinkelparentes: " + ut);
+        return 'escHtml og attr pa plass';
+      });
+    });
+
+    await kjorTest("Ovrig", "R9.5 Spotify-knappen godtar bare ekte Spotify-adresser (AVVIK-047)", async function () {
+      return await medSide('styre.html', 3000, function (w) {
+        assert(typeof w.spotifyUrl === 'function', "spotifyUrl mangler");
+        assert(w.spotifyUrl('spotify:track:4cOdK2wGLETKBW3PvgPWqT') ===
+          'https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT', "URI ble ikke gjort om riktig");
+        assert(w.spotifyUrl('https://open.spotify.com/track/abc') === 'https://open.spotify.com/track/abc',
+          "vanlig adresse ble avvist");
+        ['javascript:alert(1)', 'http://example.com', 'bare litt tekst', ''].forEach(function (d) {
+          assert(w.spotifyUrl(d) === '', "godtok noe den ikke skulle: " + d);
+        });
+        return 'URI og adresse godtas, alt annet avvises';
+      });
+    });
+
+    await kjorTest("Storskjerm", "R9.6 Storskjermen trekker ikke selv, men speiler (AVVIK-048)", async function () {
+      return await medSide('hovedskjerm.html', 3000, function (w, d) {
+        var b = d.getElementById('spinBtn');
+        assert(b && d.defaultView.getComputedStyle(b).display === 'none',
+          "storskjermen har fortsatt en synlig hjulknapp - to sider ville da kalt trekkUavgjort");
+        assert(typeof w.speilSnurr === 'function', "speilSnurr mangler i hovedskjerm.html");
+        harMerker(w, 'initUavgjort', ['speilSnurr']);
+        harMerker(w, 'autoModus', ['settModusTakt']);
+        return 'speiling og raskere takt pa plass';
+      });
+    });
+
+    await kjorTest("Storskjerm", "R9.7 Retrofigurene er tegnet i fila og gar ikke ved sidelast", async function () {
+      return await medSide('hovedskjerm.html', 3000, function (w, d) {
+        assert(d.getElementById('retroBane'), "retroBane mangler");
+        assert(w.RETRO_FIGURER && w.RETRO_FIGURER.length >= 5,
+          "forventet minst fem figurer, fant " + (w.RETRO_FIGURER || []).length);
+        w.RETRO_FIGURER.forEach(function (f) {
+          assert(f.bilder.length === 2, f.navn + " mangler to bilder");
+          assert(f.bilder[0].length === f.bilder[1].length, f.navn + " har ulik hoyde i de to bildene");
+          f.bilder.forEach(function (g) {
+            var b = g[0].length;
+            g.forEach(function (rad) { assert(rad.length === b, f.navn + " har en rad med feil bredde"); });
+          });
+        });
+        assert(w.retroSvg(w.RETRO_FIGURER[0].bilder[0], 3).indexOf('<rect') !== -1, "retroSvg tegner ingenting");
+        assert(d.querySelectorAll('#retroBane .retroFigur').length === 0,
+          "en figur er allerede pa skjermen ved sidelast");
+        return w.RETRO_FIGURER.length + ' figurer';
+      });
+    });
+
+    await kjorTest("Lykkehjul", "R9.8 Hjulet gar videre til neste trekning selv (AVVIK-049)", async function () {
+      return await medSide('trekning.html', 3000, function (w) {
+        assert(typeof w.gaTilNesteTrekning === 'function', "gaTilNesteTrekning mangler");
+        harMerker(w, 'gaTilNesteTrekning', ['nesteUavgjort', 'autoSnurrNeste']);
+        harMerker(w, 'finishSpin', ['gaTilNesteTrekning', 'speilerAndres']);
+        return 'automatisk overgang pa plass';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

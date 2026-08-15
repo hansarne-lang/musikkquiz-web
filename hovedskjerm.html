@@ -42,6 +42,10 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 #navRad{opacity:0;pointer-events:none;transition:opacity .25s;}
 #navRad.vis{opacity:1;pointer-events:auto;}
 #startBtn{display:none;}
+/* Storskjermen skal aldri VAERE den som trekker - da ville to sider kalt
+   trekkUavgjort samtidig, og bare den forste hadde fatt svar. Den speiler
+   trekningssiden i stedet (AVVIK-048). */
+#spinBtn{display:none !important;}
 #wheelBulbRing{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;}
 .bulb{position:absolute;width:12px;height:12px;border-radius:50%;background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;transform:translate(-50%,-50%);}
 .bulb.lit{background:#fff6c8;box-shadow:0 0 10px 3px #ffe066,0 0 3px #fff;}
@@ -61,6 +65,11 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 @keyframes stagePulse{0%{transform:scale(1);}30%{transform:scale(1.045);}100%{transform:scale(1);}}
 #wheelHub{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,#ffff00 60%,#c9a600 100%);border:3px solid #000;z-index:4;box-shadow:0 0 14px #ffff00;}
 #uavgjortResultat div{margin:6px 0;color:#00ff00;}
+/* ---- Retrofigurer: egne 8-bits sprites som spaserer over nederste kant.
+   Tegnet fra bunnen av her, ikke kopier av figurer fra kjente spill. ---- */
+#retroBane{position:fixed;left:0;right:0;bottom:8px;height:60px;pointer-events:none;z-index:900;overflow:hidden;}
+.retroFigur{position:absolute;bottom:0;image-rendering:pixelated;will-change:transform;}
+
 /* Vinneroverlegget skal ligge over bommerten, ikke omvendt (AVVIK-037). */
 #vinnerOverlay{z-index:1600;}
 .fullOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.94);z-index:1500;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;}
@@ -444,6 +453,7 @@ function sjekkModus() {
 
 function autoModus() {
   apiGet('uavgjortStatus').then(function(u) {
+    settModusTakt((u.status === 'venter' || u.status === 'trukket') ? 1000 : 3000);
     if (u.status === 'venter' || u.status === 'trukket') {
       var key = u.kontekst + '|' + u.type + '|' + u.status;
       if (gjeldendeModus !== 'auto:uavgjort') {
@@ -461,6 +471,7 @@ function autoModus() {
     }
     apiGet('opprykkStatus').then(function(o) {
       if (o.status === 'trekker' || o.status === 'velger') {
+        settModusTakt(1000);
         if (gjeldendeModus !== 'auto:trekning') {
           gjeldendeModus = 'auto:trekning';
           sisteTrekkStatus = null;
@@ -496,6 +507,145 @@ function autoModus() {
     }).catch(function(e) { console.error(e); });
   }).catch(function(e) { console.error(e); });
 }
+
+// ===================================================================
+// Retrofigurer over storskjermen
+// Seks egendesignede 8-bits figurer i sjangeren, tegnet som pikselrutenett
+// her i fila - ingen av dem er hentet fra et eksisterende spill. En om
+// gangen spaserer over nederste kant med 40-90 sekunders ujevne mellomrom,
+// slik at det merkes uten a stjele oppmerksomhet fra stilling og trekning.
+// ===================================================================
+var RETRO_PALETT = {
+  '.': null, 'g': '#ffe000', 'G': '#ff9d00', 'r': '#ff2f4d', 'R': '#8b0018',
+  'b': '#00e5ff', 'B': '#0066cc', 'l': '#00ff5e', 'L': '#00893a',
+  'm': '#ff4dff', 'M': '#9900cc', 'w': '#ffffff', 'k': '#101010', 'o': '#ff8a00'
+};
+
+// Hver figur har to bilder som byttes pa, slik at den ser ut til a ga.
+var RETRO_FIGURER = [
+  { navn: 'gnask', bilder: [[
+    '...o..o..o....','...oo.oo.oo...','..gggggggggg..','.gggggggggggg.',
+    'gggggggggggggg','ggwkgggggggg..','gggggggggg....','gggggggg......',
+    'gggggggggg....','gggggggggggg..','gggggggggggggg','.gggggggggggg.',
+    '..GG......GG..','..GG......GG..'],[
+    '...o..o..o....','...oo.oo.oo...','..gggggggggg..','.gggggggggggg.',
+    'gggggggggggggg','ggwkgggggggggg','gggggggggggggg','gggggggggggggg',
+    'gggggggggggggg','gggggggggggggg','gggggggggggggg','.gggggggggggg.',
+    '.GG........GG.','.GG........GG.']] },
+  { navn: 'enoye', bilder: [[
+    '.....mmmm.....','...mmmmmmmm...','..mmmmmmmmmm..','.mmmwwwwwwmmm.',
+    'mmmwwwwwwwwmmm','mmwwwwkkwwwwmm','mmwwwwkkwwwwmm','mmmwwwwwwwwmmm',
+    '.mmmwwwwwwmmm.','..mmmmmmmmmm..','..MmmmmmmmmM..','..M.mmmmmm.M..',
+    '....M....M....','..............'],[
+    '.....mmmm.....','...mmmmmmmm...','..mmmmmmmmmm..','.mmmwwwwwwmmm.',
+    'mmmwwwwwwwwmmm','mmwwkkwwwwwwmm','mmwwkkwwwwwwmm','mmmwwwwwwwwmmm',
+    '.mmmwwwwwwmmm.','..mmmmmmmmmm..','.MmmmmmmmmmmM.','.M..mmmmmm..M.',
+    '...M......M...','..............']] },
+  { navn: 'romvesen', bilder: [[
+    '..l........l..','...l......l...','..llllllllll..','.ll.llllll.ll.',
+    'llllllllllllll','l.llllllllll.l','l.l........l.l','...ll....ll...',
+    '..............','..............','..............','..............',
+    '..............','..............'],[
+    '..l........l..','.l.l......l.l.','.lllllllllll..','.ll.llllll.ll.',
+    'llllllllllllll','l.llllllllll.l','l..l......l..l','..l.l....l.l..',
+    '..............','..............','..............','..............',
+    '..............','..............']] },
+  { navn: 'skip', bilder: [[
+    '......bb......','.....bbbb.....','....bbbbbb....','...bbbbbbbb...',
+    '..bbbwwwwbbb..','.bbbwwkkwwbbb.','bbbbwwwwwwbbbb','bbbbbbbbbbbbbb',
+    'bBbbbbbbbbbbBb','B.BBBBBBBBBB.B','....o....o....','...oo....oo...',
+    '....o....o....','..............'],[
+    '......bb......','.....bbbb.....','....bbbbbb....','...bbbbbbbb...',
+    '..bbbwwwwbbb..','.bbbwwkkwwbbb.','bbbbwwwwwwbbbb','bbbbbbbbbbbbbb',
+    'bBbbbbbbbbbbBb','B.BBBBBBBBBB.B','....oo..oo....','...o......o...',
+    '..............','..............']] },
+  { navn: 'robot', bilder: [[
+    '..rrrrrrrrrr..','.rrrrrrrrrrrr.','.rrwwrrrrwwrr.','.rrwkrrrrwkrr.',
+    '.rrrrrrrrrrrr.','.rrrkkkkkkrrr.','..rrrrrrrrrr..','rRRrrrrrrrrRRr',
+    'rR.rrrrrrrr.Rr','...rrrrrrrr...','...rr....rr...','...rr....rr...',
+    '..RRR....RRR..','..............'],[
+    '..rrrrrrrrrr..','.rrrrrrrrrrrr.','.rrwwrrrrwwrr.','.rrkwrrrrkwrr.',
+    '.rrrrrrrrrrrr.','.rrrkkkkkkrrr.','..rrrrrrrrrr..','rRRrrrrrrrrRRr',
+    'rR.rrrrrrrr.Rr','...rrrrrrrr...','..rr......rr..','..rr......rr..','.RRR......RRR.',
+    '..............']] },
+  { navn: 'bille', bilder: [[
+    '..o........o..','...o......o...','...oooooooo...','..oooooooooo..',
+    '.owwoooooowwo.','.okwoooooowko.','oooooooooooooo','ooGGoooooGGooo',
+    'ooooGGoGGooooo','ooooooooooooo.','.oooooooooooo.','..oo......oo..',
+    '.GG..........G','.G...........G'],[
+    '..o........o..','..o........o..','...oooooooo...','..oooooooooo..',
+    '.owwoooooowwo.','.owkoooooowwo.','oooooooooooooo','ooGGoooooGGooo',
+    'ooooGGoGGooooo','ooooooooooooo.','.oooooooooooo.','...oo....oo...',
+    '..GG........GG','...G........G.']] }
+];
+
+function retroSvg(rutenett, skala) {
+  var b = rutenett[0].length, h = rutenett.length;
+  var ut = '<svg xmlns="http://www.w3.org/2000/svg" width="' + (b * skala) + '" height="' +
+    (h * skala) + '" viewBox="0 0 ' + b + ' ' + h + '" shape-rendering="crispEdges">';
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < b; x++) {
+      var f = RETRO_PALETT[rutenett[y].charAt(x)];
+      if (f) { ut += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + f + '"/>'; }
+    }
+  }
+  return ut + '</svg>';
+}
+
+var retroSpiller = false;
+
+function slippLosRetroFigur() {
+  var bane = document.getElementById('retroBane');
+  if (!bane || retroSpiller || document.hidden) { return; }
+  retroSpiller = true;
+  var fig = RETRO_FIGURER[Math.floor(Math.random() * RETRO_FIGURER.length)];
+  var skala = 3;
+  var motVenstre = Math.random() < 0.5;
+  var bredde = fig.bilder[0][0].length * skala;
+  var el = document.createElement('div');
+  el.className = 'retroFigur';
+  el.style.opacity = '0.85';
+  el.style.left = '0px';
+  var rammer = fig.bilder.map(function (g) { return retroSvg(g, skala); });
+  var ramme = 0;
+  el.innerHTML = rammer[0];
+  if (motVenstre) { el.style.transform = 'scaleX(-1)'; }
+  bane.appendChild(el);
+
+  var reise = window.innerWidth + bredde * 2;
+  var fart = 55 + Math.random() * 45;            // piksler i sekundet
+  var varighet = (reise / fart) * 1000;
+  var start = null;
+  var sisteBytte = 0;
+
+  function steg(na) {
+    if (start === null) { start = na; sisteBytte = na; }
+    var gaatt = na - start;
+    var andel = gaatt / varighet;
+    if (andel >= 1) { el.remove(); retroSpiller = false; planleggNesteRetro(); return; }
+    var x = motVenstre ? (window.innerWidth + bredde - reise * andel) : (-bredde + reise * andel);
+    var hopp = Math.abs(Math.sin(gaatt / 190)) * 5;
+    el.style.transform = 'translate(' + Math.round(x) + 'px,' + (-Math.round(hopp)) + 'px)' +
+      (motVenstre ? ' scaleX(-1)' : '');
+    if (na - sisteBytte > 190) {
+      sisteBytte = na;
+      ramme = 1 - ramme;
+      el.innerHTML = rammer[ramme];
+    }
+    requestAnimationFrame(steg);
+  }
+  requestAnimationFrame(steg);
+}
+
+function planleggNesteRetro() {
+  // Ujevne mellomrom: 40-90 sekunder.
+  var ventMs = (40 + Math.random() * 50) * 1000;
+  setTimeout(slippLosRetroFigur, ventMs);
+}
+
+// Forste figur kommer etter 20-45 sekunder, slik at den ikke krasjer med
+// innlastingen av siden.
+setTimeout(slippLosRetroFigur, (20 + Math.random() * 25) * 1000);
 
 // ==== Lykkehjul (uavgjort-trekning) ====
 var WHEEL_COLORS = ['#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6b6b', '#3a86ff', '#ffa500', '#ff1493'];
@@ -695,17 +845,29 @@ function initUavgjort(u) {
     buildWheel(wheelKandidater);
     initBulbRing();
   });
-  var spinBtn = document.getElementById('spinBtn');
   if (u.status === 'trukket') {
-    spinBtn.style.display = 'none';
-    var resHtml = '';
-    (u.valgt || []).forEach(function(v) { resHtml += '<div>Vinner: ' + escHtml(v.navn) + '</div>'; });
-    resHtml += '<p style="font-size:.5em;opacity:.7;margin-top:10px;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
-    document.getElementById('uavgjortResultat').innerHTML = resHtml;
-  } else {
-    spinBtn.style.display = 'inline-block';
-    spinBtn.disabled = false;
+    // Trekningssiden har snurret. Storskjermen kjorer NOYAKTIG samme snurr mot
+    // de samme vinnerne i stedet for a bare liste dem opp, slik at de to
+    // skjermene viser det samme (AVVIK-048).
+    speilSnurr(u);
   }
+}
+
+// Speiler en trekning som allerede er gjort et annet sted. Kaller ingenting
+// mot backend - vinnerne ligger i raden fra for.
+function speilSnurr(u) {
+  var vinnere = (u.valgt || []).slice();
+  if (!vinnere.length) {
+    document.getElementById('uavgjortResultat').innerHTML =
+      '<p style="font-size:.5em;opacity:.7;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
+    return;
+  }
+  wheelSpinning = true;
+  setBulbsChasing(true);
+  uavgjortWinnersQueue = vinnere;
+  var pool = (u.kandidater || wheelKandidater).slice();
+  // vent til hjulet er tegnet med logoene pa plass
+  setTimeout(function () { spinToNextWinner(pool); }, 600);
 }
 
 function tickSoundsDuring(durationMs) {
@@ -871,9 +1033,23 @@ document.addEventListener('mousemove', function () {
 });
 
 sjekkModus();
-setInterval(sjekkModus, 3000);
+// Naar en trekning eller et lykkehjul pagar, ma storskjermen fange opp
+// statusbyttet raskt - ellers starter animasjonen her flere sekunder etter
+// trekningssiden, og de to skjermene viser ikke det samme (AVVIK-048).
+var modusIntervall = null;
+var modusTakt = null;
+
+function settModusTakt(ms) {
+  if (modusTakt === ms) { return; }
+  modusTakt = ms;
+  if (modusIntervall) { clearInterval(modusIntervall); }
+  modusIntervall = setInterval(sjekkModus, ms);
+}
+
+settModusTakt(3000);
 sjekkFinaleOgBommert();
 setInterval(sjekkFinaleOgBommert, 3000);
 </script>
+<div id="retroBane"></div>
 </body>
 </html>

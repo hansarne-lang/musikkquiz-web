@@ -70,16 +70,16 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 </details>
 <div id="lagOppsettResultat"></div>
 
-<details class="card">
+<details class="card" id="kategoriPanel" ontoggle="kategoriPanelByttet(this)">
 <summary>Kategorier (rediger sanger, legg til/fjern kategori)</summary>
 <div id="kategoriDiag" style="color:#f66;font-family:monospace;font-size:12px;margin-top:8px"></div>
 <div style="margin-top:12px"><button onclick="visNyKategoriSkjema()">+ Ny kategori</button></div>
 <div id="nyKategoriSkjema"></div>
-<div id="kategoriListe" style="margin-top:12px"><p>Laster...</p></div>
+<div id="kategoriListe" style="margin-top:12px"><p style="opacity:.7;">Apne panelet for a hente kategoriene.</p></div>
 </details>
 
-<div id="app"><p>Laster...</p></div>
 <div id="uavgjort"></div>
+<div id="app"><p>Laster...</p></div>
 <div id="opprykk"></div>
 <div id="buzzer"></div>
 <div id="buzzerModusPanel" class="card">
@@ -252,6 +252,8 @@ function vis(data) {
   document.getElementById('app').innerHTML = html;
   if (scoreStatus.s1 && scoreStatus.s2 && scoreStatus.s3) {
     document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Åpne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+    document.getElementById('apneNesteWrap').removeAttribute('data-sperret');
+    oppdaterApneNesteSperre();
   }
 }
 
@@ -275,6 +277,8 @@ function visSangResultat(sangNr, res) {
   markerSangScoret(sangNr);
   if (res.status && res.status.s1 && res.status.s2 && res.status.s3) {
     document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Åpne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+    document.getElementById('apneNesteWrap').removeAttribute('data-sperret');
+    oppdaterApneNesteSperre();
   }
 }
 
@@ -364,25 +368,76 @@ function apneNeste() {
   apiGet('apneRunde', { runde: gjeldendeRunde + 1 }).then(function () { location.reload(); }).catch(feil);
 }
 
+var sistePlan = null;
+
 function lastUavgjort() {
-  apiGet('uavgjortStatus').then(visUavgjort).catch(function (e) {
-    document.getElementById('uavgjort').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (uavgjort): ' + (e && e.message ? e.message : e) + '</p></div>';
+  apiGet('uavgjortStatus').then(function (o) {
+    if (o && (o.status === 'venter' || o.status === 'trukket')) {
+      // Planen forteller hvor mange hjulomganger som gjenstar totalt, ikke bare
+      // for trekningen som star pa tur. Feiler den, viser vi kortet uten plan.
+      return apiGet('uavgjortPlan').catch(function () { return null; }).then(function (plan) {
+        sistePlan = plan;
+        visUavgjort(o, plan);
+      });
+    }
+    sistePlan = null;
+    visUavgjort(o, null);
+  }).catch(function (e) {
+    document.getElementById('uavgjort').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (uavgjort): ' + escHtml(e && e.message ? e.message : e) + '</p></div>';
   });
 }
 
-function visUavgjort(o) {
+// Trekninger som gjenstar, tegnet som en liten stripe sa quizmasteren ser
+// totalen med en gang - samme bilde som publikum far pa storskjermen.
+function planStripe(plan) {
+  if (!plan || !plan.steg || !plan.steg.length) { return ''; }
+  var h = '<p style="margin:10px 0 6px;font-size:.85em;opacity:.8;">Lykkehjulet skal snurre <b>' +
+    plan.antallOmganger + '</b> gang' + (plan.antallOmganger === 1 ? '' : 'er') +
+    ' fordelt pa <b>' + plan.antallTrekninger + '</b> trekning' +
+    (plan.antallTrekninger === 1 ? '' : 'er') + '.</p>';
+  h += '<ol style="margin:0 0 4px;padding-left:20px;font-size:.85em;">';
+  plan.steg.forEach(function (st, i) {
+    var farge = st.lost ? '#00ff00' : (i === plan.gjeldendeIndex ? '#ff00ff' : '#888');
+    var merke = st.lost ? 'FERDIG' : (i === plan.gjeldendeIndex ? 'NA' : 'venter');
+    h += '<li style="color:' + farge + ';margin-bottom:4px;">' +
+      '<b>' + escHtml(st.label) + '</b> [' + merke + ']';
+    if (st.trengerAntall > 1) { h += ' - ' + st.trengerAntall + ' omganger'; }
+    if (st.lost && st.valgt && st.valgt.length) {
+      h += '<br><span style="opacity:.85;">Trukket: ' +
+        st.valgt.map(function (v) { return escHtml(v.navn); }).join(', ') + '</span>';
+    } else if (st.kandidaterUkjent) {
+      h += '<br><span style="opacity:.7;">Kandidatene er kjent forst etter trekningen over.</span>';
+    } else if (st.kandidater && st.kandidater.length) {
+      h += '<br><span style="opacity:.7;">' +
+        st.kandidater.map(function (k) { return escHtml(k.navn); }).join(', ') + '</span>';
+    }
+    h += '</li>';
+  });
+  h += '</ol>';
+  return h;
+}
+
+function visUavgjort(o, plan) {
   var html = '';
+  uavgjortAktiv = (o.status === 'venter' || o.status === 'trukket');
   if (o.status === 'venter') {
     html = '<div class="card" style="border-color:#ff00ff;"><h2>Uavgjort-trekning - lykkehjulet venter</h2>';
-    html += '<p>' + o.label + '</p>';
-    html += '<p>Kandidater: <b>' + o.kandidater.map(function (k) { return k.navn; }).join(', ') + '</b></p>';
+    html += '<p>' + escHtml(o.label) + '</p>';
+    html += '<p>Kandidater: <b>' + o.kandidater.map(function (k) { return escHtml(k.navn); }).join(', ') + '</b></p>';
+    html += planStripe(plan);
     html += '<a href="' + siteUrl + '/trekning.html" target="_blank"><button style="background:#ff00ff;color:#fff;">Åpne lykkehjulet (storskjerm)</button></a>';
     html += '</div>';
   } else if (o.status === 'trukket') {
+    var gjenstar = plan && plan.gjeldendeIndex !== -1;
     html = '<div class="card" style="border-color:#00ff00;"><h2>Lykkehjulet er trukket!</h2>';
-    html += '<p>' + o.label + '</p>';
-    html += '<p>Resultat: <b>' + o.valgt.map(function (v) { return v.navn; }).join(', ') + '</b></p>';
-    html += '<button onclick="bekreftUavgjort(\'' + o.kontekst + '\')">Bekreft og fortsett</button>';
+    html += '<p>' + escHtml(o.label) + '</p>';
+    html += '<p>Resultat: <b>' + o.valgt.map(function (v) { return escHtml(v.navn); }).join(', ') + '</b></p>';
+    html += planStripe(plan);
+    if (gjenstar) {
+      html += '<p style="color:#ff00ff;">Det gjenstar flere trekninger - trykk under for a ga videre til neste.</p>';
+    }
+    html += '<button onclick="bekreftUavgjort(\'' + o.kontekst + '\')">' +
+      (gjenstar ? 'Bekreft og gå til neste trekning' : 'Bekreft og fortsett') + '</button>';
     html += '</div>';
   } else {
     html = '<div class="card"><h2>Uavgjort-trekninger</h2>';
@@ -392,6 +447,29 @@ function visUavgjort(o) {
     html += '</div>';
   }
   document.getElementById('uavgjort').innerHTML = html;
+  oppdaterApneNesteSperre();
+}
+
+// Sa lenge en uavgjort venter, skal ikke "Apne runde X+1" stikke seg fram -
+// backend nekter likevel, og knappen fikk tidligere uavgjort-kortet til a se ut
+// som noe som kom ETTER at runden var apnet (AVVIK-042).
+var uavgjortAktiv = false;
+
+function oppdaterApneNesteSperre() {
+  var w = document.getElementById('apneNesteWrap');
+  if (!w) { return; }
+  if (uavgjortAktiv) {
+    if (!w.getAttribute('data-sperret')) {
+      w.setAttribute('data-lagret', w.innerHTML);
+      w.setAttribute('data-sperret', '1');
+    }
+    w.innerHTML = '<div class="card" style="border-color:#ff00ff;"><p style="margin:0;">' +
+      'Uavgjort må avgjøres på lykkehjulet før neste runde kan åpnes - se kortet øverst på siden.</p></div>';
+  } else if (w.getAttribute('data-sperret')) {
+    w.innerHTML = w.getAttribute('data-lagret') || '';
+    w.removeAttribute('data-sperret');
+    w.removeAttribute('data-lagret');
+  }
 }
 
 function bekreftUavgjort(kontekst) {
@@ -428,6 +506,32 @@ function lastOpprykk() {
   });
 }
 
+// Spotify-lenken ligger allerede i kategoriarket (kolonne 5) og folger med i
+// gjeldendeSang, men ble aldri vist. Bade full URL og spotify:track:-URI
+// godtas; alt annet ignoreres, slik at et felt med tilfeldig tekst ikke blir
+// til en lenke (AVVIK-047).
+function spotifyUrl(raa) {
+  var t = String(raa || '').trim();
+  if (!t) { return ''; }
+  if (/^spotify:(track|album|playlist|episode):[A-Za-z0-9]+$/.test(t)) {
+    return 'https://open.spotify.com/' + t.split(':')[1] + '/' + t.split(':')[2];
+  }
+  if (/^https:\/\/open\.spotify\.com\/[A-Za-z0-9\/?=&._-]+$/.test(t)) { return t; }
+  return '';
+}
+
+function spotifyKnapp(sang) {
+  var u = spotifyUrl(sang && sang.spotify);
+  if (!u) {
+    return '<p style="font-size:.85em;opacity:.6;margin:6px 0;">Ingen Spotify-lenke pa denne sangen.</p>';
+  }
+  return '<p style="margin:8px 0;"><a href="' + escHtml(u) + '" target="_blank" rel="noopener">' +
+    '<button style="background:#1db954;color:#fff;">Spill av i Spotify</button></a></p>';
+}
+
+// Lagnavnene kommer fra QR-paameldingen og ble satt rett inn i innerHTML her,
+// og kategorinavn ble limt inn i onclick uten hensyn til apostrofer
+// (AVVIK-046).
 function visOpprykk(o) {
   var html = '';
   if (o.status === 'venter_uavgjort') {
@@ -436,24 +540,25 @@ function visOpprykk(o) {
     html = '<div class="card"><h2>Opp-/nedrykksspill</h2><p>Ikke startet.</p><button onclick="startOpp()">Start oppryktsspill</button></div>';
   } else if (o.status === 'trekker') {
     html = '<div class="card"><h2>Opp-/nedrykksspill</h2>';
-    html += '<p>Lag: ' + o.lagA.navn + ' (nest nederst div1), ' + o.lagB.navn + ' (nederst div1), ' + o.lagC.navn + ' (2. plass div2)</p>';
+    html += '<p>Lag: ' + escHtml(o.lagA.navn) + ' (nest nederst div1), ' + escHtml(o.lagB.navn) + ' (nederst div1), ' + escHtml(o.lagC.navn) + ' (2. plass div2)</p>';
     html += '<p>Åpne trekningssiden (vis på storskjerm) for å trekke 4 kategorier:</p>';
     html += '<a href="' + siteUrl + '/trekning.html" target="_blank"><button>Apne trekningsside</button></a></div>';
   } else if (o.status === 'velger') {
-    html = '<div class="card"><h2>Kandidatkategorier: ' + o.kandidater.join(', ') + '</h2>';
-    html += '<p>' + o.lagA.navn + ' velger kategori. Klikk hvilken kategori laget valgte:</p>';
+    html = '<div class="card"><h2>Kandidatkategorier: ' + o.kandidater.map(escHtml).join(', ') + '</h2>';
+    html += '<p>' + escHtml(o.lagA.navn) + ' velger kategori. Klikk hvilken kategori laget valgte:</p>';
     o.kandidater.forEach(function (navn) {
-      html += '<button onclick="velgKat(\'' + o.lagA.id + '\',\'' + navn + '\')">' + navn + '</button> ';
+      html += '<button onclick="velgKat(' + attr(o.lagA.id) + ',' + attr(navn) + ')">' + escHtml(navn) + '</button> ';
     });
     html += '</div>';
   } else if (o.status === 'pagar') {
-    html = '<div class="card"><h2>Kategori: ' + o.valgtKategori + '</h2>';
+    html = '<div class="card"><h2>Kategori: ' + escHtml(o.valgtKategori) + '</h2>';
     html += '<p><b>Sang ' + (o.sangIndex + 1) + '</b> av 5</p>';
-    html += '<p>Fasit: ' + o.gjeldendeSang.artist + ' - ' + o.gjeldendeSang.latt + ' (' + o.gjeldendeSang.aar + ')</p>';
+    html += '<p>Fasit: ' + escHtml(o.gjeldendeSang.artist) + ' - ' + escHtml(o.gjeldendeSang.latt) + ' (' + escHtml(o.gjeldendeSang.aar) + ')</p>';
+    html += spotifyKnapp(o.gjeldendeSang);
     html += '<p>Hvem svarte riktig?</p>';
-    html += '<button onclick="registrer(\'' + o.lagA.id + '\')">' + o.lagA.navn + '</button> ';
-    html += '<button onclick="registrer(\'' + o.lagB.id + '\')">' + o.lagB.navn + '</button> ';
-    html += '<button onclick="registrer(\'' + o.lagC.id + '\')">' + o.lagC.navn + '</button> ';
+    html += '<button onclick="registrer(' + attr(o.lagA.id) + ')">' + escHtml(o.lagA.navn) + '</button> ';
+    html += '<button onclick="registrer(' + attr(o.lagB.id) + ')">' + escHtml(o.lagB.navn) + '</button> ';
+    html += '<button onclick="registrer(' + attr(o.lagC.id) + ')">' + escHtml(o.lagC.navn) + '</button> ';
     html += '<button onclick="hopp()">Ingen riktig / hopp over...</button></div>';
   } else if (o.status === 'uavgjort') {
     var lagliste = [o.lagA, o.lagB, o.lagC];
@@ -471,7 +576,7 @@ function visOpprykk(o) {
     if (o.resultat && String(o.resultat.nedrykket) === String(o.lagA.id)) nedNavn = o.lagA.navn;
     else if (o.resultat && String(o.resultat.nedrykket) === String(o.lagB.id)) nedNavn = o.lagB.navn;
     else if (o.resultat && String(o.resultat.nedrykket) === String(o.lagC.id)) nedNavn = o.lagC.navn;
-    html = '<div class="card"><h2>Ferdig!</h2><p><b>' + nedNavn + '</b> rykker ned til 2. divisjon. De to andre spiller i 1. divisjon.</p></div>';
+    html = '<div class="card"><h2>Ferdig!</h2><p><b>' + escHtml(nedNavn) + '</b> rykker ned til 2. divisjon. De to andre spiller i 1. divisjon.</p></div>';
   }
   document.getElementById('opprykk').innerHTML = html;
 }
@@ -665,6 +770,12 @@ function avlysFinaleBClick() {
 
 var kategoriData = [];
 
+// Verdier som havner inne i en onclick-attributt ma bade escapes som HTML og
+// pakkes som en JS-streng. Kategorinavn med apostrof brakk tidligere knappen.
+function attr(v) {
+  return "'" + escHtml(String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + "'";
+}
+
 function escHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -707,7 +818,19 @@ function settSkjermPause() {
   apiGet('setSkjermOverride', { modus: 'pause', tekst: tekst }).then(visSkjermOverride).catch(feil);
 }
 
+// Kategorisvaret er pa rundt 35 kB og ble hentet ved hver sidelast selv om
+// panelet var lukket. Na hentes det forste gang panelet apnes (AVVIK-045).
+var kategorierHentet = false;
+
+function kategoriPanelByttet(el) {
+  if (!el.open || kategorierHentet) { return; }
+  kategorierHentet = true;
+  document.getElementById('kategoriListe').innerHTML = '<p>Laster kategorier...</p>';
+  lastKategorier();
+}
+
 function lastKategorier() {
+  kategorierHentet = true;
   apiGet('kategorier').then(function (data) {
     kategoriData = data;
     renderKategoriListe();
@@ -1064,24 +1187,42 @@ function arkiverKveld() {
   });
 }
 
+// Panelet hadde sju uavhengige pollere som til sammen ga rundt ett kall i
+// sekundet mot backend. Malt mot produksjon: 46 kall pa 46 sekunder, og alt
+// annet - blant annet kategoriene - sto i ko bak dem. Na hentes hele
+// tilstanden i ETT kall (AVVIK-045). De enkelte last*-funksjonene star igjen
+// slik at handlinger kan oppdatere sitt eget kort med en gang.
+var pollFeilPaaRad = 0;
+
+function pollAlt() {
+  return apiGet('styrePoll').then(function (o) {
+    pollFeilPaaRad = 0;
+    visBuzzer(o.buzzer);
+    visBuzzerModus(o.buzzerModus);
+    sistePlan = o.plan || null;
+    visUavgjort(o.uavgjort, o.plan || null);
+    visOpprykk(o.opprykk);
+    visFinale(o.finale);
+    visFinaleB(o.finaleB);
+    visSkjermOverride(o.skjerm);
+  }).catch(function (e) {
+    pollFeilPaaRad++;
+    // Et enkelt bomkall skal ikke fylle panelet med feilmeldinger - Apps Script
+    // ryker innimellom. Forst etter tre pa rad sier vi fra.
+    if (pollFeilPaaRad >= 3) {
+      document.getElementById('uavgjort').innerHTML =
+        '<div class="card"><p style="color:#ff6b6b">Mistet kontakten med backend (' +
+        pollFeilPaaRad + ' forsok pa rad): ' + escHtml(e && e.message ? e.message : e) +
+        '</p></div>';
+    }
+  });
+}
+
 init();
-lastKategorier();
-lastUavgjort();
-setInterval(lastUavgjort, 3000);
-lastOpprykk();
-setInterval(lastOpprykk, 4000);
-lastBuzzer();
-setInterval(lastBuzzer, 2000);
-lastBuzzerModus();
-setInterval(lastBuzzerModus, 5000);
-lastFinale();
-setInterval(lastFinale, 3000);
-lastFinaleB();
-setInterval(lastFinaleB, 3000);
+pollAlt();
+setInterval(pollAlt, 2500);
 lastBommertPanel();
 lastJoker();
-lastSkjermOverride();
-setInterval(lastSkjermOverride, 4000);
 
 var FYSISK_KODE_TIL_FELT = { ControlLeft: "lagKnapp1", Space: "lagKnapp2", AltLeft: "lagKnapp3" };
 function lastLagListeForFysiskBinding() {
