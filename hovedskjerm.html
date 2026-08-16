@@ -197,6 +197,17 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 <div id="sluttresultatInnhold"><p>Laster...</p></div>
 </div>
 
+<!-- Pameldingen skjedde bare pa styringspanelet: quizmasteren matte holde
+     PC-skjermen opp mot salen for at lagene skulle fa scannet QR-koden.
+     Na vises den der den horer hjemme - stort, pa projektoren (AVVIK-064). -->
+<div id="paameldingWrap" style="display:none;text-align:center;">
+<h1>Meld p&aring; laget</h1>
+<p id="paameldingHjelp" style="font-size:1.5em;margin-bottom:18px;">Skann koden og skriv inn lagnavnet deres</p>
+<div id="paameldingQr" style="background:#fff;padding:22px;display:inline-block;"></div>
+<p id="paameldingLenke" style="font-size:1.1em;margin-top:14px;color:#00ff00;word-break:break-all;"></p>
+<div id="paameldingLag" style="margin-top:26px;"></div>
+</div>
+
 <div id="skjulWrap" style="display:none;"></div>
 
 </div>
@@ -489,8 +500,50 @@ var gjeldendeModus = null;
 var lastUavgjortKey = '';
 var wheelSpinning = false;
 
+// ---------------------------------------------------------------------------
+// Pamelding pa storskjermen (AVVIK-064). QR-koden ma vaere stor nok til a
+// scannes bakerst i lokalet, og lagene skal se sitt eget navn dukke opp sa de
+// vet at pameldingen gikk gjennom.
+// ---------------------------------------------------------------------------
+var paameldingIntervalId = null;
+var SITE_URL = location.href.replace(/\/[^\/]*$/, '');
+
+function initPaamelding() {
+  var lenke = SITE_URL + '/registrer.html';
+  var qr = document.getElementById('paameldingQr');
+  if (qr && !qr.innerHTML) {
+    qr.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=420x420&data=' +
+      encodeURIComponent(lenke) + '" width="420" height="420" alt="QR-kode for pamelding">';
+  }
+  var l = document.getElementById('paameldingLenke');
+  if (l) { l.textContent = lenke; }
+  oppdaterPaameldteLag();
+  if (paameldingIntervalId) { clearInterval(paameldingIntervalId); }
+  paameldingIntervalId = setInterval(oppdaterPaameldteLag, 3000);
+}
+
+function oppdaterPaameldteLag() {
+  apiGet('teams').then(function (lag) {
+    var boks = document.getElementById('paameldingLag');
+    if (!boks) { return; }
+    if (!lag.length) {
+      boks.innerHTML = '<p style="font-size:1.3em;opacity:.7;">Ingen lag p&aring;meldt enn&aring;...</p>';
+      return;
+    }
+    var h = '<p style="font-size:1.3em;margin-bottom:10px;">' + lag.length +
+      (lag.length === 1 ? ' lag p&aring;meldt' : ' lag p&aring;meldt') + '</p>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">';
+    lag.forEach(function (t) {
+      h += '<div style="background:rgba(0,255,255,.15);border:2px solid #00ffff;padding:8px 16px;font-size:1.2em;">' +
+        escHtml(t.navn) + '</div>';
+    });
+    h += '</div>';
+    boks.innerHTML = h;
+  }).catch(function (e) { console.error(e); });
+}
+
 function alleWrapsSkjul() {
-  ['trekningWrap', 'buzzerWrap', 'uavgjortWrap', 'katWrap', 'stillingWrap', 'velkomstWrap', 'pauseWrap', 'sluttresultatWrap', 'skjulWrap'].forEach(function(id) {
+  ['trekningWrap', 'buzzerWrap', 'uavgjortWrap', 'katWrap', 'stillingWrap', 'velkomstWrap', 'pauseWrap', 'sluttresultatWrap', 'paameldingWrap', 'skjulWrap'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -499,6 +552,7 @@ function stoppIntervaller() {
   if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
   if (stillingIntervalId) { clearInterval(stillingIntervalId); stillingIntervalId = null; }
   if (sluttresultatIntervalId) { clearInterval(sluttresultatIntervalId); sluttresultatIntervalId = null; }
+  if (paameldingIntervalId) { clearInterval(paameldingIntervalId); paameldingIntervalId = null; }
 }
 
 function sjekkModus() {
@@ -531,6 +585,26 @@ function sjekkModus() {
 }
 
 function autoModus() {
+  // Star pameldingen apen, er kvelden ikke i gang enna - da er QR-koden det
+  // eneste som betyr noe pa projektoren. apneRunde stenger pameldingen
+  // automatisk, sa dette kan ikke bli staende igjen ut i kvelden.
+  apiGet('paameldingStatus').then(function (p) {
+    if (p && p.status === 'apen') {
+      settModusTakt(3000);
+      if (gjeldendeModus !== 'auto:paamelding') {
+        gjeldendeModus = 'auto:paamelding';
+        stoppIntervaller();
+        alleWrapsSkjul();
+        document.getElementById('paameldingWrap').style.display = 'block';
+        initPaamelding();
+      }
+      return;
+    }
+    autoModusVidere();
+  }).catch(function (e) { console.error(e); autoModusVidere(); });
+}
+
+function autoModusVidere() {
   apiGet('uavgjortStatus').then(function(u) {
     settModusTakt((u.status === 'venter' || u.status === 'trukket') ? 1000 : 3000);
     if (u.status === 'venter' || u.status === 'trukket') {

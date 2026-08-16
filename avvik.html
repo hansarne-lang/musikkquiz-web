@@ -832,6 +832,18 @@ var AVVIK_DATA = [
     beskrivelse: "Panelet var 4074 px hoyt - rundt fire skjermhoyder - og viste ALT samtidig fra forste minutt til siste: lag-oppsett, kategorier, buzzer-oppsett, fasit, opp-/nedrykk, B-finale, finale, joker, ny sesong, arkivering og nullstilling. Finalene sto framme fra kvelden startet, selv om de ikke kan spilles for etter runde 6, og \"Start ny sesong\" la midt i det aktive panelet ved siden av kort man bruker hvert femte minutt. Rekkefolgen fulgte omtrent kjoreplanen, men ingenting fortalte hvor i kvelden man var - man matte rulle for a finne kortet som gjaldt akkurat na. AVVIK-056 var den eneste plassen panelet tilpasset seg i det hele tatt.",
     losning: "Panelet er delt i fire faser som folger kvelden: 1 For kvelden (lag-oppsett, kategorier, buzzer-modus og fysisk buzzer), 2 Under runden (uavgjort, opp-/nedrykk, fasit og poeng, buzzer, beste bommert), 3 Etter runde 6 (B-finale og finale), 4 Etterpa (joker og ny sesong, arkivering, nullstilling). Storskjermstyringen ligger i en egen gruppe som er tilgjengelig hele veien, siden den brukes bade forst og sist. Gruppa du er i apnes automatisk og merkes NA; de andre er sammenklappet. Fasen utledes av tilstand panelet allerede har - om det finnes lag, om runde 6 er poenggitt, og om finalen er i gang eller ferdig. En gruppe quizmasteren apner selv blir staende apen; vi lukker bare den forrige AUTO-apnede. Malt effekt: 4074 px -> 1219 px. Ingen funksjonalitet er fjernet, bare gruppert. AVVIK-056 holder fortsatt: opp-/nedrykkssporet ligger for rundekortet inne i fase 2. 10 tester i e2e13.js.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-064",
+    tittel: "QR-koden for pamelding fantes bare pa styringspanelet",
+    omrade: "Storskjerm - hovedskjerm.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Velges QR-pamelding i Lag-oppsett, tegnes koden i styringspanelet - pa quizmasterens egen PC-skjerm, 220 px stor. Lagene som skal scanne den sitter i salen og ser projektoren. I praksis matte quizmasteren enten holde PC-en opp mot lokalet eller lese hoyt opp adressen. Storskjermen viste i mellomtiden stillingstabellen, som pa det tidspunktet er tom.",
+    losning: "Storskjermen har fatt en egen pameldingsvisning: QR-koden i 420 px pa hvit bakgrunn slik at den lar seg scanne bakerst i lokalet, adressen skrevet ut under i klartekst som reserve, og en levende liste over lagene som har meldt seg pa - slik at hvert lag ser sitt eget navn dukke opp og vet at det gikk gjennom. Visningen har forsterett i autoModus sa lenge pameldingen star apen. Den kan ikke bli staende igjen ut i kvelden: apneRunde setter pamelding_status til av, og skjermen gar da videre av seg selv. QR-koden i styringspanelet er beholdt. 7 tester i e2e14.js.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 
