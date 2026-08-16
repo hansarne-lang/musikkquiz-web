@@ -808,6 +808,18 @@ var AVVIK_DATA = [
     beskrivelse: "arkiverKveldOgNullstill legger til en rad i Historikk-arket, men det fantes ingen vei tilbake. Etter testkvelder og en avbrutt generalprove sto det fire kvelder i historikken som aldri hadde vaert ekte quizkvelder - to av dem uten et eneste poeng. De teller med i sesongoversikten og ser ut som ekte kvelder for alle som apner siden.",
     losning: "Ny slettHistorikkKveld(dato) i backend og en Slett-knapp per kveld i historikk.html, med bekreftelse for. Slettingen skjer pa eksakt tidsstempel og ikke pa radnummer, slik at to slettinger etter hverandre ikke kan komme til a treffe feil rad. Ukjent eller tomt tidsstempel avvises med en tydelig feilmelding i stedet for a slette noe.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-062",
+    tittel: "Lykkehjulet: ett felles hjul for begge divisjoner, ett lag om gangen",
+    omrade: "Lykkehjul - Kode.gs + trekning.html + hovedskjerm.html + styre.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Hver uavgjort ble trukket for seg. Divisjon 1 og divisjon 2 fikk hvert sitt hjul etter hverandre, og hver trekning plukket HELE settet i ett eneste spinn: sto tre lag likt om to plasser, kom begge ut samtidig og ingen sa hvem som ble nr. 1. Derfor fantes det en egen tredje trekning bare for a avgjore hvem av de to som matte utfordre. Publikum matte se pa tre separate hjul for a fa vite hva som skjedde.",
+    losning: "Ett hjul med alle lagene som star uavgjort, uansett divisjon. Hvert spinn trekker ut ETT lag, som tar hoyeste ledige plass i sin egen gruppe, og forsvinner fra hjulet. Det snurrer videre til alle er plassert. Bunnen av divisjon 1 er snudd: der trekkes de som er TRYGGE, og de som star igjen til slutt er de som gar til opp-/nedrykket - slik betyr det alltid det samme a bli trukket ut. Rekkefolgen kommer gratis av a trekke ett om gangen, sa den egne trekningen av hvem som ma utfordre er borte helt. Backend har fatt en gruppemodell (ny kolonne Grupper i Uavgjort-arket) med fellesHjulStatus/trekkFellesVinner, og skriver fortsatt til UavgjortLogg i samme format som for, slik at resten av systemet ikke merker at trekningen er gjort pa en ny mate. De to knappene Sjekk divisjonsvinner (Div 1/Div 2) er slatt sammen til en. Rader uten grupper bruker fortsatt den gamle veien, sa ingenting mister sin reserve. 14 mekanikktester og 8 ende-til-ende-tester mot to skjermer samtidig.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 

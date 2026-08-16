@@ -545,6 +545,10 @@ function autoModus() {
       } else if (key !== lastUavgjortKey && !wheelSpinning) {
         lastUavgjortKey = key;
         initUavgjort(u);
+      } else {
+        // Felles hjul: raden star som 'venter' hele veien, sa noekkelen endrer
+        // seg ikke. Vi folger valgt-lista i stedet (AVVIK-062).
+        speilFellesHjul(u);
       }
       return;
     }
@@ -1027,6 +1031,10 @@ function landImpact() {
 
 function initUavgjort(u) {
   document.getElementById('uavgjortLabel').textContent = u.label || '';
+  // Har vi allerede speilet spinn for spinn gjennom et felles hjul, skal vi
+  // ikke bygge om og kjore hele trekningen en gang til nar raden til slutt
+  // melder 'trukket' (AVVIK-062).
+  if (fellesSpeiletAntall > 0 && u.status === 'trukket') { return; }
   document.getElementById('uavgjortResultat').innerHTML = '';
   wheelKandidater = (u.kandidater || []).slice();
   wheelRotation = 0;
@@ -1036,12 +1044,50 @@ function initUavgjort(u) {
     buildWheel(wheelKandidater);
     initBulbRing();
   });
+  if (u.status !== 'trukket') { fellesSpeiletAntall = 0; }
   if (u.status === 'trukket') {
     // Trekningssiden har snurret. Storskjermen kjorer NOYAKTIG samme snurr mot
     // de samme vinnerne i stedet for a bare liste dem opp, slik at de to
     // skjermene viser det samme (AVVIK-048).
     speilSnurr(u);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Felles hjul (AVVIK-062). Trekningssiden snurrer ett lag om gangen, og raden
+// star som 'venter' helt til siste spinn. Speilingen over utloses bare av
+// 'trukket', sa storskjermen ville statt stille gjennom hele trekningen.
+// Her folger vi i stedet valgt-lista: hver gang den vokser, snurrer vi.
+// ---------------------------------------------------------------------------
+var fellesSpeiletAntall = 0;
+
+function speilFellesHjul(u) {
+  var vinnere = (u.valgt || []);
+  if (vinnere.length <= fellesSpeiletAntall) { return; }
+  if (wheelSpinning) { return; }
+  var neste = vinnere[fellesSpeiletAntall];
+  fellesSpeiletAntall++;
+  wheelSpinning = true;
+  setBulbsChasing(true);
+  var pool = wheelKandidater.slice();
+  animerTilVinner(pool, neste, function () {
+    document.getElementById('uavgjortResultat').innerHTML +=
+      '<div>' + escHtml(neste.navn) + '</div>';
+    wheelSpinning = false;
+    setBulbsChasing(false);
+    bulbsLandCelebrate();
+    // Hent hvem som fortsatt er med - backend fjerner hele grupper som er
+    // avgjort, sa hjulet krymper mer enn ett lag av gangen noen ganger.
+    apiGet('fellesHjulStatus').then(function (fh) {
+      if (fh && fh.felles && (fh.kandidater || []).length) {
+        wheelKandidater = fh.kandidater.slice();
+        buildWheel(wheelKandidater);
+        wheelRotation = 0;
+      } else {
+        confetti();
+      }
+    }).catch(function (e) { console.error(e); });
+  });
 }
 
 // Speiler en trekning som allerede er gjort et annet sted. Kaller ingenting
@@ -1087,6 +1133,32 @@ function spinWheel() {
     uavgjortWinnersQueue = (rad.valgt || []).slice();
     spinToNextWinner(rad.kandidater ? rad.kandidater.slice() : wheelKandidater.slice());
   }).catch(function(e) { console.error(e); wheelSpinning = false; document.getElementById('spinBtn').disabled = false; setBulbsChasing(false); });
+}
+
+// Selve snurren, uavhengig av hvor vinneren kom fra.
+function animerTilVinner(pool, winner, cb) {
+  var idx = -1;
+  for (var i = 0; i < pool.length; i++) {
+    if (String(pool[i].id) === String(winner.id)) { idx = i; break; }
+  }
+  if (idx === -1) { cb(); return; }
+  var n = pool.length;
+  var sliceAngle = 360 / n;
+  var winnerMid = idx * sliceAngle + sliceAngle / 2;
+  var fullSpins = 8 + Math.floor(Math.random() * 3);
+  var target = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var overshoot = target + WHEEL_OVERSHOOT_DEG;
+  var svg = document.getElementById('wheelSvg');
+  svg.style.transition = 'transform ' + (WHEEL_SPIN_MS / 1000) + 's cubic-bezier(0.12,0.67,0.1,1)';
+  svg.style.transform = 'rotate(' + overshoot + 'deg)';
+  tickSoundsDuring(WHEEL_SPIN_MS);
+  setTimeout(function () {
+    svg.style.transition = 'transform ' + (WHEEL_BOUNCE_MS / 1000) + 's cubic-bezier(0.34,1.56,0.64,1)';
+    svg.style.transform = 'rotate(' + target + 'deg)';
+    wheelRotation = target;
+    landImpact();
+    setTimeout(function () { beepWinFanfare(); cb(); }, WHEEL_BOUNCE_MS + 80);
+  }, WHEEL_SPIN_MS);
 }
 
 function spinToNextWinner(pool) {

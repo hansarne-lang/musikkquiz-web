@@ -1010,13 +1010,29 @@ function merkNestePlanOmgang(navn) {
 
 function initUavgjort(u) {
   document.getElementById('uavgjortLabel').textContent = u.label || '';
-  document.getElementById('uavgjortResultat').innerHTML = '';
   var radKey = String(u.kontekst || '') + '|' + String(u.type || '');
   if (radKey !== planRadKey) { planRadKey = radKey; lokaleVinnere = []; }
-  planOmganger = [];
-  tegnPlanStripe();
+  // Med felles hjul star raden pa 'venter' gjennom hele trekningen, og
+  // pollingen kaller hit mellom hvert spinn. Da skal resultatlista vaere i
+  // fred - ellers forsvinner lagene vi allerede har trukket (AVVIK-062).
+  if (!wheelSpinning && !lokaleVinnere.length) {
+    document.getElementById('uavgjortResultat').innerHTML = '';
+  }
+  // Planstripa skal heller ikke nullstilles midt i en pagaende trekning -
+  // gjenstaendeOmganger() leser den, og et tomt oyeblikk her gjorde at
+  // sluttmeldingen sa at ingenting gjensto (AVVIK-062).
+  if (!wheelSpinning && !lokaleVinnere.length) {
+    planOmganger = [];
+    tegnPlanStripe();
+  }
   // Planen er kun pynt og oversikt - feiler den, skal hjulet fungere som for.
   apiGet('uavgjortPlan').then(function (plan) {
+    // Er vi midt i en trekning, eier siden sin egen planstripe. Bygges den om
+    // fra backend her, forsvinner det vi nettopp har merket av, og
+    // sluttmeldingen tror at ingenting gjenstar (AVVIK-062).
+    // ... men er stripa tom, har vi ingenting a beskytte, og da MA den
+    // bygges - ellers vet vi ikke hvor mange omganger som gjenstar.
+    if ((wheelSpinning || lokaleVinnere.length) && planOmganger.length) { return; }
     planOmganger = byggPlanOmganger(plan, u);
     tegnPlanStripe();
     if (u.status === 'trukket') {
@@ -1031,6 +1047,18 @@ function initUavgjort(u) {
     }
   }).catch(function (e) { console.error(e); });
   wheelKandidater = (u.kandidater || []).slice();
+  fellesHjul = false;
+  // Bruker denne trekningen felles hjul, er det backend som eier hvilke lag
+  // som fortsatt er med - da leser vi kandidatene derfra i stedet.
+  apiGet('fellesHjulStatus').then(function (fh) {
+    if (fh && fh.felles) {
+      fellesHjul = true;
+      if ((fh.kandidater || []).length) {
+        wheelKandidater = fh.kandidater.slice();
+        buildWheel(wheelKandidater);
+      }
+    }
+  }).catch(function (e) { console.error(e); });
   wheelRotation = 0;
   wheelSpinning = false;
   bulbsReset();
@@ -1057,10 +1085,18 @@ function initUavgjort(u) {
   }
   if (u.status === 'trukket') {
     spinBtn.style.display = 'none';
+    // Pollingen kaller hit igjen i det siste spinnet lander. Har vi nettopp
+    // snurret selv, skal resultatlista IKKE overskrives - den har allerede
+    // rekkefolgen og hvem som star igjen (AVVIK-062).
+    if (wheelSpinning || lokaleVinnere.length) { return; }
     var resHtml = '';
     (u.valgt || []).forEach(function (v) { resHtml += '<div>Vinner: ' + escHtml(v.navn) + '</div>'; });
     resHtml += '<p id="trukketNote" style="font-size:.5em;opacity:.7;margin-top:10px;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
     document.getElementById('uavgjortResultat').innerHTML = resHtml;
+    // Lastes siden pa nytt etter en felles trekning, hentes fasiten fram igjen.
+    apiGet('fellesHjulStatus').then(function (fh) {
+      if (fh && fh.felles && (fh.grupper || []).length) { visFellesFasit(fh.grupper); }
+    }).catch(function (e) { console.error(e); });
   } else {
     spinBtn.style.display = 'inline-block';
     spinBtn.disabled = false;
@@ -1093,10 +1129,92 @@ function spinWheel() {
   wheelSpinning = true;
   document.getElementById('spinBtn').disabled = true;
   setBulbsChasing(true);
+  if (fellesHjul) { spinFelles(); return; }
   apiGet('trekkUavgjort').then(function (rad) {
     uavgjortWinnersQueue = (rad.valgt || []).slice();
     spinToNextWinner(rad.kandidater ? rad.kandidater.slice() : wheelKandidater.slice());
   }).catch(function (e) { console.error(e); wheelSpinning = false; document.getElementById('spinBtn').disabled = false; setBulbsChasing(false); });
+}
+
+// Selve snurren, uavhengig av hvor vinneren kom fra. Kaller cb() naar hjulet
+// har landet og vinneren er lest opp.
+function animerTilVinner(pool, winner, cb) {
+  var idx = -1;
+  for (var i = 0; i < pool.length; i++) {
+    if (String(pool[i].id) === String(winner.id)) { idx = i; break; }
+  }
+  if (idx === -1) { cb(); return; }
+  var n = pool.length;
+  var sliceAngle = 360 / n;
+  var winnerMid = idx * sliceAngle + sliceAngle / 2;
+  var fullSpins = 8 + Math.floor(Math.random() * 3);
+  var target = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var overshoot = target + WHEEL_OVERSHOOT_DEG;
+  var svg = document.getElementById('wheelSvg');
+  svg.style.transition = 'transform ' + (WHEEL_SPIN_MS / 1000) + 's cubic-bezier(0.12,0.67,0.1,1)';
+  svg.style.transform = 'rotate(' + overshoot + 'deg)';
+  tickSoundsDuring(WHEEL_SPIN_MS);
+  setTimeout(function () {
+    svg.style.transition = 'transform ' + (WHEEL_BOUNCE_MS / 1000) + 's cubic-bezier(0.34,1.56,0.64,1)';
+    svg.style.transform = 'rotate(' + target + 'deg)';
+    wheelRotation = target;
+    landImpact();
+    setTimeout(function () { beepWinFanfare(); cb(); }, WHEEL_BOUNCE_MS + 80);
+  }, WHEEL_SPIN_MS);
+}
+
+// ---------------------------------------------------------------------------
+// Felles hjul (AVVIK-062): alle lagene som star uavgjort - i BEGGE divisjoner
+// - star pa samme hjul. Hvert spinn trekker ut ett lag, som vinner sin egen
+// strid. Laget forsvinner, hjulet krymper, og vi snurrer til alle er plassert.
+// De som star igjen til slutt i en bunngruppe er de som rykker ned.
+// ---------------------------------------------------------------------------
+var fellesHjul = false;
+
+function fellesLinje(svar) {
+  var g = svar.gruppe || {};
+  var hale = g.inverter
+    ? ' - trygg'
+    : (Number(g.trengerAntall) > 1 ? ' - nr. ' + g.plass : '');
+  var div = g.divisjon ? ' (Div ' + g.divisjon + ')' : '';
+  return '<div>' + escHtml(svar.vinner.navn) + div + escHtml(hale) + '</div>';
+}
+
+function spinFelles() {
+  apiGet('trekkFellesVinner').then(function (svar) {
+    var pool = wheelKandidater.slice();
+    animerTilVinner(pool, svar.vinner, function () {
+      document.getElementById('uavgjortResultat').innerHTML += fellesLinje(svar);
+      merkNestePlanOmgang(svar.vinner.navn);
+      if (svar.ferdig) { visFellesFasit(svar.grupper); finishSpin(); return; }
+      wheelKandidater = (svar.kandidater || []).slice();
+      setTimeout(function () {
+        buildWheel(wheelKandidater);
+        wheelRotation = 0;
+        spinFelles();
+      }, 1600);
+    });
+  }).catch(function (e) {
+    console.error(e);
+    wheelSpinning = false;
+    var b = document.getElementById('spinBtn');
+    if (b) { b.disabled = false; }
+    setBulbsChasing(false);
+  });
+}
+
+// Til slutt sier vi tydelig hvem som ryker - det er de som ALDRI ble trukket.
+function visFellesFasit(grupper) {
+  var h = '';
+  (grupper || []).forEach(function (g) {
+    if (!g.inverter) { return; }
+    var trukket = (g.rekkefolge || []).map(function (x) { return String(x.id); });
+    var igjen = (g.kandidater || []).filter(function (k) { return trukket.indexOf(String(k.id)) === -1; });
+    if (!igjen.length) { return; }
+    h += '<p style="font-size:.55em;margin-top:12px;color:#ff6b6b;">Star igjen og gar til opp-/nedrykket: <b>' +
+      igjen.map(function (k) { return escHtml(k.navn); }).join(', ') + '</b></p>';
+  });
+  if (h) { document.getElementById('uavgjortResultat').innerHTML += h; }
 }
 
 function spinToNextWinner(pool) {

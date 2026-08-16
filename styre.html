@@ -460,8 +460,7 @@ function visUavgjort(o, plan) {
   } else {
     html = '<div class="card"><h2>Uavgjort-trekninger</h2>';
     html += '<p style="font-size:.85em;opacity:.75;">Sjekk om det er uavgjort om 1. plass i en divisjon (kun for kåring - påvirker ikke opp-/nedrykk eller finale). Uavgjort om opp-/nedrykk-utfordrer, finaleplass og finalevinner oppdages og løses automatisk når du starter/avslutter disse.</p>';
-    html += '<button onclick="sjekkDivVinner(1)">Sjekk divisjonsvinner (Div 1)</button> ';
-    html += '<button onclick="sjekkDivVinner(2)">Sjekk divisjonsvinner (Div 2)</button>';
+    html += '<button onclick="sjekkDivVinnere()">Sjekk divisjonsvinnere (begge divisjoner)</button>';
     html += '</div>';
   }
   document.getElementById('uavgjort').innerHTML = html;
@@ -509,6 +508,7 @@ function bekreftUavgjort(kontekst) {
     if (kontekst === 'finale_vinner') return apiGet('avsluttFinale');
     if (kontekst === 'finaleB') return apiGet('startFinaleB');
     if (kontekst === 'finaleB_vinner') return apiGet('avsluttFinaleB');
+    if (kontekst === 'divisjonsvinnere') return apiGet('sjekkDivisjonsvinnere');
     if (kontekst === 'div1_vinner') return apiGet('sjekkDivisjonsvinner', { divisjon: 1 });
     if (kontekst === 'div2_vinner') return apiGet('sjekkDivisjonsvinner', { divisjon: 2 });
     return Promise.resolve();
@@ -520,10 +520,12 @@ function bekreftUavgjort(kontekst) {
   }).catch(feil);
 }
 
-function sjekkDivVinner(div) {
-  apiGet('sjekkDivisjonsvinner', { divisjon: div }).then(function (o) {
+// Begge divisjonene havner na pa SAMME hjul (AVVIK-062), sa det er en knapp
+// i stedet for to.
+function sjekkDivVinnere() {
+  apiGet('sjekkDivisjonsvinnere').then(function (o) {
     if (!o || o.status === 'ingen') {
-      alert('Ingen uavgjort om 1. plass i Divisjon ' + div + ' akkurat nå.');
+      alert('Ingen uavgjort om 1. plass i noen av divisjonene akkurat nå.');
     }
     lastUavgjort();
   }).catch(feil);
