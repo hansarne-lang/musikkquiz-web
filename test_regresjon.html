@@ -34,17 +34,12 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 #sammendrag{font-size:1.1em;margin-top:16px;}
 .melding{font-size:12px;color:#aaa;margin-left:8px;}
 </style>
+<link rel="stylesheet" href="meny.css">
+<script src="meny.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 <h1>Musikkquiz - Avviksregresjon</h1>
-<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
-<a href="index.html"><button>Oversikt</button></a>
-<a href="avvik.html"><button style="background:#00ffff;">Avviksside</button></a>
-<a href="styre.html"><button>Styre / Admin</button></a>
-<a href="test_utvidet.html"><button style="background:#ff6b6b;color:#fff;">Utvidet testverkt&oslash;y</button></a>
-<a href="test_avvik3.html"><button style="background:#ff6b6b;color:#fff;">Corner case 3</button></a>
-</div>
 
 <div class="card" style="border-color:#00ff00;">
 <h2 style="color:#00ff00;">Trygg &aring; kj&oslash;re</h2>
@@ -794,6 +789,26 @@ async function kjorAlle() {
       // apneRunde&runde=7 ville lagt inn en runde 7 i arket hvis sperren
       // manglet, og denne siden kjores ogsa mot produksjon.
       return 'panelet tilbyr ingen runde 7';
+    });
+
+    await kjorTest("Backend", "R9.23 Gjeldende runde er en runde som faktisk er spilt (AVVIK-059)", async function () {
+      var st = await apiGet('stilling');
+      var sd = await apiGet('styreData');
+      if (sd.status === 'apen') {
+        assert(Number(st.apenRunde) === Number(sd.runde),
+          'runden er apen, men apenRunde (' + st.apenRunde + ') og styreData.runde (' + sd.runde + ') er uenige');
+        return 'apen runde ' + sd.runde;
+      }
+      // Mellom to runder falt backend tidligere tilbake til siste rad i arket,
+      // som alltid er 6 - selv rett etter runde 1.
+      assert(Number(st.apenRunde) === 0,
+        'ingen runde er apen, men apenRunde er ' + st.apenRunde);
+      if (Number(sd.runde) === 1) { return 'ingen runde spilt enna -> runde 1'; }
+      var ss = await apiGet('sangScoreStatus', { runde: sd.runde });
+      assert(ss && (ss.s1 || ss.s2 || ss.s3),
+        'backend oppgir runde ' + sd.runde + ', men ingen sanger i den runden er poenggitt - ' +
+        'da er det siste rad i arket som lekker ut igjen');
+      return 'siste spilte runde: ' + sd.runde;
     });
 
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========

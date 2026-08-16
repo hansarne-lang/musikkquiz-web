@@ -33,15 +33,12 @@ label{display:inline-block;margin-top:10px;font-size:0.9em;color:#00ffff;}
 .jokerlabel{display:flex;align-items:center;gap:8px;background:#221100;border:2px solid #ffa500;padding:10px;margin:10px 0;font-size:0.95em;color:#ffcc66;}
 .jokerlabel input{width:auto;max-width:none;height:22px;}
 </style>
+<link rel="stylesheet" href="meny.css">
+<script src="meny.js" defer></script>
 </head>
-<body>
+<body data-meny="lag">
 <div class="wrap">
 <h1>Musikkquiz - Svar</h1>
-<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
-<a href="index.html"><button>Oversikt</button></a>
-<a href="stilling.html"><button>Stilling</button></a>
-<a href="veiledning.html"><button>Veiledning</button></a>
-</div>
 <div id="app"><p>Laster...</p></div>
 <div id="buzzerdiv" class="card" style="display:none;text-align:center;">
 <button id="buzzknapp" onclick="buzz()">BUZZ!</button>

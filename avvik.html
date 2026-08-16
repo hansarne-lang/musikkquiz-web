@@ -50,17 +50,12 @@ button:hover{background:#00ff00;}
 .felt-innhold{font-size:0.9em;color:#ddd;margin-top:2px;line-height:1.4;}
 .oppdatert{font-size:0.72em;color:#666;margin-top:10px;text-align:right;}
 </style>
+<link rel="stylesheet" href="meny.css">
+<script src="meny.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 <h1>Musikkquiz - Avviksoversikt</h1>
-<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
-<a href="index.html"><button>Oversikt</button></a>
-<a href="styre.html"><button>Styre / Admin</button></a>
-<a href="test.html"><button style="background:#ff6b6b;color:#fff;">Standard testverktøy</button></a>
-<a href="test_utvidet.html"><button style="background:#ff6b6b;color:#fff;">Utvidet testverktøy</button></a>
-<a href="test_avvik.html"><button style="background:#00ffff;">Corner case-tester</button></a>
-</div>
 
 <div class="card">
 <h2>Sammendrag</h2>
@@ -776,6 +771,18 @@ var AVVIK_DATA = [
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "AVVIK-038 gjorde navigasjonsraden usynlig for publikum, men den la der fortsatt og dukket opp i tre sekunder hver gang noen beveget musa. Pa en projektor er det bare stoy: en rad med Oversikt / Stilling / Styre-Admin / Historikk / Hovedskjerm / Veiledning som blinker fram midt i sendingen hvis noen sa mye som borter borti musa ved styringsbordet.",
     losning: "Navigasjonsraden er fjernet helt fra hovedskjerm.html - bade markupen, CSS-reglene og musebevegelses-lytteren som viste den. Storskjermen har na ingen lenker i det hele tatt. De andre sidene nas som for fra oversikten eller ved a skrive adressen. Start trekning-knappen var og blir skjult. R5.3 og G7/G8 er skjerpet: de krever na at navRad ikke finnes og at siden ikke har en eneste sidelenke, heller ikke etter en musebevegelse.",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-059",
+    tittel: "Backend trodde vi var pa runde 6 med en gang runde 1 var poenggitt",
+    omrade: "Kode.gs - getGjeldendeRunde",
+    alvorlighet: "hoy",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Quizmaster sto fast under en ekte kveld etter runde 1",
+    beskrivelse: "getGjeldendeRunde() returnerte forste rad med status apen, og fant den ingen, SISTE RAD i Runder-arket. nullstillRunder legger inn alle seks rundene med en gang, sa siste rad er alltid 6. scoreRunde lukker runden nar alle tre sangene er poenggitt - og i det oyeblikket sto det ingen apen runde igjen. Fra da av svarte backend runde 6 pa alt: styringspanelet ville vist \"Fasit for runde 6\" ved neste sidelast, startOpprykk ville lagret opp-/nedrykket pa runde 6 i stedet for runde 1, og apneNeste ville forsokt a apne runde 7 - som etter AVVIK-057 blir avvist. Da star kvelden bom fast: runde 2 kan aldri apnes, fordi apneRunde krever at opp-/nedrykket gjelder runde 1. Dette var ogsa rotarsaken bak AVVIK-055; den rettelsen skjermet bare visningen pa storskjermen, ikke resten av systemet. Traff en ekte kveld 16.08.2026.",
+    losning: "getGjeldendeRunde() returnerer fortsatt den apne runden nar det finnes en. Er ingen runde apen - altsa mellom to runder - svarer den na med den SISTE SPILTE runden, funnet via poengmerkene per sang i kolonne 12-14 av Runder-arket, som er det eneste sporet av at en runde faktisk har vaert spilt. Finnes ingen slike, svarer den 1. Verifisert i produksjon rett etter distribusjon: styreData gikk fra runde 6 til runde 1, og stilling melder apenRunde 0 (mellom rundene) med runde 1. Simulatoren lukket heller aldri runden etter poengberegning, og traff derfor aldri denne tilstanden - det er rettet, slik at suitene na spiller gjennom \"mellom to runder\" pa ekte.",
     sistOppdatert: "2026-08-16"
   }
 ];

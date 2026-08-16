@@ -1,0 +1,228 @@
+/* ---------------------------------------------------------------------------
+   Felles meny og moderne morkt tema for alle sidene UNNTATT hovedskjerm.html.
+   Storskjermen beholder retro-utseendet med vilje - publikum skal se det samme
+   som for. Styresidene er derimot noe quizmasteren stirrer pa i tre timer, sa
+   de har fatt roligere flater, mykere kanter og en skrifttype som taler smatt.
+
+   Fila lastes ETTER sidens egen <style>, sa disse reglene vinner pa likt
+   spesifisitetsniva. Ingenting her rorer markupen - sidene beholder .wrap,
+   .card, button, h1-h3 akkurat som for.
+   --------------------------------------------------------------------------- */
+
+:root{
+  --m-bak:#12141a;
+  --m-flate:#1a1d25;
+  --m-flate2:#22262f;
+  --m-kant:#2f3542;
+  --m-tekst:#e8eaf0;
+  --m-dempet:#9aa3b2;
+  --m-aksent:#4dd0e1;
+  --m-aksent-sterk:#26c6da;
+  --m-gul:#ffca28;
+  --m-gronn:#66bb6a;
+  --m-rod:#ef5350;
+  --m-radius:10px;
+  --m-skygge:0 2px 8px rgba(0,0,0,.45);
+  --m-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+
+/* Temaet gjelder bare pa skjerm. Utskrift styres av sidenes egne
+   @media print-regler - kjoreplanen er tegnet for a fylle NOYAKTIG ett
+   A4-ark i liggende format, og den skal ikke rores herfra. */
+@media screen{
+  body{
+    background:var(--m-bak);
+    color:var(--m-tekst);
+    font-family:var(--m-font);
+    letter-spacing:0;
+    font-size:15px;
+    line-height:1.5;
+  }
+
+  .wrap{max-width:1100px;padding:20px 20px 80px;}
+
+  h1,h2,h3{
+    text-transform:none;
+    letter-spacing:-.01em;
+    font-weight:600;
+  }
+  h1{
+    background:none;
+    border:0;
+    padding:0;
+    color:var(--m-tekst);
+    font-size:1.7em;
+    display:block;
+    margin:0 0 18px;
+  }
+  h2{color:var(--m-tekst);font-size:1.15em;}
+  h3{color:var(--m-dempet);font-size:1em;font-weight:600;}
+
+  .card{
+    background:var(--m-flate);
+    border:1px solid var(--m-kant);
+    border-radius:var(--m-radius);
+    padding:18px 20px;
+    margin-bottom:16px;
+    box-shadow:var(--m-skygge);
+  }
+
+  button{
+    background:var(--m-flate2);
+    border:1px solid var(--m-kant);
+    color:var(--m-tekst);
+    font-weight:500;
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:14px;
+    font-family:var(--m-font);
+    text-transform:none;
+    letter-spacing:0;
+    cursor:pointer;
+    transition:background .12s,border-color .12s;
+  }
+  button:hover{background:#2b303b;border-color:#3d4453;filter:none;}
+  button:active{background:#232833;}
+  button:disabled{background:#1c1f27;color:#5b6373;border-color:#262b35;cursor:default;}
+  button:focus-visible{outline:2px solid var(--m-aksent);outline-offset:2px;}
+
+  input,select,textarea{
+    background:#0f1116;
+    border:1px solid var(--m-kant);
+    color:var(--m-tekst);
+    border-radius:8px;
+    padding:9px 11px;
+    font-size:14px;
+    font-family:var(--m-font);
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--m-aksent);}
+
+  table{border-collapse:collapse;}
+  th{
+    background:transparent;
+    color:var(--m-dempet);
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:.06em;
+    font-weight:600;
+    border-bottom:1px solid var(--m-kant);
+  }
+  td{border-bottom:1px solid rgba(255,255,255,.05);}
+  tr:nth-child(even){background:rgba(255,255,255,.02);}
+
+  a{color:var(--m-aksent);}
+
+  /* Sidespesifikke rester fra retro-tiden. Disse klassene finnes bare pa en
+     eller to sider hver, men de er store flater og ville stukket seg ut. */
+  .linkbox{                      /* oversikten */
+    background:var(--m-flate);
+    border:1px solid var(--m-kant);
+    border-radius:var(--m-radius);
+    padding:14px 16px;
+    margin:10px 0;
+  }
+  .linkbox:hover{background:var(--m-flate2);border-color:#3d4453;}
+  .linkbox b{color:var(--m-tekst);font-weight:600;}
+  .linkbox span{color:var(--m-dempet);opacity:1;}
+  #stillingSesong,.sesongRunde{          /* stillingssiden */
+    color:var(--m-dempet);
+    font-family:var(--m-font);
+    font-size:.95em;
+    letter-spacing:0;
+  }
+}
+
+/* ------------------------------ menyen ----------------------------------- */
+
+#hovedmeny{
+  position:sticky;
+  top:0;
+  z-index:900;
+  background:rgba(18,20,26,.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--m-kant);
+}
+#hovedmeny .meny-inner{
+  max-width:1100px;
+  margin:0 auto;
+  padding:0 20px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  min-height:52px;
+  flex-wrap:wrap;
+}
+#hovedmeny .meny-merke{
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:.02em;
+  color:var(--m-tekst);
+  margin-right:14px;
+  white-space:nowrap;
+}
+#hovedmeny .meny-merke span{color:var(--m-aksent);}
+
+.meny-punkt{position:relative;}
+.meny-punkt > .meny-topp{
+  background:none;
+  border:0;
+  border-radius:8px;
+  color:var(--m-dempet);
+  font-family:var(--m-font);
+  font-size:14px;
+  font-weight:500;
+  padding:8px 12px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+}
+.meny-punkt > .meny-topp:hover{background:var(--m-flate2);color:var(--m-tekst);}
+.meny-punkt > .meny-topp .pil{font-size:9px;opacity:.6;transition:transform .15s;}
+.meny-punkt.apen > .meny-topp{background:var(--m-flate2);color:var(--m-tekst);}
+.meny-punkt.apen > .meny-topp .pil{transform:rotate(180deg);}
+.meny-punkt.aktiv > .meny-topp{
+  color:var(--m-tekst);
+  box-shadow:inset 0 -2px 0 var(--m-aksent);
+  border-radius:8px 8px 0 0;
+}
+
+.meny-under{
+  display:none;
+  position:absolute;
+  top:calc(100% + 4px);
+  left:0;
+  min-width:230px;
+  background:var(--m-flate);
+  border:1px solid var(--m-kant);
+  border-radius:var(--m-radius);
+  box-shadow:0 8px 24px rgba(0,0,0,.55);
+  padding:6px;
+}
+.meny-punkt.apen .meny-under{display:block;}
+.meny-under a{
+  display:block;
+  padding:9px 12px;
+  border-radius:6px;
+  color:var(--m-tekst);
+  text-decoration:none;
+  font-size:14px;
+  white-space:nowrap;
+}
+.meny-under a:hover{background:var(--m-flate2);}
+.meny-under a.aktiv{color:var(--m-aksent);font-weight:600;}
+.meny-under a .und{display:block;font-size:11.5px;color:var(--m-dempet);font-weight:400;margin-top:1px;}
+.meny-under a.aktiv .und{color:var(--m-dempet);}
+.meny-under .skille{height:1px;background:var(--m-kant);margin:5px 6px;}
+
+/* Smale skjermer: undermenyene legger seg i flyten i stedet for a flyte
+   utenfor skjermkanten. Lagsidene apnes pa mobil, sa dette er ikke pynt. */
+@media (max-width:760px){
+  #hovedmeny .meny-inner{padding:6px 14px;gap:2px;}
+  #hovedmeny .meny-merke{width:100%;margin:2px 0 4px;}
+  .meny-punkt{position:static;}
+  .meny-under{position:static;min-width:0;margin:2px 0 6px;box-shadow:none;}
+}
+
+@media print{#hovedmeny{display:none;}}
