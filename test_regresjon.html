@@ -811,6 +811,24 @@ async function kjorAlle() {
       return 'siste spilte runde: ' + sd.runde;
     });
 
+    await kjorTest("Storskjerm", "R9.24 Kategorien kan velges direkte pa trekningssiden", async function () {
+      await medSide('trekning.html', 3000, function (w) {
+        assert(typeof w.velgKat === 'function', 'velgKat mangler i trekning.html');
+        assert(typeof w.gjorVinnerfliserKlikkbare === 'function', 'gjorVinnerfliserKlikkbare mangler');
+        assert(typeof w.visValgtKategori === 'function', 'visValgtKategori mangler');
+        harMerker(w, 'velgKat', ['velgKategori', 'confirm', 'eliminated']);
+        // laget som velger ma vaere kjent alt i 'trekker', ellers er flisene
+        // klikkbare uten at klikket kan sendes noe sted
+        harMerker(w, 'visStatus', ['velgLagId']);
+        return true;
+      });
+      return await medSide('hovedskjerm.html', 3000, function (w) {
+        assert(typeof w.visValgtKategori === 'function', 'visValgtKategori mangler i hovedskjerm.html');
+        harMerker(w, 'visValgtKategori', ['valgt', 'eliminated']);
+        return 'begge sider krymper ned til den valgte kategorien';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

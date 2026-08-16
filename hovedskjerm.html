@@ -32,6 +32,8 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 .tile.pending{animation:pulse 1.1s infinite;}
 .tile.eliminated{opacity:.12;transform:scale(.8);text-decoration:line-through;filter:grayscale(1);animation:none;}
 .tile.winner{background:linear-gradient(135deg,#00ff00,#ffff00);transform:scale(1.18);box-shadow:none;animation:none;}
+/* Nar kategorien er valgt skal bare den ene sta igjen pa storskjermen. */
+.tile.valgt{background:linear-gradient(135deg,#00ff00,#00ffff);transform:scale(1.45);outline:4px solid #ffffff;}
 @keyframes pulse{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
 .confetti{position:fixed;top:-12px;width:8px;height:8px;border-radius:0;animation:fall linear forwards;z-index:999;}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3;}}
@@ -242,6 +244,8 @@ function visStatus(o) {
   var info = document.getElementById('trekkInfo');
   if (o.status === 'trekker') {
     elimineringKjort = false;
+    valgtVistFraMs = null;
+    valgtVist = false;
     if (startBtn) startBtn.disabled = false;
     info.innerHTML = 'Lag som trekker kategori: <b>' + escHtml(o.lagA.navn) + '</b>';
     document.getElementById('app').innerHTML = '<div class="grid" id="grid"></div><div id="final"></div>';
@@ -260,12 +264,52 @@ function visStatus(o) {
       html += '</ul><p>Venter på at Styre-siden velger kategori.</p></div>';
       document.getElementById('app').innerHTML = html;
     }
+  } else if (o.status === 'pagar' && o.valgtKategori) {
+    // Kategorien er valgt pa trekningssiden. Sta ikke og vis fire kandidater
+    // videre - eliminer de tre andre, slik at bare den valgte blir staaende.
+    if (startBtn) { startBtn.disabled = true; }
+    info.innerHTML = '';
+    if (!valgtVist) {
+      valgtVist = true;
+      visValgtKategori(o.valgtKategori);
+    }
   } else {
     startBtn.disabled = true;
     info.innerHTML = '';
+    valgtVist = false;
     document.getElementById('app').innerHTML = '<div class="card"><p>Ingen trekning pågår akkurat nå.</p></div>';
   }
 }
+
+// Storskjermen viste de fire kandidatene helt til kategorispillet tok over.
+// Na krymper rutenettet ned til den ene valgte kategorien i det oyeblikket
+// den velges pa trekningssiden.
+var valgtVist = false;
+
+function visValgtKategori(navn) {
+  var fliser = document.querySelectorAll('#grid .tile');
+  if (!fliser.length) {
+    document.getElementById('app').innerHTML =
+      '<div class="card"><h2>Valgt kategori</h2><div class="grid">' +
+      '<div class="tile winner valgt">' + escHtml(navn) + '</div></div></div>';
+    return;
+  }
+  for (var i = 0; i < fliser.length; i++) {
+    var el = fliser[i];
+    if (el.textContent.trim() === String(navn).trim()) {
+      el.classList.remove('eliminated');
+      el.classList.add('winner', 'valgt');
+    } else if (el.classList.contains('winner')) {
+      el.classList.remove('winner');
+      el.classList.add('eliminated');
+    }
+  }
+  var f = document.getElementById('final');
+  if (f) { f.innerHTML = '<p style="text-align:center;font-size:1.3em;">Valgt: <b>' + escHtml(navn) + '</b></p>'; }
+}
+
+var valgtVistFraMs = null;
+var VALGT_VISES_MS = 3500;
 
 function renderGrid() {
   var grid = document.getElementById('grid');
@@ -508,6 +552,17 @@ function autoModus() {
       if (o.status === 'ferdig') { katMerkFerdig(o); }
       else if (o.status !== 'pagar' && o.status !== 'omspill') { katNullstill(); }
       // Kategorispillet og resultatet har egen visning (AVVIK-050).
+      // Ble kategorien nettopp valgt mens trekningen sto pa skjermen, far
+      // publikum se rutenettet krympe ned til den ene valgte for poengtavla
+      // tar over. Uten pausen bytter skjermen bilde i samme oyeblikk som
+      // klikket, og ingen rekker a se hva som ble valgt.
+      if (o.status === 'pagar' && o.valgtKategori && gjeldendeModus === 'auto:trekning') {
+        if (valgtVistFraMs === null) {
+          valgtVistFraMs = Date.now();
+          visValgtKategori(o.valgtKategori);
+        }
+        if (Date.now() - valgtVistFraMs < VALGT_VISES_MS) { return; }
+      }
       if (o.status === 'pagar' || o.status === 'omspill' || (o.status === 'ferdig' && katResultatSkalVises())) {
         settModusTakt(1500);
         if (gjeldendeModus !== 'auto:kategori') {

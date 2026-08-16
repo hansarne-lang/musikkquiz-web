@@ -32,6 +32,11 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 .tile.pending{animation:pulse 1.1s infinite;}
 .tile.eliminated{opacity:.12;transform:scale(.8);text-decoration:line-through;filter:grayscale(1);animation:none;}
 .tile.winner{background:linear-gradient(135deg,#00ff00,#ffff00);transform:scale(1.18);box-shadow:none;animation:none;}
+/* Kategorien velges na direkte her, ikke bare fra styringspanelet. */
+.tile.klikkbar{cursor:pointer;}
+.tile.klikkbar:hover{outline:4px solid #ffffff;outline-offset:3px;}
+.tile.valgt{background:linear-gradient(135deg,#00ff00,#00ffff);transform:scale(1.35);outline:4px solid #ffffff;}
+.velghint{text-align:center;font-size:1.1em;margin-top:10px;color:#ffff00;}
 @keyframes pulse{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
 .confetti{position:fixed;top:-12px;width:8px;height:8px;border-radius:0;animation:fall linear forwards;z-index:999;}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3;}}
@@ -234,6 +239,12 @@ function visStatus(o) {
   var startBtn = document.getElementById('startBtn');
   var info = document.getElementById('trekkInfo');
   if (o.status === 'trekker') {
+    velgSendt = false;
+    valgtVistFraMs = null;
+    // Laget som velger er kjent allerede na - flisene blir klikkbare med en
+    // gang animasjonen er ferdig, altsa for status rekker a bli 'velger'.
+    velgLagId = o.lagA ? o.lagA.id : '';
+    velgLagNavn = o.lagA ? o.lagA.navn : '';
     startBtn.disabled = false;
     info.innerHTML = 'Lag som trekker kategori: <b>' + escHtml(o.lagA.navn) + '</b>';
     document.getElementById('app').innerHTML = '<div class="grid" id="grid"></div><div id="final"></div>';
@@ -241,10 +252,20 @@ function visStatus(o) {
   } else if (o.status === 'velger') {
     startBtn.disabled = true;
     info.innerHTML = '';
-    var html = '<div class="card"><h2>Kategoriene er trukket</h2><ul style="font-size:1.4em">';
-    o.kandidater.forEach(function(k) { html += '<li>' + k + '</li>'; });
-    html += '</ul><p>Gå til Styre-siden for å velge kategori.</p></div>';
+    velgLagId = o.lagA ? o.lagA.id : '';
+    velgLagNavn = o.lagA ? o.lagA.navn : '';
+    // Er rutenettet fortsatt pa skjermen etter animasjonen, gjor vi de fire
+    // vinnerflisene klikkbare der de star. Har siden blitt lastet pa nytt,
+    // tegner vi dem opp igjen som et eget kort.
+    if (gjorVinnerfliserKlikkbare(o.kandidater)) { return; }
+    var html = '<div class="card"><h2>Kategoriene er trukket</h2>';
+    html += '<div class="grid" id="grid">';
+    o.kandidater.forEach(function(k) {
+      html += '<div class="tile winner klikkbar" data-kat="' + escHtml(k) + '">' + escHtml(k) + '</div>';
+    });
+    html += '</div><p class="velghint">Klikk kategorien ' + escHtml(velgLagNavn || 'laget') + ' velger.</p></div>';
     document.getElementById('app').innerHTML = html;
+    koblePaKategoriklikk();
   } else {
     startBtn.disabled = true;
     info.innerHTML = '';
@@ -258,6 +279,98 @@ function nullstillTrekning() {
   btn.disabled = true;
   btn.textContent = 'Nullstiller...';
   apiGet('resetTrekningTilStart').then(function() { location.reload(); }).catch(function(e) { console.error(e); btn.disabled = false; btn.textContent = 'Nullstill opp-/nedrykk'; });
+}
+
+var valgtVistFraMs = null;
+var VALGT_VISES_MS = 3500;
+
+// Krymper rutenettet ned til den ene valgte kategorien - samme bilde som
+// storskjermen viser.
+function visValgtKategori(navn) {
+  var fliser = document.querySelectorAll('#grid .tile');
+  if (!fliser.length) {
+    var app = document.getElementById('app');
+    if (app) {
+      app.innerHTML = '<div class="card"><h2>Valgt kategori</h2><div class="grid">' +
+        '<div class="tile winner valgt">' + escHtml(navn) + '</div></div></div>';
+    }
+    return;
+  }
+  for (var i = 0; i < fliser.length; i++) {
+    var el = fliser[i];
+    el.classList.remove('klikkbar');
+    el.onclick = null;
+    if (el.textContent.trim() === String(navn).trim()) {
+      el.classList.remove('eliminated');
+      el.classList.add('winner', 'valgt');
+    } else if (el.classList.contains('winner')) {
+      el.classList.remove('winner');
+      el.classList.add('eliminated');
+    }
+  }
+  var f = document.getElementById('final');
+  if (f) { f.innerHTML = '<p class="velghint">Valgt: ' + escHtml(navn) + '</p>'; }
+}
+
+// --------------------------------------------------------------------------
+// Kategorien ble tidligere bare valgt fra styringspanelet, mens de fire
+// kandidatene sto her og pa storskjermen. Na klikkes den der den vises.
+// --------------------------------------------------------------------------
+var velgLagId = '';
+var velgLagNavn = '';
+var velgSendt = false;
+
+function koblePaKategoriklikk() {
+  var noder = document.querySelectorAll('.tile.klikkbar[data-kat]');
+  for (var i = 0; i < noder.length; i++) {
+    noder[i].onclick = function () { velgKat(this.getAttribute('data-kat')); };
+  }
+}
+
+// Returnerer true hvis flisene fra selve trekningen fortsatt star pa skjermen
+// og ble gjort klikkbare - da skal ikke visStatus tegne noe nytt oppa.
+function gjorVinnerfliserKlikkbare(kandidater) {
+  if (!kandidater || !kandidater.length) { return false; }
+  var funnet = 0;
+  kandidater.forEach(function (k) {
+    var el = tileEls[k];
+    if (el && el.classList.contains('winner') && document.body.contains(el)) {
+      el.classList.add('klikkbar');
+      el.setAttribute('data-kat', k);
+      funnet++;
+    }
+  });
+  if (funnet !== kandidater.length) { return false; }
+  koblePaKategoriklikk();
+  var f = document.getElementById('final');
+  if (f) {
+    f.innerHTML = '<p class="velghint">Klikk kategorien ' +
+      escHtml(velgLagNavn || 'laget') + ' velger.</p>';
+  }
+  return true;
+}
+
+function velgKat(navn) {
+  if (velgSendt) { return; }
+  if (!velgLagId) { alert('Vet ikke hvilket lag som velger enna - prov igjen om et oyeblikk.'); return; }
+  if (!confirm('Velge kategorien "' + navn + '"?')) { return; }
+  velgSendt = true;
+  valgtVistFraMs = Date.now();
+  var valgt = document.querySelector('.tile[data-kat="' + navn.replace(/"/g, '\\"') + '"]');
+  // Bare den valgte kategorien skal sta igjen - de tre andre fjernes med
+  // samme animasjon som under trekningen.
+  document.querySelectorAll('.tile.klikkbar[data-kat]').forEach(function (el) {
+    el.classList.remove('klikkbar');
+    el.onclick = null;
+    if (el !== valgt) { el.classList.remove('winner'); el.classList.add('eliminated'); }
+  });
+  if (valgt) { valgt.classList.add('valgt'); }
+  var f = document.getElementById('final');
+  if (f) { f.innerHTML = '<p class="velghint">Valgt: ' + escHtml(navn) + '</p>'; }
+  apiGet('velgKategori', { lagId: velgLagId, navn: navn }).catch(function (e) {
+    velgSendt = false;
+    alert('Klarte ikke a velge kategori: ' + (e && e.message ? e.message : e));
+  });
 }
 
 function renderGrid() {
@@ -329,7 +442,9 @@ function revealWinners(winners) {
           [523, 659, 784, 1046].forEach(function(f, k) { setTimeout(function() { beep(f, .3, 'triangle', .3); }, k * 150); });
           confetti();
           var f = document.getElementById('final');
-          if (f) f.innerHTML = '<p><b>Kategoriene er trukket!</b> Gå til Styre-siden for å velge kategori.</p>';
+          if (f) f.innerHTML = '<p><b>Kategoriene er trukket!</b></p>';
+          // Flisene som star igjen er kandidatene - gjor dem klikkbare med en gang.
+          gjorVinnerfliserKlikkbare(winners);
         }, 400);
       }
     }, i * 550);
@@ -392,6 +507,16 @@ function sjekkModus() {
       if (o.status === 'ferdig') { katMerkFerdig(o); }
       else if (o.status !== 'pagar' && o.status !== 'omspill') { katNullstill(); }
       // Kategorispillet og resultatet har egen visning (AVVIK-050).
+      // Etter at kategorien er klikket her, skal den staa igjen alene noen
+      // sekunder for poengtavla tar over - ellers bytter siden bilde i samme
+      // oyeblikk som klikket.
+      if (o.status === 'pagar' && o.valgtKategori && gjeldendeModus === 'trekning') {
+        if (valgtVistFraMs === null) {
+          valgtVistFraMs = Date.now();
+          visValgtKategori(o.valgtKategori);
+        }
+        if (Date.now() - valgtVistFraMs < VALGT_VISES_MS) { return; }
+      }
       var visKat = (o.status === 'pagar') || (o.status === 'omspill') || (o.status === 'ferdig' && katResultatSkalVises());
       if (visKat) {
         if (gjeldendeModus !== 'kategori') {
