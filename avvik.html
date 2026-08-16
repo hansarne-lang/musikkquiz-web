@@ -844,6 +844,18 @@ var AVVIK_DATA = [
     beskrivelse: "Velges QR-pamelding i Lag-oppsett, tegnes koden i styringspanelet - pa quizmasterens egen PC-skjerm, 220 px stor. Lagene som skal scanne den sitter i salen og ser projektoren. I praksis matte quizmasteren enten holde PC-en opp mot lokalet eller lese hoyt opp adressen. Storskjermen viste i mellomtiden stillingstabellen, som pa det tidspunktet er tom.",
     losning: "Storskjermen har fatt en egen pameldingsvisning: QR-koden i 420 px pa hvit bakgrunn slik at den lar seg scanne bakerst i lokalet, adressen skrevet ut under i klartekst som reserve, og en levende liste over lagene som har meldt seg pa - slik at hvert lag ser sitt eget navn dukke opp og vet at det gikk gjennom. Visningen har forsterett i autoModus sa lenge pameldingen star apen. Den kan ikke bli staende igjen ut i kvelden: apneRunde setter pamelding_status til av, og skjermen gar da videre av seg selv. QR-koden i styringspanelet er beholdt. 7 tester i e2e14.js.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-065",
+    tittel: "Lykkehjulet sto alene - publikum sa ikke tabellen det gjaldt",
+    omrade: "Storskjerm - hovedskjerm.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Storskjermen byttet mellom visninger som gjensidig utelukket hverandre: sto lykkehjulet framme, var stillingstabellen borte. Men hjulet finnes nettopp fordi to eller flere lag star likt i tabellen - og publikum kunne ikke se hvem det gjaldt eller hva som sto pa spill mens det snurret. De matte huske stillingen fra for trekningen startet.",
+    losning: "Hjulet og stillingen star na side om side sa lenge trekningen pagar: hjulet til venstre, begge divisjonstabellene til hoyre i en kompakt utgave. Den gule markeringen i tabellen viser hvilke lag som er med i trekningen, sa sammenhengen mellom hjulet og tabellen er synlig med en gang. Tabellen oppdaterer seg mens trekningen gar. Pa skjermer smalere enn 1200 px legger tabellen seg under hjulet i stedet, slik at ingenting kuttes av. 6 tester i e2e15.js.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 

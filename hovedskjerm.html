@@ -116,6 +116,21 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 .stortekst{text-align:center;padding:80px 20px;}
 .stortekst h1{font-size:2.4em;background:none;border:none;display:block;color:#ffff00;}
 .stortekst p{font-size:1.6em;margin-top:20px;}
+
+/* Lykkehjul med stilling ved siden av (AVVIK-065). To spalter pa projektoren,
+   under hverandre pa smale skjermer. */
+#hjulOgTabell{display:flex;gap:22px;align-items:flex-start;justify-content:center;}
+#hjulOgTabell > .card{flex:0 0 auto;}
+#hjulTabell{flex:1 1 0;min-width:340px;max-width:640px;text-align:left;
+  border:2px solid #00ffff;padding:16px 18px;}
+#hjulTabell table{width:100%;font-size:.8em;}
+#hjulTabell th,#hjulTabell td{padding:4px 6px;}
+#hjulTabell h3{font-size:1em;margin:12px 0 6px;}
+#hjulTabell h3:first-child{margin-top:0;}
+@media (max-width:1200px){
+  #hjulOgTabell{flex-direction:column;align-items:center;}
+  #hjulTabell{width:100%;max-width:none;}
+}
 </style>
 </head>
 <body>
@@ -157,6 +172,9 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 <h1 style="color:#ff00ff;">LYKKEHJULET</h1>
 <p id="uavgjortLabel" style="font-size:1.2em;"></p>
 </div>
+<!-- Hjulet avgjor plasseringer, men publikum sa aldri tabellen det gjaldt -
+     den la i en helt annen visning. Na star de side om side (AVVIK-065). -->
+<div id="hjulOgTabell">
 <div class="card" style="padding:40px 20px;">
 <div id="wheelStage">
 <div id="wheelBulbRing"></div>
@@ -169,6 +187,11 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 <button id="spinBtn" onclick="spinWheel()">Drei hjulet!</button>
 </div>
 <div id="uavgjortResultat" style="margin-top:20px;font-size:1.6em;"></div>
+</div>
+<div id="hjulTabell">
+<h2 style="color:#00ffff;margin:0 0 10px;">Stilling</h2>
+<div id="hjulTabellInnhold"><p style="opacity:.7;">Laster...</p></div>
+</div>
 </div>
 </div>
 
@@ -453,6 +476,9 @@ function visStilling(data) {
   var html = '<div class="card"><h2>1. divisjon</h2>' + lagTabell(data.div1, 1) + '</div>' +
     '<div class="card"><h2>2. divisjon</h2>' + lagTabell(data.div2, 2) + '</div>';
   document.getElementById('stillingInnhold').innerHTML = html;
+  // Samme tabell ved siden av lykkehjulet (AVVIK-065).
+  var vedHjulet = document.getElementById('hjulTabellInnhold');
+  if (vedHjulet) { vedHjulet.innerHTML = html; }
 }
 function lagTabell(rader, divisjon) {
   var html = '<table><tr><th>Plass</th><th>Lag</th><th>Bord</th><th>Poeng</th></tr>';
@@ -614,6 +640,8 @@ function autoModusVidere() {
         stoppIntervaller();
         alleWrapsSkjul();
         document.getElementById('uavgjortWrap').style.display = 'block';
+        // Tabellen ved siden av hjulet skal leve mens trekningen pagar.
+        initStilling();
         lastUavgjortKey = key;
         initUavgjort(u);
       } else if (key !== lastUavgjortKey && !wheelSpinning) {
