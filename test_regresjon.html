@@ -829,6 +829,23 @@ async function kjorAlle() {
       });
     });
 
+    await kjorTest("Storskjerm", "R9.25 Trekningssiden har spilleknapp uten a rope ut fasiten", async function () {
+      return await medSide('trekning.html', 3000, function (w, d) {
+        assert(d.getElementById('katSpotify'), 'katSpotify mangler i trekning.html');
+        assert(typeof w.spotifyUrl === 'function', 'spotifyUrl mangler');
+        assert(typeof w.tegnSpotifyKnapp === 'function', 'tegnSpotifyKnapp mangler');
+        assert(w.spotifyUrl('javascript:alert(1)') === '', 'javascript:-adresse ble godtatt som lenke');
+        assert(w.spotifyUrl('bare tekst') === '', 'tilfeldig tekst ble til en lenke');
+        assert(/open\.spotify\.com\/track\/abc/.test(w.spotifyUrl('spotify:track:abc')),
+          'gyldig spotify:track ble ikke oversatt');
+        // siden kan sta pa storskjermen, sa knappen skal aldri vise artist/tittel
+        var kilde = w.tegnSpotifyKnapp.toString();
+        assert(kilde.indexOf('.artist') === -1 && kilde.indexOf('.latt') === -1,
+          'spilleknappen skriver ut artist eller tittel - det spoiler for publikum');
+        return 'knapp uten spoiler';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

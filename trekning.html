@@ -149,6 +149,7 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 <h1 id="katTittel"></h1>
 <p id="katSang"></p>
 <div id="katTavle"></div>
+<div id="katSpotify" style="text-align:center;margin:14px 0;"></div>
 <p id="katFot"></p>
 </div>
 </div>
@@ -569,6 +570,38 @@ function katLagListe(o) {
   ];
 }
 
+// Spilleknappen la bare i styringspanelet. Star trekningssiden i et eget
+// vindu hos quizmasteren, ma sangen kunne startes derfra ogsa. Knappen viser
+// BARE at det er en sang - aldri artist eller tittel, siden denne siden kan
+// sta pa storskjermen.
+function spotifyUrl(raa) {
+  var t = String(raa || '').trim();
+  if (!t) { return ''; }
+  if (/^spotify:(track|album|playlist|episode):[A-Za-z0-9]+$/.test(t)) {
+    return 'https://open.spotify.com/' + t.split(':')[1] + '/' + t.split(':')[2];
+  }
+  if (/^https:\/\/open\.spotify\.com\/[A-Za-z0-9\/?=&._-]+$/.test(t)) { return t; }
+  return '';
+}
+
+function tegnSpotifyKnapp(o, ferdig) {
+  var boks = document.getElementById('katSpotify');
+  if (!boks) { return; }
+  if (ferdig) { boks.innerHTML = ''; return; }
+  var u = spotifyUrl(o.gjeldendeSang && o.gjeldendeSang.spotify);
+  if (!u) {
+    boks.innerHTML = '<p style="font-size:.8em;opacity:.55;margin:0;">Ingen Spotify-lenke pa denne sangen.</p>';
+    return;
+  }
+  var nr = (o.status === 'omspill')
+    ? 'omspillsangen'
+    : 'sang ' + (Number(o.sangIndex || 0) + 1);
+  boks.innerHTML = '<a href="' + escHtml(u) + '" target="_blank" rel="noopener" ' +
+    'style="display:inline-block;background:#1db954;color:#fff;text-decoration:none;' +
+    'font-weight:700;padding:12px 22px;border:2px solid #ffffff;">' +
+    '&#9654;&nbsp; Spill av ' + escHtml(nr) + ' i Spotify</a>';
+}
+
 function tegnKategoriTavle(o, ferdig) {
   var lag = katLagListe(o);
   var maks = Math.max(lag[0].poeng, lag[1].poeng, lag[2].poeng);
@@ -607,6 +640,7 @@ function tegnKategoriTavle(o, ferdig) {
       '<div class="merke">' + merke + '</div></div>';
   });
   document.getElementById('katTavle').innerHTML = h;
+  tegnSpotifyKnapp(o, ferdig);
 
   var fot = '';
   if (ferdig) {
