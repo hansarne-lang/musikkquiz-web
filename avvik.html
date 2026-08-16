@@ -820,6 +820,18 @@ var AVVIK_DATA = [
     beskrivelse: "Hver uavgjort ble trukket for seg. Divisjon 1 og divisjon 2 fikk hvert sitt hjul etter hverandre, og hver trekning plukket HELE settet i ett eneste spinn: sto tre lag likt om to plasser, kom begge ut samtidig og ingen sa hvem som ble nr. 1. Derfor fantes det en egen tredje trekning bare for a avgjore hvem av de to som matte utfordre. Publikum matte se pa tre separate hjul for a fa vite hva som skjedde.",
     losning: "Ett hjul med alle lagene som star uavgjort, uansett divisjon. Hvert spinn trekker ut ETT lag, som tar hoyeste ledige plass i sin egen gruppe, og forsvinner fra hjulet. Det snurrer videre til alle er plassert. Bunnen av divisjon 1 er snudd: der trekkes de som er TRYGGE, og de som star igjen til slutt er de som gar til opp-/nedrykket - slik betyr det alltid det samme a bli trukket ut. Rekkefolgen kommer gratis av a trekke ett om gangen, sa den egne trekningen av hvem som ma utfordre er borte helt. Backend har fatt en gruppemodell (ny kolonne Grupper i Uavgjort-arket) med fellesHjulStatus/trekkFellesVinner, og skriver fortsatt til UavgjortLogg i samme format som for, slik at resten av systemet ikke merker at trekningen er gjort pa en ny mate. De to knappene Sjekk divisjonsvinner (Div 1/Div 2) er slatt sammen til en. Rader uten grupper bruker fortsatt den gamle veien, sa ingenting mister sin reserve. 14 mekanikktester og 8 ende-til-ende-tester mot to skjermer samtidig.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-063",
+    tittel: "Styringspanelet viste hele kvelden samtidig - fire skjermhoyder",
+    omrade: "Styringspanel - styre.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Gjennomgang av panelet mot kjoreplanen",
+    beskrivelse: "Panelet var 4074 px hoyt - rundt fire skjermhoyder - og viste ALT samtidig fra forste minutt til siste: lag-oppsett, kategorier, buzzer-oppsett, fasit, opp-/nedrykk, B-finale, finale, joker, ny sesong, arkivering og nullstilling. Finalene sto framme fra kvelden startet, selv om de ikke kan spilles for etter runde 6, og \"Start ny sesong\" la midt i det aktive panelet ved siden av kort man bruker hvert femte minutt. Rekkefolgen fulgte omtrent kjoreplanen, men ingenting fortalte hvor i kvelden man var - man matte rulle for a finne kortet som gjaldt akkurat na. AVVIK-056 var den eneste plassen panelet tilpasset seg i det hele tatt.",
+    losning: "Panelet er delt i fire faser som folger kvelden: 1 For kvelden (lag-oppsett, kategorier, buzzer-modus og fysisk buzzer), 2 Under runden (uavgjort, opp-/nedrykk, fasit og poeng, buzzer, beste bommert), 3 Etter runde 6 (B-finale og finale), 4 Etterpa (joker og ny sesong, arkivering, nullstilling). Storskjermstyringen ligger i en egen gruppe som er tilgjengelig hele veien, siden den brukes bade forst og sist. Gruppa du er i apnes automatisk og merkes NA; de andre er sammenklappet. Fasen utledes av tilstand panelet allerede har - om det finnes lag, om runde 6 er poenggitt, og om finalen er i gang eller ferdig. En gruppe quizmasteren apner selv blir staende apen; vi lukker bare den forrige AUTO-apnede. Malt effekt: 4074 px -> 1219 px. Ingen funksjonalitet er fjernet, bare gruppert. AVVIK-056 holder fortsatt: opp-/nedrykkssporet ligger for rundekortet inne i fase 2. 10 tester i e2e13.js.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 

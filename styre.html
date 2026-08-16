@@ -36,6 +36,21 @@ button:hover{background:#00ff00;filter:none;}
 @media print{body{background:#fff;color:#000;} .card,button{display:none;}}
 label{display:inline-block;margin-top:6px;}
 summary{cursor:pointer;font-weight:800;font-size:1.05em;}
+
+/* Faseinndeling (AVVIK-063): panelet folger kvelden i stedet for a vise alt
+   samtidig. Gruppa du er i star apen, resten er sammenklappet. */
+.fase{border:1px solid var(--m-kant,#2f3542);border-radius:10px;margin:0 0 14px;padding:0;background:transparent;}
+.fase > summary{cursor:pointer;padding:13px 16px;font-weight:600;font-size:15px;list-style:none;
+  display:flex;align-items:center;gap:10px;border-radius:10px;}
+.fase > summary::-webkit-details-marker{display:none;}
+.fase > summary::before{content:'\25B6';font-size:10px;opacity:.5;transition:transform .15s;}
+.fase[open] > summary::before{transform:rotate(90deg);}
+.fase > summary .naa{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  background:#4dd0e1;color:#12141a;padding:2px 8px;border-radius:20px;margin-left:auto;}
+.fase > summary .hint{font-size:12px;font-weight:400;opacity:.6;}
+.fase[open] > summary{border-bottom:1px solid var(--m-kant,#2f3542);border-radius:10px 10px 0 0;}
+.faseInnhold{padding:14px 16px 4px;}
+.faseInnhold > .card:last-child{margin-bottom:12px;}
 </style>
 <link rel="stylesheet" href="meny.css">
 <script src="meny.js" defer></script>
@@ -43,6 +58,13 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <body>
 <div class="wrap">
 <h1>Musikkquiz - Styring</h1>
+<!-- Varsel om at backend ikke er distribuert. Ligger UTENFOR faseinndelingen:
+     nar dette dukker opp, er det ikke noe man skal lete etter (AVVIK-063). -->
+<div id="bakoverkompatibelt"></div>
+
+<details class="fase" id="fase1" open>
+<summary>1 &middot; F&oslash;r kvelden <span class="hint">lag, kategorier, buzzer-oppsett</span><span class="naa" style="display:none;">N&Aring;</span></summary>
+<div class="faseInnhold">
 
 <details class="card" open>
 <summary>Lag-oppsett (opprett/rediger lag, generer QR-koder)</summary>
@@ -71,12 +93,6 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="kategoriListe" style="margin-top:12px"><p style="opacity:.7;">Apne panelet for a hente kategoriene.</p></div>
 </details>
 
-<div id="bakoverkompatibelt"></div>
-<div id="uavgjort"></div>
-<div id="opprykkTopp"></div>
-<div id="app"><p>Laster...</p></div>
-<div id="opprykk"></div>
-<div id="buzzer"></div>
 <div id="buzzerModusPanel" class="card">
 <h2>Buzzer-modus</h2>
 <label><input type="radio" name="buzzerModus" id="buzzerModusFysisk" onchange="settBuzzerModus()"> Fysisk (knapper hos styringsbordet)</label><br>
@@ -94,11 +110,40 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 </div>
 <p id="fysiskBindStatus" style="font-size:.85em;opacity:.75;margin-top:10px;"></p>
 </div>
+</div>
+</details>
+
+<details class="fase" id="fase2">
+<summary>2 &middot; Under runden <span class="hint">fasit, poeng, opp-/nedrykk, buzzer</span><span class="naa" style="display:none;">N&Aring;</span></summary>
+<div class="faseInnhold">
+<div id="uavgjort"></div>
+<div id="opprykkTopp"></div>
+<div id="app"><p>Laster...</p></div>
+<div id="opprykk"></div>
+<div id="buzzer"></div>
+<div id="bommert"></div>
+</div>
+</details>
+
+<details class="fase" id="fase3">
+<summary>3 &middot; Etter runde 6 <span class="hint">B-finale og finale</span><span class="naa" style="display:none;">N&Aring;</span></summary>
+<div class="faseInnhold">
 <div id="finaleB"></div>
 <div id="finale"></div>
-<div id="bommert"></div>
-<div id="jokerPanel"></div>
+</div>
+</details>
+
+<details class="fase" id="faseSkjerm">
+<summary>Storskjerm <span class="hint">velkomst, pause, sluttresultat</span></summary>
+<div class="faseInnhold">
 <div id="skjermOverride"></div>
+</div>
+</details>
+
+<details class="fase" id="fase4">
+<summary>4 &middot; Etterp&aring; <span class="hint">arkiver kvelden, ny sesong, nullstilling</span><span class="naa" style="display:none;">N&Aring;</span></summary>
+<div class="faseInnhold">
+<div id="jokerPanel"></div>
 
 <div class="card" style="border-color:#ff0000;">
 <h2 style="color:#ff0000;">Avslutt kvelden</h2>
@@ -120,6 +165,9 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <button onclick="nullstill('nullstillSvar','Nullstille alle innsendte svar fra lagene (for alle runder)? Brukes f.eks. hvis testsvar eller gamle svar dukker opp på lag-siden når en runde åpnes.')">Nullstill innsendte svar</button>
 </div>
 <div id="nullstillResultat" style="margin-top:10px;"></div>
+</details>
+
+</div>
 </details>
 
 </div>
@@ -246,6 +294,8 @@ function vis(data) {
   }
   document.getElementById('app').innerHTML = html;
   rundeFerdigScoret = !!(scoreStatus.s1 && scoreStatus.s2 && scoreStatus.s3);
+  harLag = !!data.harLag;
+  oppdaterFaser();
   if (rundeFerdigScoret) {
     document.getElementById('apneNesteWrap').innerHTML = apneNesteKort();
     document.getElementById('apneNesteWrap').removeAttribute('data-sperret');
@@ -544,6 +594,48 @@ function lastOpprykk() {
 // nederst, der det ikke tar oppmerksomhet under selve runden.
 var sisteOpprykkHtml = '';
 
+// ---------------------------------------------------------------------------
+// Faseinndeling (AVVIK-063). Panelet viste alt samtidig - 4074 px, rundt fire
+// skjermhoyder - fra lag-oppsett til "Avslutt kvelden", uansett hvor i kvelden
+// man var. Finalene sto framme fra forste minutt, selv om de ikke kan spilles
+// for etter runde 6.
+//
+// Na apnes gruppa du faktisk er i, og de andre er sammenklappet. Vi lukker
+// aldri noe brukeren har apnet selv - bare den forrige AUTO-apnede gruppa.
+// ---------------------------------------------------------------------------
+// Markupen starter med fase 1 apen, sa den er ogsa den forste vi 'eier'.
+var autoApnetFase = 'fase1';
+
+function gjeldendeFase() {
+  if (!harLag) { return 'fase1'; }
+  if (finaleFerdig) { return 'fase4'; }
+  if (finaleAktiv || (rundeFerdigScoret && Number(gjeldendeRunde) >= SISTE_RUNDE)) { return 'fase3'; }
+  return 'fase2';
+}
+
+function oppdaterFaser() {
+  var maal = gjeldendeFase();
+  ['fase1', 'fase2', 'fase3', 'fase4'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) { return; }
+    var merke = el.querySelector('.naa');
+    if (id === maal) {
+      el.open = true;
+      if (merke) { merke.style.display = ''; }
+    } else {
+      if (merke) { merke.style.display = 'none'; }
+      // Bare den forrige auto-apnede lukkes igjen - har quizmasteren apnet en
+      // gruppe selv, skal den fa sta.
+      if (id === autoApnetFase && id !== maal) { el.open = false; }
+    }
+  });
+  autoApnetFase = maal;
+}
+
+var harLag = false;
+var finaleAktiv = false;
+var finaleFerdig = false;
+
 function plasserOpprykkKort() {
   var topp = document.getElementById('opprykkTopp');
   var bunn = document.getElementById('opprykk');
@@ -774,6 +866,9 @@ function lastFinale() {
 }
 
 function visFinale(o) {
+  finaleAktiv = (o.status === 'pagar' || o.status === 'venter_uavgjort');
+  finaleFerdig = (o.status === 'ferdig');
+  oppdaterFaser();
   if (o.status === 'venter_uavgjort') {
     document.getElementById('finale').innerHTML = '<div class="card" style="border-color:#ff00ff;"><h2>Finale (topp 3 i Divisjon 1)</h2><p>Uavgjort oppstod - se kortet "Uavgjort-trekning" over for å løse det med lykkehjulet.</p></div>';
     return;
