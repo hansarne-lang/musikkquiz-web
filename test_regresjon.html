@@ -368,19 +368,21 @@ async function kjorAlle() {
       });
     });
 
-    await kjorTest("Storskjerm", "R5.3 Adminknappene og Start trekning er skjult (AVVIK-038)", async function () {
+    await kjorTest("Storskjerm", "R5.3 Ingen snarveier eller adminknapper pa storskjermen (AVVIK-038/058)", async function () {
       return await medSide('hovedskjerm.html', 3000, function (w, d) {
-        var nav = d.getElementById('navRad');
-        if (!nav) { throw new Error('navRad mangler'); }
-        var st = w.getComputedStyle(nav);
-        if (st.opacity !== '0' || st.pointerEvents !== 'none') {
-          throw new Error('Navigasjonen er synlig: opacity=' + st.opacity + ' pointer-events=' + st.pointerEvents);
+        // Navigasjonen ble forst gjemt bak en musebevegelse (AVVIK-038), men er
+        // na fjernet helt fra projektorbildet (AVVIK-058).
+        if (d.getElementById('navRad')) {
+          throw new Error('Snarveiene er tilbake pa storskjermen');
+        }
+        if (/href="(index|stilling|styre|historikk|veiledning)\.html"/.test(d.body.innerHTML)) {
+          throw new Error('Fant fortsatt en snarvei-lenke i storskjermen');
         }
         var sb = d.getElementById('startBtn');
         if (sb && w.getComputedStyle(sb).display !== 'none') {
           throw new Error('Start trekning-knappen er synlig pa projektoren');
         }
-        return 'begge skjult';
+        return 'ingen snarveier, ingen startknapp';
       });
     });
 

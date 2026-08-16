@@ -39,8 +39,6 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 #wheelStage{position:relative;width:clamp(420px, 58vmin, 680px);height:clamp(420px, 58vmin, 680px);margin:30px auto;}
 /* Projektoren skal ikke vise adminknapper for publikum. Raden ligger skjult og
    dukker opp i tre sekunder naar noen beveger musa (AVVIK-038). */
-#navRad{opacity:0;pointer-events:none;transition:opacity .25s;}
-#navRad.vis{opacity:1;pointer-events:auto;}
 #startBtn{display:none;}
 /* Storskjermen skal aldri VAERE den som trekker - da ville to sider kalt
    trekkUavgjort samtidig, og bare den forste hadde fatt svar. Den speiler
@@ -122,14 +120,9 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
 <div id="vinnerOverlay" class="fullOverlay" style="display:none;"></div>
 <div id="bommertOverlay" class="fullOverlay" style="display:none;"></div>
 <div class="wrap">
-<div class="card" id="navRad" style="display:flex;gap:10px;flex-wrap:wrap;">
-<a href="index.html"><button>Oversikt</button></a>
-<a href="stilling.html"><button>Stilling</button></a>
-<a href="styre.html"><button>Styre / Admin</button></a>
-<a href="historikk.html"><button>Historikk</button></a>
-<a href="hovedskjerm.html"><button style="background:#00ffff;">Hovedskjerm</button></a>
-<a href="veiledning.html"><button>Veiledning</button></a>
-</div>
+<!-- Ingen snarveier her: dette er projektorbildet, og publikum skal aldri
+     se navigasjonen (AVVIK-058). Bruk nettleserens tilbakeknapp eller adressen
+     direkte for a komme til de andre sidene. -->
 
 <div id="trekningWrap" style="display:none;">
 <h1>Kategori-trekning</h1>
@@ -1164,16 +1157,6 @@ function sjekkFinaleOgBommert() {
     }
   }).catch(function(e) { console.error(e); });
 }
-
-// Vis navigasjonen kort naar noen faktisk bruker musa (AVVIK-038).
-var navTimer = null;
-document.addEventListener('mousemove', function () {
-  var n = document.getElementById('navRad');
-  if (!n) { return; }
-  n.classList.add('vis');
-  if (navTimer) { clearTimeout(navTimer); }
-  navTimer = setTimeout(function () { n.classList.remove('vis'); }, 3000);
-});
 
 sjekkModus();
 // Naar en trekning eller et lykkehjul pagar, ma storskjermen fange opp

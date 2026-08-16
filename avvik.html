@@ -765,6 +765,18 @@ var AVVIK_DATA = [
     beskrivelse: "Knappen \"Apne runde X+1\" ble tegnet sa snart alle tre sangene i runden var poenggitt, uten a se pa hvilken runde det var. Etter runde 6 - siste ordinaere runde - sto det derfor \"Apne runde 7\". Backend hadde ingen ovre sperre heller: apneRunde(7) gikk rett til setRundeStatus_, som ikke fant noen rad for runde 7 og la til en ny. Kvelden ville dermed fatt en runde 7 som verken kjoreplanen, poengberegningen eller storskjermens \"Runde X av 6\" kjenner til. Ett feilklikk i det som skulle vaert overgangen til B-finalen holdt.",
     losning: "Panelet tegner ikke lenger noen apne-knapp nar gjeldende runde er 6; i stedet star det at runde 6 er ferdig og at kvelden gar rett til B-finalen og deretter finalen. apneNeste() avviser ogsa kallet hvis det skulle bli utlost pa annet vis. Backend har fatt en ovre sperre i apneRunde: bare runde 1-6 godtas, alt annet kaster \"Kvelden har seks runder\". Dekket av R9.22.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-058",
+    tittel: "Snarveiene la fortsatt pa storskjermen, bare gjemt bak en musebevegelse",
+    omrade: "Storskjerm - hovedskjerm.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "AVVIK-038 gjorde navigasjonsraden usynlig for publikum, men den la der fortsatt og dukket opp i tre sekunder hver gang noen beveget musa. Pa en projektor er det bare stoy: en rad med Oversikt / Stilling / Styre-Admin / Historikk / Hovedskjerm / Veiledning som blinker fram midt i sendingen hvis noen sa mye som borter borti musa ved styringsbordet.",
+    losning: "Navigasjonsraden er fjernet helt fra hovedskjerm.html - bade markupen, CSS-reglene og musebevegelses-lytteren som viste den. Storskjermen har na ingen lenker i det hele tatt. De andre sidene nas som for fra oversikten eller ved a skrive adressen. Start trekning-knappen var og blir skjult. R5.3 og G7/G8 er skjerpet: de krever na at navRad ikke finnes og at siden ikke har en eneste sidelenke, heller ikke etter en musebevegelse.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 
