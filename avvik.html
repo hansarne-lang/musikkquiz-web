@@ -856,6 +856,18 @@ var AVVIK_DATA = [
     beskrivelse: "Storskjermen byttet mellom visninger som gjensidig utelukket hverandre: sto lykkehjulet framme, var stillingstabellen borte. Men hjulet finnes nettopp fordi to eller flere lag star likt i tabellen - og publikum kunne ikke se hvem det gjaldt eller hva som sto pa spill mens det snurret. De matte huske stillingen fra for trekningen startet.",
     losning: "Hjulet og stillingen star na side om side sa lenge trekningen pagar: hjulet til venstre, begge divisjonstabellene til hoyre i en kompakt utgave. Den gule markeringen i tabellen viser hvilke lag som er med i trekningen, sa sammenhengen mellom hjulet og tabellen er synlig med en gang. Tabellen oppdaterer seg mens trekningen gar. Pa skjermer smalere enn 1200 px legger tabellen seg under hjulet i stedet, slik at ingenting kuttes av. 6 tester i e2e15.js.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-066",
+    tittel: "Enarmet banditt erstatter lykkehjulet: ett trekk avgjor alt",
+    omrade: "Lykkehjul - trekning.html + hovedskjerm.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Lykkehjulet fra AVVIK-062 trakk ett lag per spinn. Tre avgjorelser tok tre spinn a rundt 13 sekunder hver - snaut et minutt der publikum sa det samme hjulet snurre om og om igjen. Onsket var en mekanisme der alt avgjores i en omgang.",
+    losning: "En enarmet banditt med ett hjul per avgjorelse. Spaken dras EN gang: alle hjulene starter samtidig, og stopper etter hverandre med et lite opphold - ett lag per hjul. Over hvert hjul star det hva det avgjor: \"Div 1 - trygg\", \"Div 2 - nr. 1\", \"Div 2 - nr. 2\". Et hjul for en bunngruppe viser hvem som er TRYGG, ikke hvem som ryker, i trad med regelen fra AVVIK-062. Hvert hjul ruller gjennom sin egen gruppes lag, ikke alle, sa det ser riktig ut i det hjulet stopper. Antall hjul leses av gruppene og kan bli faerre enn ventet nar en gruppe loser seg selv. Backend er urort - hele mekanikken bygger pa fellesHjulStatus og trekkFellesVinner fra AVVIK-062. Storskjermen speiler maskinen: den bygger de samme hjulene uten spak, og stopper hjul nummer i nar valgt-lista vokser. Blir trekningen ferdig raskere enn pollingen rekker a folge med, spilles hele sekvensen av i ettertid i stedet for a falle tilbake til lykkehjulet. Stillingstabellen fra AVVIK-065 star fortsatt ved siden av. 10 tester i e2e16.js.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 

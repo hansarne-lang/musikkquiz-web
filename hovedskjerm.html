@@ -131,6 +131,26 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
   #hjulOgTabell{flex-direction:column;align-items:center;}
   #hjulTabell{width:100%;max-width:none;}
 }
+/* Enarmet banditt (AVVIK-066): ett trekk i spaken, og alle avgjorelsene faller
+   pa plass etter hverandre. Erstatter hjulet nar trekningen bruker felles hjul. */
+#bandittWrap{display:none;}
+.bandittRam{display:inline-block;background:#1a0033;border:6px solid #ffcc00;
+  border-radius:14px;padding:22px 26px;box-shadow:0 0 0 4px #7a1fa2, 0 10px 30px rgba(0,0,0,.6);}
+.bandittHjul{display:flex;gap:14px;justify-content:center;align-items:flex-start;}
+.bandittKol{text-align:center;}
+.bandittMerke{font-size:.85em;color:#ffcc00;margin-bottom:6px;white-space:nowrap;letter-spacing:1px;}
+.reel{width:230px;height:120px;overflow:hidden;background:#000;border:4px solid #ffcc00;
+  border-radius:8px;position:relative;}
+.reel .strip{position:absolute;left:0;right:0;top:0;}
+.reel .navn{height:120px;display:flex;align-items:center;justify-content:center;
+  font-size:1.25em;font-weight:bold;color:#fff;padding:0 8px;text-align:center;word-break:break-word;}
+.reel.stoppet{border-color:#00ff00;box-shadow:0 0 22px rgba(0,255,0,.6);}
+.reel.stoppet .navn{color:#00ff00;}
+.bandittSpak{margin-top:18px;}
+#spakBtn{background:#ff0000;color:#fff;border:4px solid #ffcc00;font-size:1.2em;
+  padding:16px 34px;border-radius:10px;cursor:pointer;font-weight:bold;letter-spacing:2px;}
+#spakBtn:disabled{background:#552222;color:#997777;cursor:default;}
+@media (max-width:1200px){.reel{width:160px;height:96px;}.reel .navn{height:96px;font-size:1em;}}
 </style>
 </head>
 <body>
@@ -176,6 +196,7 @@ th{background:#0000aa;color:#ffff00;text-transform:uppercase;}
      den la i en helt annen visning. Na star de side om side (AVVIK-065). -->
 <div id="hjulOgTabell">
 <div class="card" style="padding:40px 20px;">
+<div id="bandittWrap"></div>
 <div id="wheelStage">
 <div id="wheelBulbRing"></div>
 <div id="wheelPointer"></div>
@@ -1137,6 +1158,13 @@ function initUavgjort(u) {
   // ikke bygge om og kjore hele trekningen en gang til nar raden til slutt
   // melder 'trukket' (AVVIK-062).
   if (fellesSpeiletAntall > 0 && u.status === 'trukket') { return; }
+  // Trekningen kan bli ferdig raskere enn pollingen rekker a folge med - alle
+  // hjulene faller innen et par sekunder etter at spaken er dratt. Da skal vi
+  // fortsatt vise banditten, ikke falle tilbake til lykkehjulet (AVVIK-066).
+  if (fellesRadNa && u.status === 'trukket') {
+    speilBandittAlle(u);
+    return;
+  }
   document.getElementById('uavgjortResultat').innerHTML = '';
   wheelKandidater = (u.kandidater || []).slice();
   wheelRotation = 0;
@@ -1147,6 +1175,24 @@ function initUavgjort(u) {
     initBulbRing();
   });
   if (u.status !== 'trukket') { fellesSpeiletAntall = 0; }
+  // Bruker trekningen felles hjul, speiler vi den enarmede banditten i stedet
+  // for lykkehjulet (AVVIK-066).
+  apiGet('fellesHjulStatus').then(function (fh) {
+    var stage = document.getElementById('wheelStage');
+    var bw = document.getElementById('bandittWrap');
+    fellesRadNa = !!(fh && fh.felles);
+    if (fh && fh.felles && u.status !== 'trukket') {
+      if (stage) { stage.style.display = 'none'; }
+      byggBanditt(fh.grupper || []);
+      var sp = document.getElementById('spakBtn');
+      if (sp) { sp.style.display = 'none'; }
+      for (var k = 0; k < bandittKolonner.length; k++) { rullHjul(k, 20); }
+      setBulbsChasing(true);
+    } else {
+      if (bw) { bw.style.display = 'none'; }
+      if (stage) { stage.style.display = ''; }
+    }
+  }).catch(function (e) { console.error(e); });
   if (u.status === 'trukket') {
     // Trekningssiden har snurret. Storskjermen kjorer NOYAKTIG samme snurr mot
     // de samme vinnerne i stedet for a bare liste dem opp, slik at de to
@@ -1162,31 +1208,220 @@ function initUavgjort(u) {
 // Her folger vi i stedet valgt-lista: hver gang den vokser, snurrer vi.
 // ---------------------------------------------------------------------------
 var fellesSpeiletAntall = 0;
+var fellesRadNa = false;
+
+// ---------------------------------------------------------------------------
+// Enarmet banditt (AVVIK-066). Lykkehjulet trakk ett lag per spinn, sa tre
+// avgjorelser tok tre spinn. Her dras spaken EN gang: alle hjulene starter
+// samtidig og stopper etter hverandre - ett hjul per avgjorelse. Merkingen
+// over hvert hjul sier hva det avgjor ("Div 2 - nr. 1"), og et hjul for en
+// bunngruppe viser hvem som er TRYGG, ikke hvem som ryker.
+// ---------------------------------------------------------------------------
+var REEL_H = 120;
+var bandittGar = false;
+
+function bandittMerkeTekst(g) {
+  var d = g.divisjon ? 'Div ' + g.divisjon : '';
+  if (g.inverter) { return (d ? d + ' - ' : '') + 'trygg'; }
+  if (Number(g.trengerAntall) > 1) { return (d ? d + ' - ' : '') + 'nr. ' + g.plass; }
+  return d || 'Vinner';
+}
+
+// Bygger ett hjul per avgjorelse som gjenstar. Navnene som ruller er gruppas
+// egne kandidater - da ser det riktig ut i det hjulet stopper.
+function byggBanditt(grupper) {
+  var kol = [];
+  (grupper || []).forEach(function (g) {
+    var mangler = Number(g.trengerAntall || 1) - (g.rekkefolge || []).length;
+    for (var i = 0; i < mangler; i++) {
+      kol.push({ gruppe: g, plass: (g.rekkefolge || []).length + i + 1 });
+    }
+  });
+  var h = '<div class="bandittRam"><div class="bandittHjul">';
+  kol.forEach(function (k, i) {
+    var g = k.gruppe;
+    var merke = bandittMerkeTekst({ divisjon: g.divisjon, inverter: g.inverter,
+                                    trengerAntall: g.trengerAntall, plass: k.plass });
+    var pool = (g.kandidater || []).slice();
+    // Stripa ma vaere lang nok til at bade rullingen (40 steg) og landingen
+    // (4 runder + posisjon) holder seg innenfor - ellers ruller den forbi
+    // slutten og hjulet star tomt.
+    var runder = Math.max(8, Math.ceil(60 / Math.max(pool.length, 1)));
+    var strip = '';
+    for (var r = 0; r < runder; r++) {
+      pool.forEach(function (p) { strip += '<div class="navn">' + escHtml(p.navn) + '</div>'; });
+    }
+    h += '<div class="bandittKol"><div class="bandittMerke">' + escHtml(merke) + '</div>' +
+         '<div class="reel" id="reel' + i + '"><div class="strip">' + strip + '</div></div></div>';
+  });
+  h += '</div><div class="bandittSpak"><button id="spakBtn" onclick="draSpaken()">DRA SPAKEN</button></div></div>';
+  var w = document.getElementById('bandittWrap');
+  if (w) { w.innerHTML = h; w.style.display = 'block'; }
+  bandittKolonner = kol;
+  return kol.length;
+}
+
+var bandittKolonner = [];
+
+function rullHjul(i, ms) {
+  var el = document.getElementById('reel' + i);
+  if (!el) { return; }
+  var strip = el.querySelector('.strip');
+  strip.style.transition = 'none';
+  strip.style.transform = 'translateY(0px)';
+  // tvinger reflow slik at overgangen under faktisk starter fra 0
+  void strip.offsetHeight;
+  strip.style.transition = 'transform ' + (ms / 1000) + 's linear';
+  var maks = strip.children.length - 2;
+  strip.style.transform = 'translateY(-' + (REEL_H * Math.min(40, maks)) + 'px)';
+}
+
+// Stopper hjul i pa laget som vant, med en mjuk landing.
+function stoppHjul(i, vinnerNavn, cb) {
+  var el = document.getElementById('reel' + i);
+  if (!el) { if (cb) cb(); return; }
+  var g = (bandittKolonner[i] || {}).gruppe || {};
+  var pool = (g.kandidater || []);
+  var idx = 0;
+  for (var j = 0; j < pool.length; j++) {
+    if (String(pool[j].navn) === String(vinnerNavn)) { idx = j; break; }
+  }
+  var strip = el.querySelector('.strip');
+  var runder = 4;
+  var mal = REEL_H * (pool.length * runder + idx);
+  strip.style.transition = 'transform 1.1s cubic-bezier(0.22,1.1,0.36,1)';
+  strip.style.transform = 'translateY(-' + mal + 'px)';
+  setTimeout(function () {
+    el.classList.add('stoppet');
+    beep(660, .22, 'square', .25);
+    if (cb) { cb(); }
+  }, 1150);
+}
+
+function draSpaken() {
+  // Storskjermen speiler bare; spaken dras pa trekningssiden.
+  if (true) { return; }
+  bandittGar = true;
+  var knapp = document.getElementById('spakBtn');
+  if (knapp) { knapp.disabled = true; knapp.textContent = 'TREKKER...'; }
+  setBulbsChasing(true);
+  for (var i = 0; i < bandittKolonner.length; i++) { rullHjul(i, 20); }
+  tickSoundsDuring(2000);
+
+  // Hent hele sekvensen forst - da vet vi hva hvert hjul skal lande pa.
+  var resultater = [];
+  var hentNeste = function () {
+    apiGet('trekkFellesVinner').then(function (svar) {
+      resultater.push(svar);
+      if (!svar.ferdig) { hentNeste(); return; }
+      landHjulene(resultater);
+    }).catch(function (e) {
+      console.error(e);
+      bandittGar = false;
+      setBulbsChasing(false);
+      if (knapp) { knapp.disabled = false; knapp.textContent = 'DRA SPAKEN'; }
+    });
+  };
+  setTimeout(hentNeste, 600);
+}
+
+function landHjulene(resultater) {
+  var i = 0;
+  var neste = function () {
+    if (i >= resultater.length) {
+      bandittGar = false;
+      setBulbsChasing(false);
+      bulbsLandCelebrate();
+      confetti();
+      visFellesFasit((resultater[resultater.length - 1] || {}).grupper);
+      bandittFerdig();
+      return;
+    }
+    var res = resultater[i];
+    stoppHjul(i, res.vinner.navn, function () {
+      var el = document.getElementById('uavgjortResultat');
+      if (el) { el.innerHTML += fellesLinje(res); }
+      merkNestePlanOmgang(res.vinner.navn);
+      i++;
+      setTimeout(neste, 700);
+    });
+  };
+  neste();
+}
+
+function fellesLinje(svar) {
+  var g = svar.gruppe || {};
+  var hale = g.inverter ? ' - trygg' : (Number(g.trengerAntall) > 1 ? ' - nr. ' + g.plass : '');
+  var div = g.divisjon ? ' (Div ' + g.divisjon + ')' : '';
+  return '<div>' + escHtml(svar.vinner.navn) + div + escHtml(hale) + '</div>';
+}
+function merkNestePlanOmgang() {}
+function visFellesFasit(grupper) {
+  var h = '';
+  (grupper || []).forEach(function (g) {
+    if (!g.inverter) { return; }
+    var trukket = (g.rekkefolge || []).map(function (x) { return String(x.id); });
+    var igjen = (g.kandidater || []).filter(function (k) { return trukket.indexOf(String(k.id)) === -1; });
+    if (!igjen.length) { return; }
+    h += '<p style="font-size:.55em;margin-top:12px;color:#ff6b6b;">Star igjen og gar til opp-/nedrykket: <b>' +
+      igjen.map(function (k) { return escHtml(k.navn); }).join(', ') + '</b></p>';
+  });
+  if (h) { document.getElementById('uavgjortResultat').innerHTML += h; }
+}
+function bandittFerdig() { setBulbsChasing(false); bulbsLandCelebrate(); confetti(); }
+
+// Hele trekningen var over for vi rakk a folge med: bygg maskinen og la
+// hjulene falle etter hverandre likevel, slik at publikum ser det samme.
+function speilBandittAlle(u) {
+  apiGet('fellesHjulStatus').then(function (fh) {
+    if (!fh || !fh.felles) { return; }
+    var stage = document.getElementById('wheelStage');
+    if (stage) { stage.style.display = 'none'; }
+    // Grupper med tomt "igjen" gir ingen hjul - bygg fra hele kandidatlista.
+    var g = (fh.grupper || []).map(function (x) {
+      return { kandidater: x.kandidater, igjen: x.kandidater, rekkefolge: [],
+               trengerAntall: x.trengerAntall, inverter: x.inverter,
+               divisjon: x.divisjon, label: x.label };
+    });
+    byggBanditt(g);
+    var sp = document.getElementById('spakBtn');
+    if (sp) { sp.style.display = 'none'; }
+    for (var k = 0; k < bandittKolonner.length; k++) { rullHjul(k, 20); }
+    setBulbsChasing(true);
+    var vinnere = (u.valgt || []).slice();
+    fellesSpeiletAntall = vinnere.length;
+    var i = 0;
+    var neste = function () {
+      if (i >= vinnere.length) { visFellesFasit(fh.grupper); bandittFerdig(); return; }
+      stoppHjul(i, vinnere[i].navn, function () {
+        var el = document.getElementById('uavgjortResultat');
+        if (el) { el.innerHTML += '<div>' + escHtml(vinnere[i].navn) + '</div>'; }
+        i++;
+        setTimeout(neste, 700);
+      });
+    };
+    setTimeout(neste, 1200);
+  }).catch(function (e) { console.error(e); });
+}
 
 function speilFellesHjul(u) {
   var vinnere = (u.valgt || []);
   if (vinnere.length <= fellesSpeiletAntall) { return; }
   if (wheelSpinning) { return; }
-  var neste = vinnere[fellesSpeiletAntall];
+  var i = fellesSpeiletAntall;
+  var neste = vinnere[i];
   fellesSpeiletAntall++;
   wheelSpinning = true;
   setBulbsChasing(true);
-  var pool = wheelKandidater.slice();
-  animerTilVinner(pool, neste, function () {
+  // Trekningssiden dro spaken; her stopper vi det tilsvarende hjulet.
+  stoppHjul(i, neste.navn, function () {
     document.getElementById('uavgjortResultat').innerHTML +=
       '<div>' + escHtml(neste.navn) + '</div>';
     wheelSpinning = false;
-    setBulbsChasing(false);
-    bulbsLandCelebrate();
-    // Hent hvem som fortsatt er med - backend fjerner hele grupper som er
-    // avgjort, sa hjulet krymper mer enn ett lag av gangen noen ganger.
     apiGet('fellesHjulStatus').then(function (fh) {
-      if (fh && fh.felles && (fh.kandidater || []).length) {
-        wheelKandidater = fh.kandidater.slice();
-        buildWheel(wheelKandidater);
-        wheelRotation = 0;
-      } else {
-        confetti();
+      if (fh && fh.status === 'trukket') {
+        visFellesFasit(fh.grupper);
+        bandittFerdig();
       }
     }).catch(function (e) { console.error(e); });
   });
