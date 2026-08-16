@@ -1011,17 +1011,20 @@ function merkNestePlanOmgang(navn) {
 function initUavgjort(u) {
   document.getElementById('uavgjortLabel').textContent = u.label || '';
   var radKey = String(u.kontekst || '') + '|' + String(u.type || '');
-  if (radKey !== planRadKey) { planRadKey = radKey; lokaleVinnere = []; }
+  // fellesHjul nullstilles BARE nar vi bytter rad. Ble den satt false ved hver
+  // polling, var den falsk i det korte vinduet for statuskallet svarte - og
+  // akkurat da rakk pollingen a overskrive resultatlista (AVVIK-062).
+  if (radKey !== planRadKey) { planRadKey = radKey; lokaleVinnere = []; fellesHjul = false; }
   // Med felles hjul star raden pa 'venter' gjennom hele trekningen, og
   // pollingen kaller hit mellom hvert spinn. Da skal resultatlista vaere i
   // fred - ellers forsvinner lagene vi allerede har trukket (AVVIK-062).
-  if (!wheelSpinning && !lokaleVinnere.length) {
+  if (!fellesHjul || (!wheelSpinning && !lokaleVinnere.length)) {
     document.getElementById('uavgjortResultat').innerHTML = '';
   }
   // Planstripa skal heller ikke nullstilles midt i en pagaende trekning -
   // gjenstaendeOmganger() leser den, og et tomt oyeblikk her gjorde at
   // sluttmeldingen sa at ingenting gjensto (AVVIK-062).
-  if (!wheelSpinning && !lokaleVinnere.length) {
+  if (!fellesHjul || (!wheelSpinning && !lokaleVinnere.length)) {
     planOmganger = [];
     tegnPlanStripe();
   }
@@ -1032,7 +1035,7 @@ function initUavgjort(u) {
     // sluttmeldingen tror at ingenting gjenstar (AVVIK-062).
     // ... men er stripa tom, har vi ingenting a beskytte, og da MA den
     // bygges - ellers vet vi ikke hvor mange omganger som gjenstar.
-    if ((wheelSpinning || lokaleVinnere.length) && planOmganger.length) { return; }
+    if (fellesHjul && (wheelSpinning || lokaleVinnere.length) && planOmganger.length) { return; }
     planOmganger = byggPlanOmganger(plan, u);
     tegnPlanStripe();
     if (u.status === 'trukket') {
@@ -1047,7 +1050,6 @@ function initUavgjort(u) {
     }
   }).catch(function (e) { console.error(e); });
   wheelKandidater = (u.kandidater || []).slice();
-  fellesHjul = false;
   // Bruker denne trekningen felles hjul, er det backend som eier hvilke lag
   // som fortsatt er med - da leser vi kandidatene derfra i stedet.
   apiGet('fellesHjulStatus').then(function (fh) {
@@ -1088,7 +1090,7 @@ function initUavgjort(u) {
     // Pollingen kaller hit igjen i det siste spinnet lander. Har vi nettopp
     // snurret selv, skal resultatlista IKKE overskrives - den har allerede
     // rekkefolgen og hvem som star igjen (AVVIK-062).
-    if (wheelSpinning || lokaleVinnere.length) { return; }
+    if (fellesHjul && (wheelSpinning || lokaleVinnere.length)) { return; }
     var resHtml = '';
     (u.valgt || []).forEach(function (v) { resHtml += '<div>Vinner: ' + escHtml(v.navn) + '</div>'; });
     resHtml += '<p id="trukketNote" style="font-size:.5em;opacity:.7;margin-top:10px;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
