@@ -412,9 +412,14 @@ async function kjorAlle() {
 
     await kjorTest("Ovrig", "R6.2 Knappen heter 'Apne runde' med a (AVVIK-032)", async function () {
       return await medSide('styre.html', 3000, function (w) {
-        var kilde = w.vis.toString();
+        // Teksten flyttet fra vis() til apneNesteKort() med AVVIK-057, sa vi
+        // leter i begge - det er skrivematen som skal vaktes, ikke plasseringen.
+        var kilde = w.vis.toString() + (w.apneNesteKort ? w.apneNesteKort.toString() : '');
         if (kilde.indexOf('Åpne runde') === -1) {
           throw new Error('Fant ikke "Åpne runde" - skrivefeilen er tilbake');
+        }
+        if (/Apne runde \'/.test(kilde)) {
+          throw new Error('Fant "Apne runde" uten a - skrivefeilen er tilbake');
         }
         return 'riktig skrivemate';
       });
@@ -718,6 +723,75 @@ async function kjorAlle() {
         harMerker(w, 'visStilling', ['apenRunde']);
         return 'begge sider foretrekker apenRunde';
       });
+    });
+
+    await kjorTest("Styringspanel", "R9.20 Opp-/nedrykket kommer FOR Apne runde X+1 (AVVIK-056)", async function () {
+      return await medSide('styre.html', 3000, function (w, d) {
+        var topp = d.getElementById('opprykkTopp');
+        var app = d.getElementById('app');
+        var bunn = d.getElementById('opprykk');
+        assert(topp, 'sporet opprykkTopp mangler');
+        assert(app && bunn, 'app eller opprykk mangler');
+        // dokumentrekkefolge: opprykkTopp skal ligge FOR rundekortet
+        var etter = topp.compareDocumentPosition(app) & Node.DOCUMENT_POSITION_FOLLOWING;
+        assert(etter, 'opprykkTopp ligger ikke over rundekortet');
+        assert(typeof w.plasserOpprykkKort === 'function', 'plasserOpprykkKort mangler');
+
+        // pa tur: runden er poenggitt og opp-/nedrykket er ikke ferdig
+        w.gjeldendeRunde = 1;
+        w.rundeFerdigScoret = true;
+        w.sisteOpprykkHtml = '<div class="card">KORT</div>';
+        w.opprykkMaSpilles = true;
+        w.plasserOpprykkKort();
+        assert(/KORT/.test(topp.innerHTML) && !/KORT/.test(bunn.innerHTML),
+          'kortet ble ikke flyttet opp nar opp-/nedrykket sto for tur');
+
+        // ikke pa tur: kortet skal ligge nederst som for
+        w.opprykkMaSpilles = false;
+        w.plasserOpprykkKort();
+        assert(!/KORT/.test(topp.innerHTML) && /KORT/.test(bunn.innerHTML),
+          'kortet ble liggende oppe selv om opp-/nedrykket ikke sto for tur');
+        return 'kortet bytter plass riktig';
+      });
+    });
+
+    await kjorTest("Styringspanel", "R9.21 Apne runde X+1 sperres til opp-/nedrykket er ferdig (AVVIK-056)", async function () {
+      return await medSide('styre.html', 3000, function (w, d) {
+        var app = d.getElementById('app');
+        app.innerHTML = '<div id="apneNesteWrap"><div class="card"><button>Åpne runde 2</button></div></div>';
+        w.gjeldendeRunde = 1;
+        w.uavgjortAktiv = false;
+
+        w.opprykkMaSpilles = true;
+        w.oppdaterApneNesteSperre();
+        var sperret = d.getElementById('apneNesteWrap').innerHTML;
+        assert(!/<button/i.test(sperret), 'knappen sto igjen selv om opp-/nedrykket ikke var ferdig');
+        assert(/Opp-\/nedrykksspillet/i.test(sperret), 'ingen forklaring pa hvorfor knappen er borte: ' + sperret.slice(0, 80));
+
+        w.opprykkMaSpilles = false;
+        w.oppdaterApneNesteSperre();
+        assert(/<button/i.test(d.getElementById('apneNesteWrap').innerHTML),
+          'knappen kom ikke tilbake da opp-/nedrykket ble ferdig');
+        return 'sperres og slippes til rett tid';
+      });
+    });
+
+    await kjorTest("Styringspanel", "R9.22 Ingen 'Apne runde 7' etter runde 6 (AVVIK-057)", async function () {
+      await medSide('styre.html', 3000, function (w) {
+        assert(typeof w.apneNesteKort === 'function', 'apneNesteKort mangler');
+        w.gjeldendeRunde = 5;
+        assert(/<button/i.test(w.apneNesteKort()) && /runde 6/i.test(w.apneNesteKort()),
+          'knappen for runde 6 mangler: ' + w.apneNesteKort().slice(0, 80));
+        w.gjeldendeRunde = 6;
+        var k = w.apneNesteKort();
+        assert(!/<button/i.test(k), 'panelet tilbyr fortsatt a apne en runde etter runde 6: ' + k.slice(0, 80));
+        assert(/B-finalen/i.test(k), 'ingen henvisning til B-finalen: ' + k.slice(0, 80));
+        return true;
+      });
+      // Selve backend-sperren testes IKKE herfra: et ekte kall til
+      // apneRunde&runde=7 ville lagt inn en runde 7 i arket hvis sperren
+      // manglet, og denne siden kjores ogsa mot produksjon.
+      return 'panelet tilbyr ingen runde 7';
     });
 
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========

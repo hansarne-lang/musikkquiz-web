@@ -735,11 +735,35 @@ var AVVIK_DATA = [
     tittel: "Storskjermen sa \"Runde 6 av 6\" allerede etter forste runde",
     omrade: "Storskjerm - Kode.gs + stilling.html + hovedskjerm.html",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Generalprove mot produksjon - sjekken \"Stillingen viser sesong og runde\"",
     beskrivelse: "getGjeldendeRunde() leter etter forste rad med status apen i Runder-arket. Finner den ingen apen runde - altsa mellom to runder, som er akkurat nar stillingstabellen star pa storskjermen - faller den tilbake til siste rad i arket, som etter nullstilling alltid er runde 6. Rett etter at runde 1 var ferdigstilt, meldte backend derfor runde 6, og linja fra AVVIK-054 sa \"Sesong 1 - Runde 6 av 6\" til publikum. Malt i generalproven: runde 1 var nettopp poenggitt, og stillingen rapporterte runde 6. Feilen ble bare synlig fordi AVVIK-054 begynte a vise rundenummeret; tallet har vaert galt hele tiden.",
-    losning: "Ny hjelpefunksjon apenRundeNr_() som returnerer nummeret pa den apne runden, og 0 hvis ingen er apen - uten fallback til siste rad. getStandings returnerer den som apenRunde ved siden av runde (runde beholdes uendret, siden andre kall bygger pa den). Bade stilling.html og hovedskjerm.html leser na apenRunde forst og faller tilbake til runde bare hvis feltet mangler, slik at eldre backend fortsatt virker. Star ingen runde apen, viser skjermen \"Mellom rundene\" som for.",
+    losning: "Ny hjelpefunksjon apenRundeNr_() som returnerer nummeret pa den apne runden, og 0 hvis ingen er apen - uten fallback til siste rad. getStandings returnerer den som apenRunde ved siden av runde (runde beholdes uendret, siden andre kall bygger pa den). Bade stilling.html og hovedskjerm.html leser na apenRunde forst og faller tilbake til runde bare hvis feltet mangler, slik at eldre backend fortsatt virker. Star ingen runde apen, viser skjermen \"Mellom rundene\" som for. Distribuert 16.08.2026: Apps Script v89 og GitHub-commit ed01ff5. Verifisert mot produksjon (66/66 gronne, deriblant R9.18 og R9.19).",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-056",
+    tittel: "\"Apne runde X+1\" sto over opp-/nedrykket, som ma spilles forst",
+    omrade: "Styringspanel - styre.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Sporsmal fra quizmaster: hvorfor kommer ikke opp-/nedrykket FOR apne runde?",
+    beskrivelse: "Etter hver av runde 1-5 skal opp-/nedrykksspillet spilles, og forst da kan neste runde apnes. Backend handhever det allerede: apneRunde kaster \"Opp-/nedrykk for runde X ma fullfores for runde X+1 kan apnes\". Panelet viste likevel knappen \"Apne runde X+1\" rett etter at siste sang var poenggitt, med opp-/nedrykkskortet UNDER. Rekkefolgen pa skjermen sa altsa ut som om runden apnes forst og opp-/nedrykket kommer etterpa - stikk i strid med bade kjoreplanen og hva backend tillater. Trykket quizmasteren pa knappen, fikk han en feilmelding midt i sendingen. Noyaktig samme felle som AVVIK-042, bare for opp-/nedrykket i stedet for uavgjort.",
+    losning: "Panelet speiler na backend-regelen. Nytt spor opprykkTopp over rundekortet: sa lenge runden er ferdig poenggitt og opp-/nedrykket for den runden ikke er ferdig, tegnes opp-/nedrykkskortet DER - altsa over \"Apne runde X+1\". Er det ikke pa tur, blir kortet staende nederst som for, slik at det ikke tar oppmerksomhet under selve runden. Samtidig sperres \"Apne runde X+1\" med samme mekanikk som ved uavgjort (data-sperret/data-lagret): knappen erstattes av \"Opp-/nedrykksspillet for runde X ma fullfores for runde X+1 kan apnes\", og kommer tilbake med en gang opp-/nedrykket melder ferdig for riktig runde. Sperren sjekker bade at status er ferdig OG at o.runde stemmer med gjeldende runde, akkurat som backend gjor.",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-057",
+    tittel: "Panelet tilbod \"Apne runde 7\" etter runde 6",
+    omrade: "Styringspanel + Kode.gs",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Gjennomgang av rundeflyten mens AVVIK-056 ble rettet",
+    beskrivelse: "Knappen \"Apne runde X+1\" ble tegnet sa snart alle tre sangene i runden var poenggitt, uten a se pa hvilken runde det var. Etter runde 6 - siste ordinaere runde - sto det derfor \"Apne runde 7\". Backend hadde ingen ovre sperre heller: apneRunde(7) gikk rett til setRundeStatus_, som ikke fant noen rad for runde 7 og la til en ny. Kvelden ville dermed fatt en runde 7 som verken kjoreplanen, poengberegningen eller storskjermens \"Runde X av 6\" kjenner til. Ett feilklikk i det som skulle vaert overgangen til B-finalen holdt.",
+    losning: "Panelet tegner ikke lenger noen apne-knapp nar gjeldende runde er 6; i stedet star det at runde 6 er ferdig og at kvelden gar rett til B-finalen og deretter finalen. apneNeste() avviser ogsa kallet hvis det skulle bli utlost pa annet vis. Backend har fatt en ovre sperre i apneRunde: bare runde 1-6 godtas, alt annet kaster \"Kvelden har seks runder\". Dekket av R9.22.",
     sistOppdatert: "2026-08-16"
   }
 ];

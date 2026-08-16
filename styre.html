@@ -80,6 +80,7 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 
 <div id="bakoverkompatibelt"></div>
 <div id="uavgjort"></div>
+<div id="opprykkTopp"></div>
 <div id="app"><p>Laster...</p></div>
 <div id="opprykk"></div>
 <div id="buzzer"></div>
@@ -251,11 +252,13 @@ function vis(data) {
     html += renderAlleFasit(data.alleFasit.filter(function (r) { return r.runde !== data.runde; }), data.runde);
   }
   document.getElementById('app').innerHTML = html;
-  if (scoreStatus.s1 && scoreStatus.s2 && scoreStatus.s3) {
-    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Åpne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+  rundeFerdigScoret = !!(scoreStatus.s1 && scoreStatus.s2 && scoreStatus.s3);
+  if (rundeFerdigScoret) {
+    document.getElementById('apneNesteWrap').innerHTML = apneNesteKort();
     document.getElementById('apneNesteWrap').removeAttribute('data-sperret');
     oppdaterApneNesteSperre();
   }
+  plasserOpprykkKort();
 }
 
 function markerSangScoret(sangNr) {
@@ -277,9 +280,11 @@ function visSangResultat(sangNr, res) {
   document.getElementById('sangResultat' + sangNr).innerHTML = html;
   markerSangScoret(sangNr);
   if (res.status && res.status.s1 && res.status.s2 && res.status.s3) {
-    document.getElementById('apneNesteWrap').innerHTML = '<div class="card"><button onclick="apneNeste()">Åpne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+    rundeFerdigScoret = true;
+    document.getElementById('apneNesteWrap').innerHTML = apneNesteKort();
     document.getElementById('apneNesteWrap').removeAttribute('data-sperret');
     oppdaterApneNesteSperre();
+    plasserOpprykkKort();
   }
 }
 
@@ -365,7 +370,26 @@ function lagreFasit() {
   }).catch(feil);
 }
 
+// Kvelden har seks runder. Etter runde 6 finnes det ingen runde 7 a apne - da
+// gar det rett til B-finalen. Knappen tok ikke hensyn til det og tilbod "Apne
+// runde 7"; backend ville lydig lagt inn en rad for runde 7 i Runder-arket og
+// dermed dyttet kvelden ut av sin egen struktur (AVVIK-057).
+var SISTE_RUNDE = 6;
+
+function apneNesteKort() {
+  if (gjeldendeRunde >= SISTE_RUNDE) {
+    return '<div class="card"><h2>Runde ' + SISTE_RUNDE + ' er ferdig</h2>' +
+      '<p style="margin:0;">Det er ingen runde ' + (SISTE_RUNDE + 1) + '. Kvelden gar rett til B-finalen, ' +
+      'og deretter finalen - se kortene lenger ned.</p></div>';
+  }
+  return '<div class="card"><button onclick="apneNeste()">Åpne runde ' + (gjeldendeRunde + 1) + '</button></div>';
+}
+
 function apneNeste() {
+  if (gjeldendeRunde >= SISTE_RUNDE) {
+    alert('Runde ' + SISTE_RUNDE + ' er siste runde. Ga videre til B-finalen.');
+    return;
+  }
   apiGet('apneRunde', { runde: gjeldendeRunde + 1 }).then(function () { location.reload(); }).catch(feil);
 }
 
@@ -456,16 +480,27 @@ function visUavgjort(o, plan) {
 // som noe som kom ETTER at runden var apnet (AVVIK-042).
 var uavgjortAktiv = false;
 
+// Samme felle for opp-/nedrykket: etter runde 1-5 ma det spilles FOR neste
+// runde kan apnes (apneRunde kaster feil ellers), men kortet la under
+// "Apne runde X+1" og knappen sto ulast. Da ser rekkefolgen ut som om runden
+// apnes forst (AVVIK-056).
+var opprykkMaSpilles = false;
+var rundeFerdigScoret = false;
+
 function oppdaterApneNesteSperre() {
   var w = document.getElementById('apneNesteWrap');
   if (!w) { return; }
-  if (uavgjortAktiv) {
+  if (uavgjortAktiv || opprykkMaSpilles) {
     if (!w.getAttribute('data-sperret')) {
       w.setAttribute('data-lagret', w.innerHTML);
       w.setAttribute('data-sperret', '1');
     }
-    w.innerHTML = '<div class="card" style="border-color:#ff00ff;"><p style="margin:0;">' +
-      'Uavgjort må avgjøres på lykkehjulet før neste runde kan åpnes - se kortet øverst på siden.</p></div>';
+    w.innerHTML = uavgjortAktiv
+      ? '<div class="card" style="border-color:#ff00ff;"><p style="margin:0;">' +
+        'Uavgjort må avgjøres på lykkehjulet før neste runde kan åpnes - se kortet øverst på siden.</p></div>'
+      : '<div class="card" style="border-color:#ff00ff;"><p style="margin:0;">' +
+        'Opp-/nedrykksspillet for runde ' + gjeldendeRunde + ' må fullføres før runde ' +
+        (gjeldendeRunde + 1) + ' kan åpnes - se kortet øverst på siden.</p></div>';
   } else if (w.getAttribute('data-sperret')) {
     w.innerHTML = w.getAttribute('data-lagret') || '';
     w.removeAttribute('data-sperret');
@@ -503,8 +538,24 @@ function sjekkDivVinner(div) {
 
 function lastOpprykk() {
   apiGet('opprykkStatus').then(visOpprykk).catch(function (e) {
-    document.getElementById('opprykk').innerHTML = '<div class="card"><p style="color:#ff6b6b">Feil (opprykk): ' + (e && e.message ? e.message : e) + '</p></div>';
+    sisteOpprykkHtml = '<div class="card"><p style="color:#ff6b6b">Feil (opprykk): ' + escHtml(e && e.message ? e.message : e) + '</p></div>';
+    plasserOpprykkKort();
   });
+}
+
+// Nar runden er ferdig poenggitt og opp-/nedrykket sto for tur, la kortet
+// likevel UNDER "Apne runde X+1". Da er kortet flyttet opp over rundekortet,
+// slik uavgjort-kortet allerede gjor (AVVIK-042/056). Ellers blir det staende
+// nederst, der det ikke tar oppmerksomhet under selve runden.
+var sisteOpprykkHtml = '';
+
+function plasserOpprykkKort() {
+  var topp = document.getElementById('opprykkTopp');
+  var bunn = document.getElementById('opprykk');
+  if (!topp || !bunn) { return; }
+  var iTopp = opprykkMaSpilles && rundeFerdigScoret;
+  topp.innerHTML = iTopp ? sisteOpprykkHtml : '';
+  bunn.innerHTML = iTopp ? '' : sisteOpprykkHtml;
 }
 
 // Spotify-lenken ligger allerede i kategoriarket (kolonne 5) og folger med i
@@ -631,7 +682,14 @@ function visOpprykk(o) {
     html += '<p style="margin-top:12px;"><b>' + escHtml(nedNavn) + '</b> rykker ned til 2. divisjon. De to andre spiller i 1. divisjon.</p>';
     html += '<p style="font-size:.85em;opacity:.7;">Resultatet står på storskjermen i 30 sekunder.</p></div>';
   }
-  document.getElementById('opprykk').innerHTML = html;
+  // Backend nekter a apne runde X+1 for opp-/nedrykket for runde X er ferdig
+  // (apneRunde kaster feil). Speil den regelen her, slik at knappen ikke
+  // inviterer til et klikk som uansett feiler (AVVIK-056).
+  opprykkMaSpilles = (gjeldendeRunde >= 1 && gjeldendeRunde <= 5 &&
+                      !(o.status === 'ferdig' && Number(o.runde) === Number(gjeldendeRunde)));
+  sisteOpprykkHtml = html;
+  plasserOpprykkKort();
+  oppdaterApneNesteSperre();
 }
 
 function startOpp() {
