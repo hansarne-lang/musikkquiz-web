@@ -846,6 +846,24 @@ async function kjorAlle() {
       });
     });
 
+    await kjorTest("Storskjerm", "R9.26 Poeng kan registreres direkte pa trekningssiden", async function () {
+      return await medSide('trekning.html', 3000, function (w, d) {
+        assert(d.getElementById('katSvar'), 'katSvar mangler i trekning.html');
+        assert(typeof w.tegnSvarknapper === 'function', 'tegnSvarknapper mangler');
+        assert(typeof w.registrerSvar === 'function', 'registrerSvar mangler');
+        assert(typeof w.hoppOverSangHer === 'function', 'hoppOverSangHer mangler');
+        harMerker(w, 'registrerSvar', ['registrerOpprykkPoeng', 'laasSvarknapper']);
+        harMerker(w, 'hoppOverSangHer', ['hoppOverSang', 'laasSvarknapper']);
+        // i omspill skal bare lagene som star likt kunne fa poeng
+        harMerker(w, 'tegnSvarknapper', ['omspillLag']);
+        // og heller ikke her skal fasiten sta
+        var kilde = w.tegnSvarknapper.toString();
+        assert(kilde.indexOf('.artist') === -1 && kilde.indexOf('.latt') === -1,
+          'svarknappene skriver ut artist eller tittel - det spoiler for publikum');
+        return 'svarknapper uten spoiler';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

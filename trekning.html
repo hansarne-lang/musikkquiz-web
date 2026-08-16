@@ -150,6 +150,7 @@ button:disabled{background:#666;color:#ccc;cursor:default;}
 <p id="katSang"></p>
 <div id="katTavle"></div>
 <div id="katSpotify" style="text-align:center;margin:14px 0;"></div>
+<div id="katSvar" style="text-align:center;margin:14px 0;"></div>
 <p id="katFot"></p>
 </div>
 </div>
@@ -602,6 +603,69 @@ function tegnSpotifyKnapp(o, ferdig) {
     '&#9654;&nbsp; Spill av ' + escHtml(nr) + ' i Spotify</a>';
 }
 
+// Poengene ble registrert i styringspanelet. Star trekningssiden i et eget
+// vindu, skal de kunne registreres her ogsa - uten a bytte fane midt i en
+// sang. Kun lagnavn, aldri fasit: siden kan sta pa storskjermen.
+function tegnSvarknapper(o, ferdig) {
+  var boks = document.getElementById('katSvar');
+  if (!boks) { return; }
+  if (ferdig || (o.status !== 'pagar' && o.status !== 'omspill')) { boks.innerHTML = ''; return; }
+
+  var alle = [o.lagA, o.lagB, o.lagC].filter(function (l) { return l && l.id !== ''; });
+  var deltakere = alle;
+  if (o.status === 'omspill') {
+    var iOmspill = (o.omspillLag || []).map(String);
+    deltakere = alle.filter(function (l) { return iOmspill.indexOf(String(l.id)) !== -1; });
+  }
+  if (!deltakere.length) { boks.innerHTML = ''; return; }
+
+  var h = '<p style="margin:0 0 8px;font-size:1.05em;">Hvem svarte riktig?</p>';
+  deltakere.forEach(function (l) {
+    h += '<button type="button" class="svarknapp" data-lag="' + escHtml(l.id) + '" ' +
+      'style="margin:4px 6px;">' + escHtml(l.navn) + '</button>';
+  });
+  h += '<button type="button" class="hoppknapp" style="margin:4px 6px;opacity:.8;">' +
+    (o.status === 'omspill' ? 'Ingen riktig - ny omspillsang' : 'Ingen riktig / hopp over') + '</button>';
+  boks.innerHTML = h;
+
+  var knapper = boks.querySelectorAll('.svarknapp');
+  for (var i = 0; i < knapper.length; i++) {
+    knapper[i].onclick = function () { registrerSvar(this.getAttribute('data-lag'), this); };
+  }
+  var hopp = boks.querySelector('.hoppknapp');
+  if (hopp) { hopp.onclick = function () { hoppOverSangHer(this); }; }
+}
+
+// Dobbeltklikk pa en spilleknapp ville gitt to poeng for samme sang, sa alle
+// knappene lases mens kallet er ute.
+function laasSvarknapper(laast, tekstPa) {
+  var boks = document.getElementById('katSvar');
+  if (!boks) { return; }
+  var alle = boks.querySelectorAll('button');
+  for (var i = 0; i < alle.length; i++) { alle[i].disabled = laast; }
+  if (tekstPa) { tekstPa.textContent = 'Sender...'; }
+}
+
+function registrerSvar(lagId, knapp) {
+  laasSvarknapper(true, knapp);
+  apiGet('registrerOpprykkPoeng', { lagId: lagId }).then(function (o) {
+    tegnKategoriTavle(o, o.status === 'ferdig');
+  }).catch(function (e) {
+    laasSvarknapper(false);
+    alert('Klarte ikke a registrere poeng: ' + (e && e.message ? e.message : e));
+  });
+}
+
+function hoppOverSangHer(knapp) {
+  laasSvarknapper(true, knapp);
+  apiGet('hoppOverSang').then(function (o) {
+    tegnKategoriTavle(o, o.status === 'ferdig');
+  }).catch(function (e) {
+    laasSvarknapper(false);
+    alert('Klarte ikke a hoppe over sangen: ' + (e && e.message ? e.message : e));
+  });
+}
+
 function tegnKategoriTavle(o, ferdig) {
   var lag = katLagListe(o);
   var maks = Math.max(lag[0].poeng, lag[1].poeng, lag[2].poeng);
@@ -641,6 +705,7 @@ function tegnKategoriTavle(o, ferdig) {
   });
   document.getElementById('katTavle').innerHTML = h;
   tegnSpotifyKnapp(o, ferdig);
+  tegnSvarknapper(o, ferdig);
 
   var fot = '';
   if (ferdig) {
