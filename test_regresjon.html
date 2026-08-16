@@ -688,6 +688,38 @@ async function kjorAlle() {
       return o.antall + ' sanger, ' + o.brukt + ' brukt';
     });
 
+    await kjorTest("Backend", "R9.18 stilling melder apenRunde, ikke siste rad (AVVIK-055)", async function () {
+      var st = await apiGet('stilling');
+      assert(st && typeof st.apenRunde !== 'undefined',
+        'stilling mangler apenRunde - da faller storskjermen tilbake til runde, som er 6 mellom rundene');
+      var r = await apiGet('styreData');
+      var apen = (r && r.status === 'apen');
+      if (!apen) {
+        assert(Number(st.apenRunde) === 0,
+          'ingen runde er apen, men apenRunde er ' + st.apenRunde + ' (skal vaere 0)');
+        return 'ingen apen runde -> apenRunde 0';
+      }
+      assert(Number(st.apenRunde) > 0, 'runden er apen, men apenRunde er 0');
+      return 'apen runde ' + st.apenRunde;
+    });
+
+    await kjorTest("Storskjerm", "R9.19 Skjermene foretrekker apenRunde (AVVIK-055)", async function () {
+      await medSide('stilling.html', 2500, function (w) {
+        assert(typeof w.sesongOgRunde === 'function', 'sesongOgRunde mangler i stilling.html');
+        assert(/Mellom rundene/.test(w.sesongOgRunde({ sesong: 1, runde: 6, apenRunde: 0 })),
+          'apenRunde 0 ble ikke foretrukket - skjermen ville sagt Runde 6 av 6 mellom rundene');
+        assert(/Runde 2 av 6/.test(w.sesongOgRunde({ sesong: 1, runde: 6, apenRunde: 2 })),
+          'apenRunde 2 ble ikke brukt');
+        assert(/Runde 4 av 6/.test(w.sesongOgRunde({ sesong: 1, runde: 4 })),
+          'fallback til runde virker ikke nar apenRunde mangler');
+        return true;
+      });
+      return await medSide('hovedskjerm.html', 3000, function (w) {
+        harMerker(w, 'visStilling', ['apenRunde']);
+        return 'begge sider foretrekker apenRunde';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

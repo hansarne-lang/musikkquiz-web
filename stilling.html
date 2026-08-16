@@ -77,9 +77,10 @@ function last() {
 // Er runden 0, staar vi mellom to runder - da er opp-/nedrykket i gang.
 function sesongOgRunde(data) {
   var s = data.sesong ? 'Sesong ' + escHtml(data.sesong) : '';
-  var r = Number(data.runde);
+  // apenRunde er 0 nar ingen runde er apen; runde faller tilbake til siste rad
+  var r = Number(data.apenRunde !== undefined ? data.apenRunde : data.runde);
   var rt = (r >= 1 && r <= 6) ? 'Runde ' + r + ' av 6'
-         : (r === 0 ? 'Mellom rundene' : 'Runde ' + escHtml(data.runde));
+         : (r === 0 ? 'Mellom rundene' : 'Runde ' + escHtml(r));
   return (s ? s + ' \u00b7 ' : '') + rt;
 }
 

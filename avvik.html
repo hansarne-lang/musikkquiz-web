@@ -711,7 +711,7 @@ var AVVIK_DATA = [
     tittel: "Uavgjort i kategoriomgangen ble avgjort av quizmasteren, ikke av spillet",
     omrade: "Opp-/nedrykk - Kode.gs + styre.html + storskjermene",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-15",
     funnetAv: "Sporsmal fra quizmaster om hva som skjer nar flere star likt",
     beskrivelse: "Finalene og B-finalen oppdager uavgjort selv og sender det til lykkehjulet. Kategoriomgangen i opp-/nedrykket gjorde ikke det: fullforOpprykk_ satte status til uavgjort, og sa matte quizmasteren klikke selv hvilket lag som skulle rykke ned. Det er akkurat der det svir mest, siden et lag faktisk degraderes, og avgjorelsen la pa en person foran salen uten noen mekanisme bak. Tilfellet er ikke sjeldent heller: to lag deler bunnplassen, eller alle tre star likt - typisk 0-0-0 hvis ingen svarer riktig pa noen av de fem sangene.",
@@ -723,12 +723,24 @@ var AVVIK_DATA = [
     tittel: "Stillingstabellen oppga verken sesong eller runde",
     omrade: "Storskjerm - stilling.html + hovedskjerm.html + Kode.gs",
     alvorlighet: "lav",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-15",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Stillingssiden viste en liten linje med rundenummeret og ellers bare de to divisjonstabellene. Sesongen fantes i backend (AKTIV_SESONG, brukt av jokeren og lagret i historikken), men ble aldri vist noe sted utenom historikksiden. Publikum kunne altsa ikke se hvilken sesong de var i, og pa storskjermen sto det ikke engang hvilken runde.",
-    losning: "getStandings returnerer na sesong sammen med runde (runde la der fra for, men ble ikke brukt pa storskjermen). Bade stilling.html og hovedskjermens stillingsvisning har fatt en linje som viser \"Sesong 3 - Runde 4 av 6\". Mellom to runder, nar backend melder runde 0, star det \"Mellom rundene\" i stedet for et misvisende tall.",
-    sistOppdatert: "2026-08-15"
+    losning: "getStandings returnerer na sesong sammen med runde (runde la der fra for, men ble ikke brukt pa storskjermen). Bade stilling.html og hovedskjermens stillingsvisning har fatt en linje som viser \"Sesong 3 - Runde 4 av 6\". Mellom to runder, nar backend melder runde 0, star det \"Mellom rundene\" i stedet for et misvisende tall. Verifisert i produksjon 16.08.2026.",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-055",
+    tittel: "Storskjermen sa \"Runde 6 av 6\" allerede etter forste runde",
+    omrade: "Storskjerm - Kode.gs + stilling.html + hovedskjerm.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Generalprove mot produksjon - sjekken \"Stillingen viser sesong og runde\"",
+    beskrivelse: "getGjeldendeRunde() leter etter forste rad med status apen i Runder-arket. Finner den ingen apen runde - altsa mellom to runder, som er akkurat nar stillingstabellen star pa storskjermen - faller den tilbake til siste rad i arket, som etter nullstilling alltid er runde 6. Rett etter at runde 1 var ferdigstilt, meldte backend derfor runde 6, og linja fra AVVIK-054 sa \"Sesong 1 - Runde 6 av 6\" til publikum. Malt i generalproven: runde 1 var nettopp poenggitt, og stillingen rapporterte runde 6. Feilen ble bare synlig fordi AVVIK-054 begynte a vise rundenummeret; tallet har vaert galt hele tiden.",
+    losning: "Ny hjelpefunksjon apenRundeNr_() som returnerer nummeret pa den apne runden, og 0 hvis ingen er apen - uten fallback til siste rad. getStandings returnerer den som apenRunde ved siden av runde (runde beholdes uendret, siden andre kall bygger pa den). Bade stilling.html og hovedskjerm.html leser na apenRunde forst og faller tilbake til runde bare hvis feltet mangler, slik at eldre backend fortsatt virker. Star ingen runde apen, viser skjermen \"Mellom rundene\" som for.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 

@@ -396,7 +396,8 @@ function lastStilling() {
 function visStilling(data) {
   var el = document.getElementById('stillingSesong');
   if (el) {
-    var r = Number(data.runde);
+    // apenRunde er 0 mellom to runder (AVVIK-055)
+    var r = Number(data.apenRunde !== undefined ? data.apenRunde : data.runde);
     var rt = (r >= 1 && r <= 6) ? 'Runde ' + r + ' av 6'
            : (r === 0 ? 'Mellom rundene' : 'Runde ' + data.runde);
     el.textContent = (data.sesong ? 'Sesong ' + data.sesong + ' \u00b7 ' : '') + rt;
