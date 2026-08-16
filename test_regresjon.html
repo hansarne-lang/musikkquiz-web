@@ -188,7 +188,7 @@ var SIDER = [
   { fil: 'lag.html', globaler: ['escHtml', 'sjekkBuzzerModus', 'visBuzzerLag'], vent: 2500 },
   { fil: 'registrer.html', globaler: ['escHtml', 'meldPa', 'init'], vent: 2500 },
   { fil: 'stilling.html', globaler: ['escHtml', 'vis'], vent: 2500 },
-  { fil: 'trekning.html', globaler: ['escHtml', 'visStatus', 'buildWheel'], vent: 3000 },
+  
   { fil: 'hovedskjerm.html', globaler: ['escHtml', 'visStatus', 'visVinnerOverlay'], vent: 3000 },
   { fil: 'historikk.html', globaler: ['escHtml', 'sortertPaaPoeng'], vent: 2500 },
   { fil: 'buzzertest.html', globaler: ['escHtml', 'visBuzzerFeil'], vent: 2500 },
@@ -228,7 +228,7 @@ async function kjorAlle() {
       { fil: 'stilling.html', avvik: 'AVVIK-012', vent: 2000, navn: 'escHtml' },
       { fil: 'lag.html', avvik: 'AVVIK-012', vent: 2000, navn: 'escHtml' },
       { fil: 'registrer.html', avvik: 'AVVIK-012', vent: 2000, navn: 'escHtml' },
-      { fil: 'trekning.html', avvik: 'AVVIK-030', vent: 2500, navn: 'escHtml' },
+      { fil: 'styre.html', avvik: 'AVVIK-030', vent: 3500, navn: 'escHtml' },
       { fil: 'buzzertest.html', avvik: 'AVVIK-034', vent: 2000, navn: 'escHtml' },
       { fil: 'bilder.html', avvik: 'AVVIK-035', vent: 2500, navn: 'escHtml' },
       { fil: 'avvik.html', avvik: 'AVVIK-028', vent: 1500, navn: 'e' }
@@ -252,8 +252,8 @@ async function kjorAlle() {
       });
     });
 
-    await kjorTest("Escaping", "R2.10 trekning.html escaper laget som trekker (AVVIK-030)", async function () {
-      return await medSide('trekning.html', 3000, function (w) {
+    await kjorTest("Escaping", "R2.10 styringspanelet escaper laget som trekker (AVVIK-030)", async function () {
+      return await medSide('styre.html', 4000, function (w) {
         harMerker(w, 'visStatus', ['escHtml']);
         return 'visStatus escaper';
       });
@@ -387,7 +387,7 @@ async function kjorAlle() {
         harMerker(w, 'lastKlubbLogoMap', ['KLUBB_LOGO_MAP = null']);
         return 'hovedskjerm';
       }));
-      res.push(await medSide('trekning.html', 3000, function (w) {
+      res.push(await medSide('styre.html', 4000, function (w) {
         harMerker(w, 'lastKlubbLogoMap', ['KLUBB_LOGO_MAP = null']);
         return 'trekning';
       }));
@@ -469,9 +469,9 @@ async function kjorAlle() {
     });
 
     await kjorTest("Lykkehjul", "R8.5 Storskjermen viser alle omgangene for forste snurr (AVVIK-044)", async function () {
-      return await medSide('trekning.html', 3000, function (w, d) {
-        assert(d.getElementById('planStripe'), "planStripe mangler i trekning.html");
-        assert(d.getElementById('planTittel'), "planTittel mangler i trekning.html");
+      return await medSide('styre.html', 4000, function (w, d) {
+        assert(d.getElementById('planStripe'), "planStripe mangler i styre.html");
+        assert(d.getElementById('planTittel'), "planTittel mangler i styre.html");
         harMerker(w, 'byggPlanOmganger', ['trengerAntall', 'lost', 'valgt']);
         harMerker(w, 'tegnPlanStripe', ['antallTrekninger', 'planPille']);
         harMerker(w, 'initUavgjort', ['uavgjortPlan']);
@@ -480,7 +480,7 @@ async function kjorAlle() {
     });
 
     await kjorTest("Lykkehjul", "R8.6 Stripa fylles inn per snurr og overlever polling (AVVIK-044)", async function () {
-      return await medSide('trekning.html', 3000, function (w) {
+      return await medSide('styre.html', 4000, function (w) {
         harMerker(w, 'merkNestePlanOmgang', ['lokaleVinnere']);
         harMerker(w, 'spinToNextWinner', ['merkNestePlanOmgang']);
         // uten radKey-sjekken nullstiller pollingen stripa rett etter landing
@@ -584,7 +584,7 @@ async function kjorAlle() {
     });
 
     await kjorTest("Lykkehjul", "R9.8 Hjulet gar videre til neste trekning selv (AVVIK-049)", async function () {
-      return await medSide('trekning.html', 3000, function (w) {
+      return await medSide('styre.html', 4000, function (w) {
         assert(typeof w.gaTilNesteTrekning === 'function', "gaTilNesteTrekning mangler");
         harMerker(w, 'gaTilNesteTrekning', ['nesteUavgjort', 'autoSnurrNeste']);
         harMerker(w, 'finishSpin', ['gaTilNesteTrekning', 'speilerAndres']);
@@ -593,7 +593,7 @@ async function kjorAlle() {
     });
 
     await kjorTest("Storskjerm", "R9.9 Storskjermene har poengtavle for kategorispillet (AVVIK-050)", async function () {
-      var sider = ['hovedskjerm.html', 'trekning.html'];
+      var sider = ['hovedskjerm.html', 'styre.html'];
       for (var i = 0; i < sider.length; i++) {
         await medSide(sider[i], 3000, function (w, d) {
           assert(d.getElementById('katWrap'), 'katWrap mangler i ' + sider[i]);
@@ -630,7 +630,7 @@ async function kjorAlle() {
     });
 
     await kjorTest("Lykkehjul", "R9.12 Egen trekning speiles ikke om igjen (AVVIK-052)", async function () {
-      return await medSide('trekning.html', 3000, function (w) {
+      return await medSide('styre.html', 4000, function (w) {
         // lokaleVinnere ma fylles for lokken, ellers tror siden at noen andre trakk
         var kode = String(w.merkNestePlanOmgang);
         var iPush = kode.indexOf('lokaleVinnere.push');
@@ -650,7 +650,7 @@ async function kjorAlle() {
     });
 
     await kjorTest("Storskjerm", "R9.14 Storskjermene viser omspill (AVVIK-053)", async function () {
-      var sider = ['hovedskjerm.html', 'trekning.html'];
+      var sider = ['hovedskjerm.html', 'styre.html'];
       for (var i = 0; i < sider.length; i++) {
         await medSide(sider[i], 3000, function (w) {
           harMerker(w, 'tegnKategoriTavle', ['omspill', 'I OMSPILL']);
@@ -811,12 +811,12 @@ async function kjorAlle() {
       return 'siste spilte runde: ' + sd.runde;
     });
 
-    await kjorTest("Storskjerm", "R9.24 Kategorien kan velges direkte pa trekningssiden", async function () {
-      await medSide('trekning.html', 3000, function (w) {
-        assert(typeof w.velgKat === 'function', 'velgKat mangler i trekning.html');
+    await kjorTest("Storskjerm", "R9.24 Kategorien kan velges direkte i trekningsseksjonen", async function () {
+      await medSide('styre.html', 4000, function (w) {
+        assert(typeof w.velgKatTrekning === 'function', 'velgKatTrekning mangler i styre.html');
         assert(typeof w.gjorVinnerfliserKlikkbare === 'function', 'gjorVinnerfliserKlikkbare mangler');
         assert(typeof w.visValgtKategori === 'function', 'visValgtKategori mangler');
-        harMerker(w, 'velgKat', ['velgKategori', 'confirm', 'eliminated']);
+        harMerker(w, 'velgKatTrekning', ['velgKategori', 'confirm', 'eliminated']);
         // laget som velger ma vaere kjent alt i 'trekker', ellers er flisene
         // klikkbare uten at klikket kan sendes noe sted
         harMerker(w, 'visStatus', ['velgLagId']);
@@ -829,9 +829,9 @@ async function kjorAlle() {
       });
     });
 
-    await kjorTest("Storskjerm", "R9.25 Trekningssiden har spilleknapp uten a rope ut fasiten", async function () {
-      return await medSide('trekning.html', 3000, function (w, d) {
-        assert(d.getElementById('katSpotify'), 'katSpotify mangler i trekning.html');
+    await kjorTest("Storskjerm", "R9.25 Trekningsseksjonen har spilleknapp uten a rope ut fasiten", async function () {
+      return await medSide('styre.html', 4000, function (w, d) {
+        assert(d.getElementById('katSpotify'), 'katSpotify mangler i styre.html');
         assert(typeof w.spotifyUrl === 'function', 'spotifyUrl mangler');
         assert(typeof w.tegnSpotifyKnapp === 'function', 'tegnSpotifyKnapp mangler');
         assert(w.spotifyUrl('javascript:alert(1)') === '', 'javascript:-adresse ble godtatt som lenke');
@@ -847,8 +847,8 @@ async function kjorAlle() {
     });
 
     await kjorTest("Storskjerm", "R9.26 Poeng kan registreres direkte pa trekningssiden", async function () {
-      return await medSide('trekning.html', 3000, function (w, d) {
-        assert(d.getElementById('katSvar'), 'katSvar mangler i trekning.html');
+      return await medSide('styre.html', 4000, function (w, d) {
+        assert(d.getElementById('katSvar'), 'katSvar mangler i styre.html');
         assert(typeof w.tegnSvarknapper === 'function', 'tegnSvarknapper mangler');
         assert(typeof w.registrerSvar === 'function', 'registrerSvar mangler');
         assert(typeof w.hoppOverSangHer === 'function', 'hoppOverSangHer mangler');

@@ -51,6 +51,111 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 .fase[open] > summary{border-bottom:1px solid var(--m-kant,#2f3542);border-radius:10px 10px 0 0;}
 .faseInnhold{padding:14px 16px 4px;}
 .faseInnhold > .card:last-child{margin-bottom:12px;}
+
+/* --------------------------------------------------------------------------
+   Trekning, buzzer-visning, kategorispill og lykkehjul (AVVIK-067).
+   Dette var trekning.html. Na er det en egen seksjon her, slik at hele
+   kvelden styres fra EN side. Reglene er tatt med som de var - de eneste
+   endringene er at .grid het det samme som rutenettet i styringspanelet
+   (heter .trGrid her), og at fullskjerm-overleggene for finalevinner og
+   bommert er tatt bort: de hoerer hjemme paa storskjermen, og et overlegg
+   over kontrollene ville sperret panelet midt i kvelden.
+   -------------------------------------------------------------------------- */
+#trekningsPanel h1{font-size:1.25em;}
+#trekningsPanel h1#katTittel{font-size:1.8em;background:none;border:0;padding:0;display:block;}
+.trGrid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:28px 0;}
+.tile{background:rgba(0,255,255,0.15);border-radius:0;padding:14px 18px;font-size:1.05em;font-weight:bold;transition:all .45s ease;}
+.tile.pending{animation:pulse 1.1s infinite;}
+.tile.eliminated{opacity:.12;transform:scale(.8);text-decoration:line-through;filter:grayscale(1);animation:none;}
+.tile.winner{background:linear-gradient(135deg,#00ff00,#ffff00);transform:scale(1.18);box-shadow:none;animation:none;}
+/* Kategorien velges na direkte her, ikke bare fra styringspanelet. */
+.tile.klikkbar{cursor:pointer;}
+.tile.klikkbar:hover{outline:4px solid #ffffff;outline-offset:3px;}
+.tile.valgt{background:linear-gradient(135deg,#00ff00,#00ffff);transform:scale(1.35);outline:4px solid #ffffff;}
+.velghint{text-align:center;font-size:1.1em;margin-top:10px;color:#ffff00;}
+@keyframes pulse{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
+.confetti{position:fixed;top:-12px;width:8px;height:8px;border-radius:0;animation:fall linear forwards;z-index:999;}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3;}}
+#final{font-size:1.6em;text-align:center;margin-top:20px;}
+#wheelStage{position:relative;width:360px;height:360px;margin:20px auto;}
+#wheelBulbRing{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;}
+.bulb{position:absolute;width:12px;height:12px;border-radius:50%;background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;transform:translate(-50%,-50%);}
+.bulb.lit{background:#fff6c8;box-shadow:0 0 10px 3px #ffe066,0 0 3px #fff;}
+@keyframes bulbChase{0%,100%{background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;}15%{background:#fff6c8;box-shadow:0 0 10px 3px #ffe066,0 0 3px #fff;}30%{background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;}}
+.bulb.chase{animation:bulbChase 1s linear infinite;}
+@keyframes bulbStrobe{0%,100%{background:#332900;box-shadow:0 0 4px rgba(0,0,0,.6) inset;}50%{background:#ffffff;box-shadow:0 0 18px 6px #ffffff;}}
+.bulb.strobe{animation:bulbStrobe .18s steps(1) 6;}
+#wheelPointer{position:absolute;top:-16px;left:50%;width:0;height:0;transform-origin:50% 8px;transform:translateX(-50%);border-left:26px solid transparent;border-right:26px solid transparent;border-top:44px solid #ffff00;z-index:6;filter:drop-shadow(0 0 8px #ffff00) drop-shadow(0 2px 5px #000);animation:pointerIdle 1.6s ease-in-out infinite;}
+@keyframes pointerIdle{0%,100%{transform:translateX(-50%) rotate(0deg);}50%{transform:translateX(-50%) rotate(-6deg);}}
+#wheelPointer.bump{animation:pointerBump .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pointerBump{0%{transform:translateX(-50%) rotate(0deg);}30%{transform:translateX(-50%) rotate(20deg);}60%{transform:translateX(-50%) rotate(-12deg);}100%{transform:translateX(-50%) rotate(0deg);}}
+#wheelFlash{position:absolute;top:-8px;left:50%;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,0) 70%);opacity:0;pointer-events:none;z-index:5;}
+#wheelFlash.go{animation:flashPop .6s ease-out;}
+@keyframes flashPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3);}25%{opacity:1;transform:translate(-50%,-50%) scale(1.5);}100%{opacity:0;transform:translate(-50%,-50%) scale(2.4);}}
+#wheelSvg{width:360px;height:360px;border-radius:50%;border:6px solid #00ffff;background:#000;transform:rotate(0deg);box-shadow:0 0 0 4px #000,0 0 30px rgba(0,255,255,.4);}
+#wheelStage.landed{animation:stagePulse .5s ease-out;}
+@keyframes stagePulse{0%{transform:scale(1);}30%{transform:scale(1.045);}100%{transform:scale(1);}}
+#wheelHub{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,#ffff00 60%,#c9a600 100%);border:3px solid #000;z-index:4;box-shadow:0 0 10px #ffff00;}
+#uavgjortResultat div{margin:6px 0;color:#00ff00;}
+/* ---- Poengtavle for kategorispillet i opp-/nedrykket (AVVIK-050) ---- */
+#katWrap{text-align:center;}
+#katTittel{color:#ffff00;font-size:2.4em;text-transform:uppercase;letter-spacing:2px;margin:0 0 6px;}
+#katSang{color:#00ffff;font-size:1.4em;margin:0 0 22px;letter-spacing:2px;}
+#katTavle{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;}
+.katLag{border:4px solid #00ffff;background:#000;padding:22px 26px;min-width:230px;}
+.katLag .navn{font-size:1.5em;color:#ffffff;margin-bottom:10px;word-break:break-word;}
+.katLag .poeng{font-size:4.2em;line-height:1;color:#00ffff;font-weight:700;}
+.katLag .merke{font-size:1em;letter-spacing:2px;margin-top:10px;min-height:1.2em;}
+.katLag.leder{border-color:#00ff00;}
+.katLag.leder .poeng{color:#00ff00;}
+.katLag.leder .merke{color:#00ff00;}
+.katLag.vant{border-color:#ffff00;background:#161600;}
+.katLag.vant .poeng{color:#ffff00;}
+.katLag.vant .merke{color:#ffff00;}
+.katLag.ned{border-color:#ff2f4d;background:#160000;}
+.katLag.ned .poeng{color:#ff2f4d;}
+.katLag.ned .merke{color:#ff2f4d;}
+.katLag.omspill{border-color:#ff00ff;}
+.katLag.omspill .poeng{color:#ff00ff;}
+.katLag.omspill .merke{color:#ff00ff;}
+.katLag.pling{animation:katPling .8s ease-out;}
+@keyframes katPling{0%{transform:scale(1);}35%{transform:scale(1.14);}100%{transform:scale(1);}}
+#katFot{margin-top:26px;font-size:1.5em;color:#ffffff;}
+
+/* Planstripe: publikum skal se hvor mange omganger hjulet skal snurre FOR
+   den forste snurren, og resultatene fylles inn underveis. */
+#planStripe{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}
+.planPille{border:3px solid #444;background:#000;padding:8px 14px;min-width:132px;text-align:center;}
+.planPille .pnr{font-size:.8em;letter-spacing:1px;color:#888;text-transform:uppercase;}
+.planPille .pnavn{font-size:1.05em;margin-top:4px;color:#555;}
+.planPille.ferdig{border-color:#00ff00;}
+.planPille.ferdig .pnr{color:#00ff00;}
+.planPille.ferdig .pnavn{color:#00ff00;font-weight:700;}
+.planPille.na{border-color:#ff00ff;animation:planPuls 1.1s ease-in-out infinite;}
+.planPille.na .pnr{color:#ff00ff;}
+.planPille.na .pnavn{color:#ff00ff;}
+@keyframes planPuls{0%,100%{box-shadow:0 0 0 rgba(255,0,255,0);}50%{box-shadow:0 0 18px rgba(255,0,255,.75);}}
+#planTittel{font-size:1.05em;color:#00ffff;margin-top:6px;}
+/* Enarmet banditt (AVVIK-066): ett trekk i spaken, og alle avgjorelsene faller
+   pa plass etter hverandre. Erstatter hjulet nar trekningen bruker felles hjul. */
+#bandittWrap{display:none;}
+.bandittRam{display:inline-block;background:#1a0033;border:6px solid #ffcc00;
+  border-radius:14px;padding:22px 26px;box-shadow:0 0 0 4px #7a1fa2, 0 10px 30px rgba(0,0,0,.6);}
+.bandittHjul{display:flex;gap:14px;justify-content:center;align-items:flex-start;}
+.bandittKol{text-align:center;}
+.bandittMerke{font-size:.85em;color:#ffcc00;margin-bottom:6px;white-space:nowrap;letter-spacing:1px;}
+.reel{width:230px;height:120px;overflow:hidden;background:#000;border:4px solid #ffcc00;
+  border-radius:8px;position:relative;}
+.reel .strip{position:absolute;left:0;right:0;top:0;}
+.reel .navn{height:120px;display:flex;align-items:center;justify-content:center;
+  font-size:1.25em;font-weight:bold;color:#fff;padding:0 8px;text-align:center;word-break:break-word;}
+.reel.stoppet{border-color:#00ff00;box-shadow:0 0 22px rgba(0,255,0,.6);}
+.reel.stoppet .navn{color:#00ff00;}
+.bandittSpak{margin-top:18px;}
+#spakBtn{background:#ff0000;color:#fff;border:4px solid #ffcc00;font-size:1.2em;
+  padding:16px 34px;border-radius:10px;cursor:pointer;font-weight:bold;letter-spacing:2px;}
+#spakBtn:disabled{background:#552222;color:#997777;cursor:default;}
+@media (max-width:1200px){.reel{width:160px;height:96px;}.reel .navn{height:96px;font-size:1em;}}
 </style>
 <link rel="stylesheet" href="meny.css">
 <script src="meny.js" defer></script>
@@ -122,6 +227,74 @@ summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 <div id="opprykk"></div>
 <div id="buzzer"></div>
 <div id="bommert"></div>
+</div>
+</details>
+
+
+<!-- Trekning og lykkehjul (AVVIK-067): egen seksjon her i stedet for en egen
+     fane. Merket NAA i overskriften nar noe faktisk skjer, slik at seksjonen
+     ikke blir et gjemmested. -->
+<details class="fase" id="faseTrekning" ontoggle="trekningsseksjonByttet()">
+<summary>Trekning &amp; hjul <span class="hint">kategoritrekning, buzzer, lykkehjul</span><span class="naa" style="display:none;">N&Aring;</span></summary>
+<div class="faseInnhold">
+<div id="trekningsPanel">
+<div id="trekningWrap">
+<h1>Kategori-trekning</h1>
+<div class="card" id="trekkKontroll">
+<button id="startBtn" onclick="start()" disabled>Start trekning</button>
+<button id="nullstillBtn" onclick="nullstillTrekning()" style="background:#ff0000;color:#fff;">Nullstill opp-/nedrykk</button>
+<p class="small" id="trekkInfo"></p>
+</div>
+<div id="trApp"><p>Laster...</p></div>
+<div class="card">
+<h2>Kategorier</h2>
+<p style="font-size:.85em;opacity:.7">Kryss av kategorier som er brukt for å utelate dem fra trekningen.</p>
+<div id="katliste"><p>Laster...</p></div>
+</div>
+</div>
+
+<div id="buzzerWrap" style="display:none;text-align:center;">
+<div id="buzzerLedig" class="card" style="padding:60px 20px;"><h1 style="font-size:2.5em;color:#888;">Venter...</h1></div>
+<div id="buzzerApen" class="card" style="display:none;padding:60px 20px;background:#2ecc71;"><h1 style="font-size:4em;color:#fff;">BUZZER ÅPEN!</h1></div>
+<div id="buzzerLukket" class="card" style="display:none;padding:60px 20px;background:#ff0000;">
+<h2 style="font-size:2em;color:#fff;margin-bottom:10px;">Først til å trykke:</h2>
+<h1 id="buzzerVinnernavn" style="font-size:4.5em;color:#fff;"></h1>
+</div>
+</div>
+
+<div id="katWrap" style="display:none;">
+<div class="card">
+<h1 id="katTittel"></h1>
+<p id="katSang"></p>
+<div id="katTavle"></div>
+<div id="katSpotify" style="text-align:center;margin:14px 0;"></div>
+<div id="katSvar" style="text-align:center;margin:14px 0;"></div>
+<p id="katFot"></p>
+</div>
+</div>
+<div id="uavgjortWrap" style="display:none;text-align:center;">
+<div class="card">
+<h1 style="color:#ff00ff;">LYKKEHJULET</h1>
+<p id="uavgjortLabel" style="font-size:1.2em;"></p>
+<p id="planTittel"></p>
+<div id="planStripe"></div>
+</div>
+<div class="card" style="padding:40px 20px;">
+<div id="bandittWrap"></div>
+<div id="wheelStage">
+<div id="wheelBulbRing"></div>
+<div id="wheelPointer"></div>
+<div id="wheelFlash"></div>
+<div id="wheelHub"></div>
+<svg id="wheelSvg" viewBox="0 0 300 300"></svg>
+</div>
+<div style="margin-top:10px;">
+<button id="spinBtn" onclick="spinWheel()">Drei hjulet!</button>
+</div>
+<div id="uavgjortResultat" style="margin-top:20px;font-size:1.6em;"></div>
+</div>
+</div>
+</div>
 </div>
 </details>
 
@@ -439,7 +612,8 @@ function apneNeste() {
 var sistePlan = null;
 
 function lastUavgjort() {
-  apiGet('uavgjortStatus').then(function (o) {
+  return apiGet('uavgjortStatus').then(function (o) {
+    sisteUavgjort = o;
     if (o && (o.status === 'venter' || o.status === 'trukket')) {
       // Planen forteller hvor mange hjulomganger som gjenstar totalt, ikke bare
       // for trekningen som star pa tur. Feiler den, viser vi kortet uten plan.
@@ -493,7 +667,7 @@ function visUavgjort(o, plan) {
     html += '<p>' + escHtml(o.label) + '</p>';
     html += '<p>Kandidater: <b>' + o.kandidater.map(function (k) { return escHtml(k.navn); }).join(', ') + '</b></p>';
     html += planStripe(plan);
-    html += '<a href="' + siteUrl + '/trekning.html" target="_blank"><button style="background:#ff00ff;color:#fff;">Åpne lykkehjulet (storskjerm)</button></a>';
+    html += '<button style="background:#ff00ff;color:#fff;" onclick="apneTrekningsseksjon()">Ga til lykkehjulet</button>';
     html += '</div>';
   } else if (o.status === 'trukket') {
     var gjenstar = plan && plan.gjeldendeIndex !== -1;
@@ -705,8 +879,8 @@ function visOpprykk(o) {
   } else if (o.status === 'trekker') {
     html = '<div class="card"><h2>Opp-/nedrykksspill</h2>';
     html += '<p>Lag: ' + escHtml(o.lagA.navn) + ' (nest nederst div1), ' + escHtml(o.lagB.navn) + ' (nederst div1), ' + escHtml(o.lagC.navn) + ' (2. plass div2)</p>';
-    html += '<p>Åpne trekningssiden (vis på storskjerm) for å trekke 4 kategorier:</p>';
-    html += '<a href="' + siteUrl + '/trekning.html" target="_blank"><button>Apne trekningsside</button></a></div>';
+    html += '<p>Trekk 4 kategorier i seksjonen "Trekning &amp; hjul" under - publikum folger med pa storskjermen:</p>';
+    html += '<button onclick="apneTrekningsseksjon()">Ga til trekningen</button></div>';
   } else if (o.status === 'velger') {
     html = '<div class="card"><h2>Kandidatkategorier: ' + o.kandidater.map(escHtml).join(', ') + '</h2>';
     html += '<p>' + escHtml(o.lagA.navn) + ' velger kategori. Klikk hvilken kategori laget valgte:</p>';
@@ -1399,18 +1573,21 @@ var pollFeilPaaRad = 0;
 // faller derfor tilbake til de gamle enkeltkallene av seg selv, og sier fra om
 // at distribusjonen mangler (AVVIK-051).
 var brukSamlekall = true;
+var sisteUavgjort = null;
+var sisteOpprykk = null;
 
 function pollEnkeltvis() {
   return Promise.all([
     apiGet('buzzerStatus').then(visBuzzer),
     apiGet('buzzerModus').then(visBuzzerModus),
-    apiGet('opprykkStatus').then(visOpprykk),
+    apiGet('opprykkStatus').then(function (o) { visOpprykk(o); sisteOpprykk = o; }),
     apiGet('finaleStatus').then(visFinale),
     apiGet('finaleBStatus').then(visFinaleB),
     apiGet('skjermOverride').then(visSkjermOverride),
     lastUavgjort()
   ]).then(function () {
     pollFeilPaaRad = 0;
+    sjekkModus(sisteUavgjort, sisteOpprykk);
     var el = document.getElementById('bakoverkompatibelt');
     if (el) {
       el.innerHTML = '<div class="card" style="border-color:#ffff00;">' +
@@ -1430,6 +1607,7 @@ function pollAlt() {
     sistePlan = o.plan || null;
     visUavgjort(o.uavgjort, o.plan || null);
     visOpprykk(o.opprykk);
+    sjekkModus(o.uavgjort, o.opprykk);
     visFinale(o.finale);
     visFinaleB(o.finaleB);
     visSkjermOverride(o.skjerm);
@@ -1454,6 +1632,1363 @@ function pollAlt() {
 init();
 pollAlt();
 setInterval(pollAlt, 2500);
+
+// =========================================================================
+// Trekning, buzzer-visning, kategorispill og lykkehjul (AVVIK-067).
+// Flyttet hit fra trekning.html, som er borte. escHtml, apiGet og spotifyUrl
+// fantes allerede i styringspanelet og er ikke tatt med en gang til; velgKat
+// het det samme som styringspanelets egen og heter velgKatTrekning her.
+// =========================================================================
+var allNames = [];
+var tileEls = {};
+var katListeIntervalId = null;
+
+function initTrekning() {
+  // Kategorinavnene maa vaere pa plass foer visStatus kaller renderGrid, ellers
+  // blir rutenettet staaende tomt naar kategorikallet er tregest (AVVIK-031).
+  apiGet('alleKategoriNavn')
+    .then(function (n) { allNames = n; })
+    .catch(function (e) { console.error(e); })
+    .then(function () { return apiGet('opprykkStatus').then(visStatus); })
+    .catch(function (e) { console.error(e); });
+  lastKatListe();
+  if (katListeIntervalId) clearInterval(katListeIntervalId);
+  katListeIntervalId = setInterval(lastKatListe, 5000);
+}
+
+// Trekningsseksjonen star normalt lukket. Da er det ingen som ser buzzer-
+// visningen eller kategorilista, og da skal de heller ikke poller backend -
+// ellers ville sammenslaingen (AVVIK-067) lagt to ekstra pollere oppa
+// styringspanelets egen.
+function trekningsseksjonenErApen() {
+  var sek = document.getElementById('faseTrekning');
+  return !!(sek && sek.open);
+}
+
+function trekningsseksjonByttet() {
+  if (trekningsseksjonenErApen()) {
+    if (gjeldendeModus === 'buzzer') { initBuzzer(); }
+    if (gjeldendeModus === 'trekning') { lastKatListe(); }
+    return;
+  }
+  if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
+  if (katListeIntervalId) { clearInterval(katListeIntervalId); katListeIntervalId = null; }
+}
+
+function lastKatListe() {
+  if (!trekningsseksjonenErApen()) { return; }
+  apiGet('kategoriStatusListe').then(visKatListe).catch(function(e) { console.error(e); });
+}
+
+function visKatListe(liste) {
+  var wrap = document.getElementById('katliste');
+  wrap.innerHTML = '';
+  liste.forEach(function(k) {
+    var lab = document.createElement('label');
+    lab.style.display = 'inline-block';
+    lab.style.width = '220px';
+    lab.style.margin = '4px';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!k.brukt;
+    cb.onchange = function() { apiGet('setKategoriBrukt', { navn: k.navn, brukt: cb.checked }).catch(function(e) { console.error(e); }); };
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(' ' + k.navn));
+    wrap.appendChild(lab);
+  });
+  if (!liste.length) wrap.innerHTML = '<p>Ingen kategorier funnet.</p>';
+}
+
+function visStatus(o) {
+  var startBtn = document.getElementById('startBtn');
+  var info = document.getElementById('trekkInfo');
+  if (o.status === 'trekker') {
+    velgSendt = false;
+    valgtVistFraMs = null;
+    // Laget som velger er kjent allerede na - flisene blir klikkbare med en
+    // gang animasjonen er ferdig, altsa for status rekker a bli 'velger'.
+    velgLagId = o.lagA ? o.lagA.id : '';
+    velgLagNavn = o.lagA ? o.lagA.navn : '';
+    startBtn.disabled = false;
+    info.innerHTML = 'Lag som trekker kategori: <b>' + escHtml(o.lagA.navn) + '</b>';
+    document.getElementById('trApp').innerHTML = '<div class="trGrid" id="grid"></div><div id="final"></div>';
+    renderGrid();
+  } else if (o.status === 'velger') {
+    startBtn.disabled = true;
+    info.innerHTML = '';
+    velgLagId = o.lagA ? o.lagA.id : '';
+    velgLagNavn = o.lagA ? o.lagA.navn : '';
+    // Er rutenettet fortsatt pa skjermen etter animasjonen, gjor vi de fire
+    // vinnerflisene klikkbare der de star. Har siden blitt lastet pa nytt,
+    // tegner vi dem opp igjen som et eget kort.
+    if (gjorVinnerfliserKlikkbare(o.kandidater)) { return; }
+    var html = '<div class="card"><h2>Kategoriene er trukket</h2>';
+    html += '<div class="trGrid" id="grid">';
+    o.kandidater.forEach(function(k) {
+      html += '<div class="tile winner klikkbar" data-kat="' + escHtml(k) + '">' + escHtml(k) + '</div>';
+    });
+    html += '</div><p class="velghint">Klikk kategorien ' + escHtml(velgLagNavn || 'laget') + ' velger.</p></div>';
+    document.getElementById('trApp').innerHTML = html;
+    koblePaKategoriklikk();
+  } else {
+    startBtn.disabled = true;
+    info.innerHTML = '';
+    document.getElementById('trApp').innerHTML = '<div class="card"><p>Ingen trekning pågår akkurat nå.</p></div>';
+  }
+}
+
+function nullstillTrekning() {
+  if (!confirm('Nullstille trekningen og trekke kategorier på nytt? Lagene og poengene beholdes.')) return;
+  var btn = document.getElementById('nullstillBtn');
+  btn.disabled = true;
+  btn.textContent = 'Nullstiller...';
+  apiGet('resetTrekningTilStart').then(function() { location.reload(); }).catch(function(e) { console.error(e); btn.disabled = false; btn.textContent = 'Nullstill opp-/nedrykk'; });
+}
+
+var valgtVistFraMs = null;
+var VALGT_VISES_MS = 3500;
+
+// Krymper rutenettet ned til den ene valgte kategorien - samme bilde som
+// storskjermen viser.
+function visValgtKategori(navn) {
+  var fliser = document.querySelectorAll('#grid .tile');
+  if (!fliser.length) {
+    var app = document.getElementById('trApp');
+    if (app) {
+      app.innerHTML = '<div class="card"><h2>Valgt kategori</h2><div class="trGrid">' +
+        '<div class="tile winner valgt">' + escHtml(navn) + '</div></div></div>';
+    }
+    return;
+  }
+  for (var i = 0; i < fliser.length; i++) {
+    var el = fliser[i];
+    el.classList.remove('klikkbar');
+    el.onclick = null;
+    if (el.textContent.trim() === String(navn).trim()) {
+      el.classList.remove('eliminated');
+      el.classList.add('winner', 'valgt');
+    } else if (el.classList.contains('winner')) {
+      el.classList.remove('winner');
+      el.classList.add('eliminated');
+    }
+  }
+  var f = document.getElementById('final');
+  if (f) { f.innerHTML = '<p class="velghint">Valgt: ' + escHtml(navn) + '</p>'; }
+}
+
+// --------------------------------------------------------------------------
+// Kategorien ble tidligere bare valgt fra styringspanelet, mens de fire
+// kandidatene sto her og pa storskjermen. Na klikkes den der den vises.
+// --------------------------------------------------------------------------
+var velgLagId = '';
+var velgLagNavn = '';
+var velgSendt = false;
+
+function koblePaKategoriklikk() {
+  var noder = document.querySelectorAll('.tile.klikkbar[data-kat]');
+  for (var i = 0; i < noder.length; i++) {
+    noder[i].onclick = function () { velgKatTrekning(this.getAttribute('data-kat')); };
+  }
+}
+
+// Returnerer true hvis flisene fra selve trekningen fortsatt star pa skjermen
+// og ble gjort klikkbare - da skal ikke visStatus tegne noe nytt oppa.
+function gjorVinnerfliserKlikkbare(kandidater) {
+  if (!kandidater || !kandidater.length) { return false; }
+  var funnet = 0;
+  kandidater.forEach(function (k) {
+    var el = tileEls[k];
+    if (el && el.classList.contains('winner') && document.body.contains(el)) {
+      el.classList.add('klikkbar');
+      el.setAttribute('data-kat', k);
+      funnet++;
+    }
+  });
+  if (funnet !== kandidater.length) { return false; }
+  koblePaKategoriklikk();
+  var f = document.getElementById('final');
+  if (f) {
+    f.innerHTML = '<p class="velghint">Klikk kategorien ' +
+      escHtml(velgLagNavn || 'laget') + ' velger.</p>';
+  }
+  return true;
+}
+
+function velgKatTrekning(navn) {
+  if (velgSendt) { return; }
+  if (!velgLagId) { alert('Vet ikke hvilket lag som velger enna - prov igjen om et oyeblikk.'); return; }
+  if (!confirm('Velge kategorien "' + navn + '"?')) { return; }
+  velgSendt = true;
+  valgtVistFraMs = Date.now();
+  var valgt = document.querySelector('.tile[data-kat="' + navn.replace(/"/g, '\\"') + '"]');
+  // Bare den valgte kategorien skal sta igjen - de tre andre fjernes med
+  // samme animasjon som under trekningen.
+  document.querySelectorAll('.tile.klikkbar[data-kat]').forEach(function (el) {
+    el.classList.remove('klikkbar');
+    el.onclick = null;
+    if (el !== valgt) { el.classList.remove('winner'); el.classList.add('eliminated'); }
+  });
+  if (valgt) { valgt.classList.add('valgt'); }
+  var f = document.getElementById('final');
+  if (f) { f.innerHTML = '<p class="velghint">Valgt: ' + escHtml(navn) + '</p>'; }
+  apiGet('velgKategori', { lagId: velgLagId, navn: navn }).catch(function (e) {
+    velgSendt = false;
+    alert('Klarte ikke a velge kategori: ' + (e && e.message ? e.message : e));
+  });
+}
+
+function renderGrid() {
+  var grid = document.getElementById('grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  tileEls = {};
+  allNames.forEach(function(name) {
+    var d = document.createElement('div');
+    d.className = 'tile pending';
+    d.textContent = name;
+    grid.appendChild(d);
+    tileEls[name] = d;
+  });
+}
+
+function start() {
+  var btn = document.getElementById('startBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Trekker...'; }
+  apiGet('trekkKategorier').then(function(o) { eliminate(o.kandidater); }).catch(function(e) { console.error(e); });
+}
+
+var actx = null;
+function actxGet() { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); return actx; }
+function beep(freq, dur, type, vol) {
+  try {
+    var a = actxGet();
+    var o = a.createOscillator();
+    var g = a.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.value = vol || .2;
+    o.connect(g); g.connect(a.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(.001, a.currentTime + dur);
+    o.stop(a.currentTime + dur + .03);
+  } catch (e) {}
+}
+
+function eliminate(winners) {
+  if (!allNames.length) { setTimeout(function() { eliminate(winners); }, 200); return; }
+  var losers = allNames.filter(function(n) { return winners.indexOf(n) === -1; });
+  for (var i = losers.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = losers[i]; losers[i] = losers[j]; losers[j] = t; }
+  var totalMs = 9000; var stepMs = Math.max(220, Math.floor(totalMs / Math.max(losers.length, 1)));
+  var idx = 0;
+  function step() {
+    if (idx < losers.length) {
+      var el = tileEls[losers[idx]];
+      if (el) { el.classList.remove('pending'); el.classList.add('eliminated'); }
+      beep(170, .1, 'square', .12);
+      idx++;
+      setTimeout(step, stepMs);
+    } else {
+      setTimeout(function() { revealWinners(winners); }, 600);
+    }
+  }
+  step();
+}
+
+function revealWinners(winners) {
+  var notes = [523, 659, 784, 988];
+  winners.forEach(function(name, i) {
+    setTimeout(function() {
+      var el = tileEls[name];
+      if (el) { el.classList.remove('pending'); el.classList.add('winner'); }
+      beep(notes[i % 4], .28, 'sine', .28);
+      if (i === winners.length - 1) {
+        setTimeout(function() {
+          [523, 659, 784, 1046].forEach(function(f, k) { setTimeout(function() { beep(f, .3, 'triangle', .3); }, k * 150); });
+          confetti();
+          var f = document.getElementById('final');
+          if (f) f.innerHTML = '<p><b>Kategoriene er trukket!</b></p>';
+          // Flisene som star igjen er kandidatene - gjor dem klikkbare med en gang.
+          gjorVinnerfliserKlikkbare(winners);
+        }, 400);
+      }
+    }, i * 550);
+  });
+}
+
+function confetti() {
+  var colors = ['#00ff00', '#ffff00', '#ffd23f', '#3a86ff', '#ffffff'];
+  for (var i = 0; i < 50; i++) {
+    (function() {
+      var d = document.createElement('div');
+      d.className = 'confetti';
+      d.style.left = (Math.random() * 100) + 'vw';
+      d.style.background = colors[Math.floor(Math.random() * colors.length)];
+      d.style.animationDuration = (2 + Math.random() * 2) + 's';
+      document.body.appendChild(d);
+      setTimeout(function() { d.remove(); }, 4200);
+    })();
+  }
+}
+
+var buzzerIntervalId = null;
+function initBuzzer() {
+  lastBuzzerDisplay();
+  if (buzzerIntervalId) clearInterval(buzzerIntervalId);
+  buzzerIntervalId = setInterval(lastBuzzerDisplay, 700);
+}
+function lastBuzzerDisplay() {
+  if (!trekningsseksjonenErApen()) { return; }
+  apiGet('buzzerStatus').then(visBuzzerDisplay).catch(function(e) { console.error(e); });
+}
+function visBuzzerDisplay(o) {
+  document.getElementById('buzzerLedig').style.display = (o.status === 'ledig') ? 'block' : 'none';
+  document.getElementById('buzzerApen').style.display = (o.status === 'apen') ? 'block' : 'none';
+  document.getElementById('buzzerLukket').style.display = (o.status === 'lukket') ? 'block' : 'none';
+  if (o.status === 'lukket') { document.getElementById('buzzerVinnernavn').textContent = o.vinnerNavn || ''; }
+}
+
+var gjeldendeModus = null;
+
+// Seksjonen "Trekning & hjul" star normalt sammenklappet. Skjer det noe der -
+// kategoritrekning, kategorispill eller lykkehjul - skal overskriften si fra,
+// ellers blir seksjonen et gjemmested midt i kvelden (AVVIK-067).
+// Snarvei fra kortene i styringspanelet ned til seksjonen der trekningen
+// faktisk skjer (AVVIK-067).
+// ?trekning=1 apner seksjonen med en gang. Praktisk som bokmerke nar man vet
+// at kvelden starter med opp-/nedrykk - og testene bruker den samme veien.
+function apneTrekningsseksjonHvisBedtOm() {
+  if (/[?&]trekning=1(&|$)/.test(location.search)) {
+    var sek = document.getElementById('faseTrekning');
+    if (sek) { sek.open = true; }
+  }
+}
+
+function apneTrekningsseksjon() {
+  var sek = document.getElementById('faseTrekning');
+  if (!sek) { return; }
+  sek.open = true;
+  sek.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function settModus(m) {
+  gjeldendeModus = m;
+  var merke = document.querySelector('#faseTrekning .naa');
+  if (merke) { merke.style.display = (m === 'uavgjort' || m === 'kategori' || m === 'trekning') ? '' : 'none'; }
+}
+
+// Etter sammenslaingen (AVVIK-067) ligger trekningen i samme side som
+// styringen, og styringen poller allerede styrePoll hvert 2,5 sekund med
+// nettopp uavgjort- og opprykkstilstanden. Da skal trekningen bruke DE
+// dataene i stedet for a sette i gang en ny runde med egne kall - ellers
+// dobler sammenslaingen trafikken mot Apps Script.
+function sjekkModus(u, o) {
+  if (!u || !o) { return; }
+  (function () {
+    if (u.status === 'venter' || u.status === 'trukket') {
+      var key = u.kontekst + '|' + u.type + '|' + u.status;
+      if (gjeldendeModus !== 'uavgjort') {
+        settModus('uavgjort');
+        document.getElementById('trekningWrap').style.display = 'none';
+        document.getElementById('buzzerWrap').style.display = 'none';
+        document.getElementById('uavgjortWrap').style.display = 'block';
+        document.getElementById('katWrap').style.display = 'none';
+        if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
+        if (katListeIntervalId) { clearInterval(katListeIntervalId); katListeIntervalId = null; }
+        lastUavgjortKey = key;
+        initUavgjort(u);
+      } else if (key !== lastUavgjortKey && !wheelSpinning) {
+        lastUavgjortKey = key;
+        initUavgjort(u);
+      }
+      return;
+    }
+    (function () {
+      if (o.status === 'ferdig') { katMerkFerdig(o); }
+      else if (o.status !== 'pagar' && o.status !== 'omspill') { katNullstill(); }
+      // Kategorispillet og resultatet har egen visning (AVVIK-050).
+      // Etter at kategorien er klikket her, skal den staa igjen alene noen
+      // sekunder for poengtavla tar over - ellers bytter siden bilde i samme
+      // oyeblikk som klikket.
+      if (o.status === 'pagar' && o.valgtKategori && gjeldendeModus === 'trekning') {
+        if (valgtVistFraMs === null) {
+          valgtVistFraMs = Date.now();
+          visValgtKategori(o.valgtKategori);
+        }
+        if (Date.now() - valgtVistFraMs < VALGT_VISES_MS) { return; }
+      }
+      var visKat = (o.status === 'pagar') || (o.status === 'omspill') || (o.status === 'ferdig' && katResultatSkalVises());
+      if (visKat) {
+        if (gjeldendeModus !== 'kategori') {
+          settModus('kategori');
+          document.getElementById('trekningWrap').style.display = 'none';
+          document.getElementById('buzzerWrap').style.display = 'none';
+          document.getElementById('uavgjortWrap').style.display = 'none';
+          document.getElementById('katWrap').style.display = 'block';
+          if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
+          if (katListeIntervalId) { clearInterval(katListeIntervalId); katListeIntervalId = null; }
+        }
+        tegnKategoriTavle(o, o.status === 'ferdig');
+        return;
+      }
+      var skalViseTrekning = (o.status === 'trekker' || o.status === 'velger');
+      var nyModus = skalViseTrekning ? 'trekning' : 'buzzer';
+      if (nyModus !== gjeldendeModus) {
+        settModus(nyModus);
+        document.getElementById('katWrap').style.display = 'none';
+        document.getElementById('trekningWrap').style.display = skalViseTrekning ? 'block' : 'none';
+        document.getElementById('buzzerWrap').style.display = skalViseTrekning ? 'none' : 'block';
+        document.getElementById('uavgjortWrap').style.display = 'none';
+        if (skalViseTrekning) {
+          if (buzzerIntervalId) { clearInterval(buzzerIntervalId); buzzerIntervalId = null; }
+          initTrekning();
+        } else {
+          if (katListeIntervalId) { clearInterval(katListeIntervalId); katListeIntervalId = null; }
+          initBuzzer();
+        }
+      }
+    })();
+  })();
+}
+
+
+// ==== Poengtavle for kategorispillet i opp-/nedrykket ====
+// Under 'pagar' viste storskjermene ingenting om kategorien i det hele tatt -
+// de falt tilbake til buzzer- eller stillingsvisningen. Na folger publikum
+// stillingen sang for sang, og ser resultatet nar kategorien er ferdig
+// (AVVIK-050).
+var katForrigePoeng = {};
+var katFerdigFraMs = null;
+var KAT_RESULTAT_MS = 30000;
+
+function katLagListe(o) {
+  return [
+    { id: o.lagA ? o.lagA.id : '', navn: o.lagA ? o.lagA.navn : '', poeng: Number(o.poengA || 0) },
+    { id: o.lagB ? o.lagB.id : '', navn: o.lagB ? o.lagB.navn : '', poeng: Number(o.poengB || 0) },
+    { id: o.lagC ? o.lagC.id : '', navn: o.lagC ? o.lagC.navn : '', poeng: Number(o.poengC || 0) }
+  ];
+}
+
+// Spilleknappen la bare i styringspanelet. Star trekningssiden i et eget
+// vindu hos quizmasteren, ma sangen kunne startes derfra ogsa. Knappen viser
+// BARE at det er en sang - aldri artist eller tittel, siden denne siden kan
+// sta pa storskjermen.
+function tegnSpotifyKnapp(o, ferdig) {
+  var boks = document.getElementById('katSpotify');
+  if (!boks) { return; }
+  if (ferdig) { boks.innerHTML = ''; return; }
+  var u = spotifyUrl(o.gjeldendeSang && o.gjeldendeSang.spotify);
+  if (!u) {
+    boks.innerHTML = '<p style="font-size:.8em;opacity:.55;margin:0;">Ingen Spotify-lenke pa denne sangen.</p>';
+    return;
+  }
+  var nr = (o.status === 'omspill')
+    ? 'omspillsangen'
+    : 'sang ' + (Number(o.sangIndex || 0) + 1);
+  boks.innerHTML = '<a href="' + escHtml(u) + '" target="_blank" rel="noopener" ' +
+    'style="display:inline-block;background:#1db954;color:#fff;text-decoration:none;' +
+    'font-weight:700;padding:12px 22px;border:2px solid #ffffff;">' +
+    '&#9654;&nbsp; Spill av ' + escHtml(nr) + ' i Spotify</a>';
+}
+
+// Poengene ble registrert i styringspanelet. Star trekningssiden i et eget
+// vindu, skal de kunne registreres her ogsa - uten a bytte fane midt i en
+// sang. Kun lagnavn, aldri fasit: siden kan sta pa storskjermen.
+function tegnSvarknapper(o, ferdig) {
+  var boks = document.getElementById('katSvar');
+  if (!boks) { return; }
+  if (ferdig || (o.status !== 'pagar' && o.status !== 'omspill')) { boks.innerHTML = ''; return; }
+
+  var alle = [o.lagA, o.lagB, o.lagC].filter(function (l) { return l && l.id !== ''; });
+  var deltakere = alle;
+  if (o.status === 'omspill') {
+    var iOmspill = (o.omspillLag || []).map(String);
+    deltakere = alle.filter(function (l) { return iOmspill.indexOf(String(l.id)) !== -1; });
+  }
+  if (!deltakere.length) { boks.innerHTML = ''; return; }
+
+  var h = '<p style="margin:0 0 8px;font-size:1.05em;">Hvem svarte riktig?</p>';
+  deltakere.forEach(function (l) {
+    h += '<button type="button" class="svarknapp" data-lag="' + escHtml(l.id) + '" ' +
+      'style="margin:4px 6px;">' + escHtml(l.navn) + '</button>';
+  });
+  h += '<button type="button" class="hoppknapp" style="margin:4px 6px;opacity:.8;">' +
+    (o.status === 'omspill' ? 'Ingen riktig - ny omspillsang' : 'Ingen riktig / hopp over') + '</button>';
+  boks.innerHTML = h;
+
+  var knapper = boks.querySelectorAll('.svarknapp');
+  for (var i = 0; i < knapper.length; i++) {
+    knapper[i].onclick = function () { registrerSvar(this.getAttribute('data-lag'), this); };
+  }
+  var hopp = boks.querySelector('.hoppknapp');
+  if (hopp) { hopp.onclick = function () { hoppOverSangHer(this); }; }
+}
+
+// Dobbeltklikk pa en spilleknapp ville gitt to poeng for samme sang, sa alle
+// knappene lases mens kallet er ute.
+function laasSvarknapper(laast, tekstPa) {
+  var boks = document.getElementById('katSvar');
+  if (!boks) { return; }
+  var alle = boks.querySelectorAll('button');
+  for (var i = 0; i < alle.length; i++) { alle[i].disabled = laast; }
+  if (tekstPa) { tekstPa.textContent = 'Sender...'; }
+}
+
+function registrerSvar(lagId, knapp) {
+  laasSvarknapper(true, knapp);
+  apiGet('registrerOpprykkPoeng', { lagId: lagId }).then(function (o) {
+    tegnKategoriTavle(o, o.status === 'ferdig');
+  }).catch(function (e) {
+    laasSvarknapper(false);
+    alert('Klarte ikke a registrere poeng: ' + (e && e.message ? e.message : e));
+  });
+}
+
+function hoppOverSangHer(knapp) {
+  laasSvarknapper(true, knapp);
+  apiGet('hoppOverSang').then(function (o) {
+    tegnKategoriTavle(o, o.status === 'ferdig');
+  }).catch(function (e) {
+    laasSvarknapper(false);
+    alert('Klarte ikke a hoppe over sangen: ' + (e && e.message ? e.message : e));
+  });
+}
+
+function tegnKategoriTavle(o, ferdig) {
+  var lag = katLagListe(o);
+  var maks = Math.max(lag[0].poeng, lag[1].poeng, lag[2].poeng);
+  var min = Math.min(lag[0].poeng, lag[1].poeng, lag[2].poeng);
+  var nedId = (ferdig && o.resultat) ? String(o.resultat.nedrykket) : null;
+  var visning = ferdig ? lag.slice().sort(function (a, b) { return b.poeng - a.poeng; }) : lag;
+
+  document.getElementById('katTittel').textContent = o.valgtKategori || 'Kategori';
+  var iOmspill = (o.status === 'omspill');
+  document.getElementById('katSang').textContent = ferdig
+    ? 'Alle 5 sangene er spilt'
+    : (iOmspill
+        ? 'OMSPILL - ekstra sang ' + (Number(o.omspillBrukt || 0) + 1)
+        : 'Sang ' + (Number(o.sangIndex || 0) + 1) + ' av 5');
+
+  var h = '';
+  visning.forEach(function (l) {
+    var klasse = 'katLag';
+    var merke = '';
+    if (ferdig) {
+      if (nedId !== null && String(l.id) === nedId) { klasse += ' ned'; merke = 'RYKKER NED'; }
+      else if (l.poeng === maks) { klasse += ' vant'; merke = 'VANT KATEGORIEN'; }
+      else { merke = 'BLIR I 1. DIVISJON'; }
+    } else if (iOmspill && (o.omspillLag || []).map(String).indexOf(String(l.id)) !== -1) {
+      klasse += ' omspill'; merke = 'I OMSPILL';
+    } else if (l.poeng === maks && maks > min) {
+      klasse += ' leder'; merke = 'LEDER';
+    }
+    // fikk laget poeng siden forrige tegning? da skal tallet sla ut
+    if (!ferdig && katForrigePoeng[l.id] !== undefined && l.poeng > katForrigePoeng[l.id]) {
+      klasse += ' pling';
+    }
+    katForrigePoeng[l.id] = l.poeng;
+    h += '<div class="' + klasse + '"><div class="navn">' + escHtml(l.navn) + '</div>' +
+      '<div class="poeng">' + l.poeng + '</div>' +
+      '<div class="merke">' + merke + '</div></div>';
+  });
+  document.getElementById('katTavle').innerHTML = h;
+  tegnSpotifyKnapp(o, ferdig);
+  tegnSvarknapper(o, ferdig);
+
+  var fot = '';
+  if (ferdig) {
+    var nedNavn = '';
+    lag.forEach(function (l) { if (nedId !== null && String(l.id) === nedId) { nedNavn = l.navn; } });
+    fot = nedNavn ? escHtml(nedNavn) + ' rykker ned til 2. divisjon.' : 'Venter på avgjørelse.';
+  } else if (iOmspill) {
+    fot = 'Uavgjort nederst - ekstra sang avgjør hvem som rykker ned.';
+  } else {
+    fot = 'Riktig svar gir 1 poeng.';
+  }
+  document.getElementById('katFot').innerHTML = fot;
+}
+
+// Skal resultatet fortsatt vises? 'ferdig' blir staende til neste opprykk
+// starter, sa uten en tidsgrense ville storskjermen aldri kommet tilbake til
+// stillingen.
+function katResultatSkalVises() {
+  if (katFerdigFraMs === null) { return false; }
+  return (Date.now() - katFerdigFraMs) < KAT_RESULTAT_MS;
+}
+
+function katMerkFerdig(o) {
+  if (katFerdigFraMs === null) { katFerdigFraMs = Date.now(); }
+}
+
+function katNullstill() {
+  katFerdigFraMs = null;
+  katForrigePoeng = {};
+}
+
+// ---- Lykkehjul (uavgjort-trekning) ----
+var WHEEL_COLORS = ['#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6b6b', '#3a86ff', '#ffa500', '#ff1493'];
+var WHEEL_SPIN_MS = 7000;
+var WHEEL_OVERSHOOT_DEG = 7;
+var WHEEL_BOUNCE_MS = 420;
+var wheelKandidater = [];
+var wheelRotation = 0;
+var wheelSpinning = false;
+var lastUavgjortKey = '';
+var uavgjortWinnersQueue = [];
+var KLUBB_LOGO_MAP = null;
+var KLUBB_LOGO_BASE = "https://raw.githubusercontent.com/hansarne-lang/musikkquiz-web/main/klubbdata/";
+
+function lastKlubbLogoMap() {
+  if (KLUBB_LOGO_MAP) return Promise.resolve(KLUBB_LOGO_MAP);
+  return apiGet('klubbListe').then(function (liste) {
+    var map = {};
+    (liste || []).forEach(function (k) { map[String(k.navn).toLowerCase().trim()] = k.slug; });
+    KLUBB_LOGO_MAP = map;
+    return map;
+  }).catch(function (e) {
+    console.error(e); KLUBB_LOGO_MAP = null; return {};
+  });
+}
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  var rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeSlice(cx, cy, r, startAngle, endAngle) {
+  var start = polarToCartesian(cx, cy, r, endAngle);
+  var end = polarToCartesian(cx, cy, r, startAngle);
+  var largeArc = (endAngle - startAngle) <= 180 ? '0' : '1';
+  return ['M', cx, cy, 'L', start.x, start.y, 'A', r, r, 0, largeArc, 0, end.x, end.y, 'Z'].join(' ');
+}
+
+function buildWheel(kandidater) {
+  var svg = document.getElementById('wheelSvg');
+  svg.innerHTML = '';
+  svg.style.transition = 'none';
+  svg.style.transform = 'rotate(0deg)';
+  var n = kandidater.length;
+  if (!n) return;
+  var cx = 150, cy = 150, r = 148;
+  var sliceAngle = 360 / n;
+  var logoMap = KLUBB_LOGO_MAP || {};
+  var logoR = n <= 4 ? 30 : n <= 6 ? 24 : n <= 10 ? 18 : 13;
+  var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  svg.appendChild(defs);
+  for (var i = 0; i < n; i++) {
+    var start = i * sliceAngle;
+    var end = start + sliceAngle;
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', describeSlice(cx, cy, r, start, end));
+    path.setAttribute('fill', WHEEL_COLORS[i % WHEEL_COLORS.length]);
+    path.setAttribute('stroke', '#000');
+    path.setAttribute('stroke-width', '2');
+    svg.appendChild(path);
+    var midAngle = start + sliceAngle / 2;
+    var slug = logoMap[String(kandidater[i].navn || '').toLowerCase().trim()];
+    if (slug) {
+      var logoPos = polarToCartesian(cx, cy, r * 0.66, midAngle);
+      var clipId = 'wheelclip' + i;
+      var clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+      clipPath.setAttribute('id', clipId);
+      var clipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      clipCircle.setAttribute('cx', logoPos.x);
+      clipCircle.setAttribute('cy', logoPos.y);
+      clipCircle.setAttribute('r', logoR);
+      clipPath.appendChild(clipCircle);
+      defs.appendChild(clipPath);
+      var bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      bg.setAttribute('cx', logoPos.x);
+      bg.setAttribute('cy', logoPos.y);
+      bg.setAttribute('r', logoR + 3);
+      bg.setAttribute('fill', '#ffffff');
+      bg.setAttribute('stroke', '#000');
+      bg.setAttribute('stroke-width', '1.5');
+      svg.appendChild(bg);
+      var img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', KLUBB_LOGO_BASE + slug + '_logo.jpg');
+      img.setAttribute('href', KLUBB_LOGO_BASE + slug + '_logo.jpg');
+      img.setAttribute('x', logoPos.x - logoR);
+      img.setAttribute('y', logoPos.y - logoR);
+      img.setAttribute('width', logoR * 2);
+      img.setAttribute('height', logoR * 2);
+      img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      img.setAttribute('clip-path', 'url(#' + clipId + ')');
+      (function (bgEl) { img.addEventListener('error', function () { this.style.display = 'none'; bgEl.style.display = 'none'; }); })(bg);
+      svg.appendChild(img);
+      var namePos = polarToCartesian(cx, cy, r * 0.90, midAngle);
+      var text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text2.setAttribute('x', namePos.x);
+      text2.setAttribute('y', namePos.y);
+      text2.setAttribute('fill', '#000');
+      text2.setAttribute('font-family', 'Courier New, monospace');
+      text2.setAttribute('font-weight', 'bold');
+      text2.setAttribute('font-size', n > 8 ? '7' : '9');
+      text2.setAttribute('text-anchor', 'middle');
+      text2.setAttribute('dominant-baseline', 'middle');
+      text2.setAttribute('transform', 'rotate(' + midAngle + ' ' + namePos.x + ' ' + namePos.y + ')');
+      text2.textContent = kandidater[i].navn;
+      svg.appendChild(text2);
+    } else {
+      var labelPos = polarToCartesian(cx, cy, r * 0.62, midAngle);
+      var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', labelPos.x);
+      text.setAttribute('y', labelPos.y);
+      text.setAttribute('fill', '#000');
+      text.setAttribute('font-family', 'Courier New, monospace');
+      text.setAttribute('font-weight', 'bold');
+      text.setAttribute('font-size', n > 8 ? '9' : '13');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'middle');
+      text.setAttribute('transform', 'rotate(' + midAngle + ' ' + labelPos.x + ' ' + labelPos.y + ')');
+      text.textContent = kandidater[i].navn;
+      svg.appendChild(text);
+    }
+  }
+  void svg.offsetWidth;
+  svg.style.transition = 'transform ' + (WHEEL_SPIN_MS / 1000) + 's cubic-bezier(0.12,0.67,0.1,1)';
+}
+
+// ---- Lyskrans ----
+var bulbEls = [];
+function initBulbRing() {
+  var stage = document.getElementById('wheelStage');
+  var ring = document.getElementById('wheelBulbRing');
+  if (!stage || !ring) return;
+  ring.innerHTML = '';
+  bulbEls = [];
+  var size = stage.offsetWidth || 360;
+  var count = Math.max(18, Math.round(size / 20));
+  var cx = size / 2, cy = size / 2;
+  var rr = size / 2 + Math.max(10, size * 0.035);
+  var bulbSize = Math.max(8, Math.round(size / 32));
+  for (var i = 0; i < count; i++) {
+    var angle = (360 / count) * i;
+    var pos = polarToCartesian(cx, cy, rr, angle);
+    var b = document.createElement('div');
+    b.className = 'bulb';
+    b.style.width = bulbSize + 'px';
+    b.style.height = bulbSize + 'px';
+    b.style.left = pos.x + 'px';
+    b.style.top = pos.y + 'px';
+    ring.appendChild(b);
+    bulbEls.push(b);
+  }
+}
+function setBulbsChasing(on) {
+  bulbEls.forEach(function (b, i) {
+    if (on) {
+      b.classList.remove('lit', 'strobe');
+      b.classList.add('chase');
+      b.style.animationDelay = (-(i / bulbEls.length)) + 's';
+    } else {
+      b.classList.remove('chase');
+    }
+  });
+}
+function bulbsLandCelebrate() {
+  bulbEls.forEach(function (b, i) {
+    b.classList.remove('chase');
+    setTimeout(function () {
+      b.classList.add('strobe');
+      setTimeout(function () { b.classList.remove('strobe'); b.classList.add('lit'); }, 1150);
+    }, (i % 6) * 25);
+  });
+}
+function bulbsReset() {
+  bulbEls.forEach(function (b) { b.classList.remove('chase', 'strobe', 'lit'); });
+}
+
+function landImpact() {
+  var stage = document.getElementById('wheelStage');
+  var pointer = document.getElementById('wheelPointer');
+  var flash = document.getElementById('wheelFlash');
+  if (stage) { stage.classList.remove('landed'); void stage.offsetWidth; stage.classList.add('landed'); }
+  if (pointer) {
+    pointer.classList.remove('bump'); void pointer.offsetWidth; pointer.classList.add('bump');
+    setTimeout(function () { pointer.classList.remove('bump'); }, 520);
+  }
+  if (flash) { flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
+  beep(120, .15, 'square', .25);
+}
+
+// ---- Planstripe -------------------------------------------------------
+// planOmganger er en flat liste over hver enkelt snurr hjulet skal gjore for
+// hele operasjonen, ikke bare for trekningen som star pa tur. Den bygges av
+// uavgjortPlan fra backend nar vi kommer inn pa siden, og oppdateres lokalt
+// etter hvert som hver snurr lander.
+var planOmganger = [];
+var planRadKey = null;
+var lokaleVinnere = [];
+
+function byggPlanOmganger(plan, u) {
+  var ut = [];
+  if (!plan || !plan.steg) { return ut; }
+  plan.steg.forEach(function (st, i) {
+    var n = Number(st.trengerAntall || 1);
+    for (var k = 0; k < n; k++) {
+      ut.push({
+        trekning: i + 1,
+        antallTrekninger: plan.antallTrekninger,
+        label: st.label || '',
+        navn: (st.lost && st.valgt && st.valgt[k]) ? st.valgt[k].navn : null,
+        ferdig: !!st.lost
+      });
+    }
+  });
+  // Backend rekker ikke alltid a fa med seg trekningen som nettopp landet.
+  // Vinnerne vi allerede kjenner - fra svaret pa trekkUavgjort, eller fra
+  // uavgjort-raden nar den star som trukket - fylles inn her, slik at stripa
+  // ikke faller tilbake til sporsmalstegn.
+  var kjente = [];
+  if (u && u.status === 'trukket' && u.valgt && u.valgt.length) {
+    kjente = u.valgt.map(function (v) { return v.navn; });
+  }
+  if (lokaleVinnere.length > kjente.length) { kjente = lokaleVinnere.slice(); }
+  var k = 0;
+  for (var i = 0; i < ut.length && k < kjente.length; i++) {
+    if (!ut[i].ferdig) { ut[i].ferdig = true; ut[i].navn = kjente[k]; k++; }
+  }
+  return ut;
+}
+
+function gjenstaendeOmganger() {
+  var n = 0;
+  planOmganger.forEach(function (o) { if (!o.ferdig) { n++; } });
+  return n;
+}
+
+function tegnPlanStripe() {
+  var stripe = document.getElementById('planStripe');
+  var tittel = document.getElementById('planTittel');
+  if (!stripe || !tittel) { return; }
+  if (!planOmganger.length) { stripe.innerHTML = ''; tittel.textContent = ''; return; }
+  var ferdige = 0;
+  planOmganger.forEach(function (o) { if (o.ferdig) { ferdige++; } });
+  var flereTrekninger = planOmganger[0].antallTrekninger > 1;
+  tittel.textContent = 'Hjulet skal snurre ' + planOmganger.length + ' gang' +
+    (planOmganger.length === 1 ? '' : 'er') +
+    (flereTrekninger ? ' fordelt på ' + planOmganger[0].antallTrekninger + ' trekninger' : '') +
+    ' - ' + ferdige + ' av ' + planOmganger.length + ' er avgjort';
+  var naSatt = false;
+  var h = '';
+  planOmganger.forEach(function (o, i) {
+    var klasse = 'planPille';
+    if (o.ferdig) { klasse += ' ferdig'; }
+    else if (!naSatt) { klasse += ' na'; naSatt = true; }
+    h += '<div class="' + klasse + '"><div class="pnr">' +
+      (flereTrekninger ? 'Trekning ' + o.trekning + ' &middot; ' : '') +
+      'Omgang ' + (i + 1) + '</div><div class="pnavn">' +
+      (o.navn ? escHtml(o.navn) : '?') + '</div></div>';
+  });
+  stripe.innerHTML = h;
+}
+
+function merkNestePlanOmgang(navn) {
+  lokaleVinnere.push(navn);
+  for (var i = 0; i < planOmganger.length; i++) {
+    if (!planOmganger[i].ferdig) {
+      planOmganger[i].ferdig = true;
+      planOmganger[i].navn = navn;
+      break;
+    }
+  }
+  tegnPlanStripe();
+}
+
+function initUavgjort(u) {
+  document.getElementById('uavgjortLabel').textContent = u.label || '';
+  var radKey = String(u.kontekst || '') + '|' + String(u.type || '');
+  // fellesHjul nullstilles BARE nar vi bytter rad. Ble den satt false ved hver
+  // polling, var den falsk i det korte vinduet for statuskallet svarte - og
+  // akkurat da rakk pollingen a overskrive resultatlista (AVVIK-062).
+  if (radKey !== planRadKey) {
+    planRadKey = radKey; lokaleVinnere = []; fellesHjul = false;
+    // En snurr fra forrige rad skal ikke fa tegne videre pa denne (AVVIK-068).
+    // Telleren okes UTEN a sette aktivSpinGen: da ser callbackene som ligger og
+    // venter at de er utdaterte, og gir seg stille i stedet for a kalle
+    // finishSpin - som ville skrevet sluttmeldingen fra forrige trekning.
+    spinGen++;
+    wheelSpinning = false; speilerAndres = false; uavgjortWinnersQueue = [];
+  }
+  // Med felles hjul star raden pa 'venter' gjennom hele trekningen, og
+  // pollingen kaller hit mellom hvert spinn. Da skal resultatlista vaere i
+  // fred - ellers forsvinner lagene vi allerede har trukket (AVVIK-062).
+  if (!fellesHjul || (!wheelSpinning && !lokaleVinnere.length)) {
+    document.getElementById('uavgjortResultat').innerHTML = '';
+  }
+  // Planstripa skal heller ikke nullstilles midt i en pagaende trekning -
+  // gjenstaendeOmganger() leser den, og et tomt oyeblikk her gjorde at
+  // sluttmeldingen sa at ingenting gjensto (AVVIK-062).
+  if (!fellesHjul || (!wheelSpinning && !lokaleVinnere.length)) {
+    planOmganger = [];
+    tegnPlanStripe();
+  }
+  // Planen er kun pynt og oversikt - feiler den, skal hjulet fungere som for.
+  apiGet('uavgjortPlan').then(function (plan) {
+    // Er vi midt i en trekning, eier siden sin egen planstripe. Bygges den om
+    // fra backend her, forsvinner det vi nettopp har merket av, og
+    // sluttmeldingen tror at ingenting gjenstar (AVVIK-062).
+    // ... men er stripa tom, har vi ingenting a beskytte, og da MA den
+    // bygges - ellers vet vi ikke hvor mange omganger som gjenstar.
+    if (fellesHjul && (wheelSpinning || lokaleVinnere.length) && planOmganger.length) { return; }
+    planOmganger = byggPlanOmganger(plan, u);
+    tegnPlanStripe();
+    if (u.status === 'trukket') {
+      var rest = gjenstaendeOmganger();
+      var note = document.getElementById('trukketNote');
+      if (note) {
+        note.textContent = rest
+          ? 'Denne trekningen er ferdig. ' + rest + ' omgang' + (rest === 1 ? '' : 'er') +
+            ' gjenstår - bekreft på Styre-siden for å hente fram neste hjul.'
+          : 'Alle trekninger er ferdige. Venter på bekreftelse fra Styre-siden.';
+      }
+    }
+  }).catch(function (e) { console.error(e); });
+  wheelKandidater = (u.kandidater || []).slice();
+  // Bruker denne trekningen felles hjul, er det backend som eier hvilke lag
+  // som fortsatt er med - da leser vi kandidatene derfra i stedet.
+  apiGet('fellesHjulStatus').then(function (fh) {
+    if (fh && fh.felles) {
+      fellesHjul = true;
+      wheelKandidater = (fh.kandidater || []).slice();
+      // Felles trekning kjores pa den enarmede banditten (AVVIK-066): ett trekk
+      // i spaken, ett hjul per avgjorelse. Hjulet skjules helt.
+      var stage = document.getElementById('wheelStage');
+      var gammelKnapp = document.getElementById('spinBtn');
+      if (u.status !== 'trukket') {
+        if (stage) { stage.style.display = 'none'; }
+        if (gammelKnapp) { gammelKnapp.style.display = 'none'; }
+        byggBanditt(fh.grupper || []);
+      } else {
+        var bw = document.getElementById('bandittWrap');
+        if (bw) { bw.style.display = 'none'; }
+        if (stage) { stage.style.display = ''; }
+      }
+    }
+  }).catch(function (e) { console.error(e); });
+  wheelRotation = 0;
+  wheelSpinning = false;
+  bulbsReset();
+  lastKlubbLogoMap().then(function () {
+    buildWheel(wheelKandidater);
+    initBulbRing();
+  });
+  var spinBtn = document.getElementById('spinBtn');
+  // Speilingen gjelder BARE det gamle lykkehjulet. Felles trekning kjores pa
+  // banditten, som viser seg selv - a speile den som en hjulsnurr her ville
+  // vist en mekanikk vi ikke lenger bruker, og snurren ble hengende og tegne
+  // videre etter at neste rad var pa plass (AVVIK-068).
+  if (!fellesHjul && u.status === 'trukket' && !lokaleVinnere.length && !wheelSpinning && speiletRadKey !== radKey) {
+    // Raden star som trukket, men det var ikke vi som snurret - speil den
+    // samme snurren sa skjermene viser det samme (AVVIK-048).
+    spinBtn.style.display = 'none';
+    var speilVinnere = (u.valgt || []).slice();
+    if (speilVinnere.length) {
+      wheelSpinning = true;
+      starterSnurr();
+      setBulbsChasing(true);
+      uavgjortWinnersQueue = speilVinnere;
+      speilerAndres = true;
+      speiletRadKey = radKey;
+      var speilPool = (u.kandidater || wheelKandidater).slice();
+      setTimeout(function () { spinToNextWinner(speilPool); }, 600);
+      return;
+    }
+  }
+  if (u.status === 'trukket') {
+    spinBtn.style.display = 'none';
+    // Pollingen kaller hit igjen i det siste spinnet lander. Har vi nettopp
+    // snurret selv, skal resultatlista IKKE overskrives - den har allerede
+    // rekkefolgen og hvem som star igjen (AVVIK-062).
+    if (fellesHjul && (wheelSpinning || lokaleVinnere.length)) { return; }
+    var resHtml = '';
+    (u.valgt || []).forEach(function (v) { resHtml += '<div>Vinner: ' + escHtml(v.navn) + '</div>'; });
+    resHtml += '<p id="trukketNote" style="font-size:.5em;opacity:.7;margin-top:10px;">Trukket - venter på bekreftelse fra Styre-siden.</p>';
+    document.getElementById('uavgjortResultat').innerHTML = resHtml;
+    // Lastes siden pa nytt etter en felles trekning, hentes fasiten fram igjen.
+    apiGet('fellesHjulStatus').then(function (fh) {
+      if (fh && fh.felles && (fh.grupper || []).length) { visFellesFasit(fh.grupper); }
+    }).catch(function (e) { console.error(e); });
+  } else {
+    spinBtn.style.display = 'inline-block';
+    spinBtn.disabled = false;
+    if (autoSnurrNeste) {
+      autoSnurrNeste = false;
+      setTimeout(function () { if (!wheelSpinning) { spinWheel(); } }, 2500);
+    }
+  }
+}
+
+function tickSoundsDuring(durationMs) {
+  var elapsed = 0;
+  var interval = 80;
+  function tick() {
+    if (elapsed >= durationMs - 300) return;
+    beep(300 + Math.random() * 80, .05, 'square', .1);
+    elapsed += interval;
+    interval = interval * 1.06;
+    setTimeout(tick, interval);
+  }
+  tick();
+}
+
+function beepWinFanfare() {
+  [523, 659, 784, 1046].forEach(function (f, k) { setTimeout(function () { beep(f, .3, 'triangle', .3); }, k * 150); });
+}
+
+function spinWheel() {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  starterSnurr();
+  document.getElementById('spinBtn').disabled = true;
+  setBulbsChasing(true);
+  if (fellesHjul) { spinFelles(); return; }
+  apiGet('trekkUavgjort').then(function (rad) {
+    uavgjortWinnersQueue = (rad.valgt || []).slice();
+    spinToNextWinner(rad.kandidater ? rad.kandidater.slice() : wheelKandidater.slice());
+  }).catch(function (e) { console.error(e); wheelSpinning = false; document.getElementById('spinBtn').disabled = false; setBulbsChasing(false); });
+}
+
+// Selve snurren, uavhengig av hvor vinneren kom fra. Kaller cb() naar hjulet
+// har landet og vinneren er lest opp.
+function animerTilVinner(pool, winner, cb) {
+  var idx = -1;
+  for (var i = 0; i < pool.length; i++) {
+    if (String(pool[i].id) === String(winner.id)) { idx = i; break; }
+  }
+  if (idx === -1) { cb(); return; }
+  var n = pool.length;
+  var sliceAngle = 360 / n;
+  var winnerMid = idx * sliceAngle + sliceAngle / 2;
+  var fullSpins = 8 + Math.floor(Math.random() * 3);
+  var target = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var overshoot = target + WHEEL_OVERSHOOT_DEG;
+  var svg = document.getElementById('wheelSvg');
+  svg.style.transition = 'transform ' + (WHEEL_SPIN_MS / 1000) + 's cubic-bezier(0.12,0.67,0.1,1)';
+  svg.style.transform = 'rotate(' + overshoot + 'deg)';
+  tickSoundsDuring(WHEEL_SPIN_MS);
+  setTimeout(function () {
+    svg.style.transition = 'transform ' + (WHEEL_BOUNCE_MS / 1000) + 's cubic-bezier(0.34,1.56,0.64,1)';
+    svg.style.transform = 'rotate(' + target + 'deg)';
+    wheelRotation = target;
+    landImpact();
+    setTimeout(function () { beepWinFanfare(); cb(); }, WHEEL_BOUNCE_MS + 80);
+  }, WHEEL_SPIN_MS);
+}
+
+// ---------------------------------------------------------------------------
+// Felles hjul (AVVIK-062): alle lagene som star uavgjort - i BEGGE divisjoner
+// - star pa samme hjul. Hvert spinn trekker ut ett lag, som vinner sin egen
+// strid. Laget forsvinner, hjulet krymper, og vi snurrer til alle er plassert.
+// De som star igjen til slutt i en bunngruppe er de som rykker ned.
+// ---------------------------------------------------------------------------
+var fellesHjul = false;
+
+function fellesLinje(svar) {
+  var g = svar.gruppe || {};
+  var hale = g.inverter
+    ? ' - trygg'
+    : (Number(g.trengerAntall) > 1 ? ' - nr. ' + g.plass : '');
+  var div = g.divisjon ? ' (Div ' + g.divisjon + ')' : '';
+  return '<div>' + escHtml(svar.vinner.navn) + div + escHtml(hale) + '</div>';
+}
+
+// ---------------------------------------------------------------------------
+// Enarmet banditt (AVVIK-066). Lykkehjulet trakk ett lag per spinn, sa tre
+// avgjorelser tok tre spinn. Her dras spaken EN gang: alle hjulene starter
+// samtidig og stopper etter hverandre - ett hjul per avgjorelse. Merkingen
+// over hvert hjul sier hva det avgjor ("Div 2 - nr. 1"), og et hjul for en
+// bunngruppe viser hvem som er TRYGG, ikke hvem som ryker.
+// ---------------------------------------------------------------------------
+var REEL_H = 120;
+var bandittGar = false;
+
+function bandittMerkeTekst(g) {
+  var d = g.divisjon ? 'Div ' + g.divisjon : '';
+  if (g.inverter) { return (d ? d + ' - ' : '') + 'trygg'; }
+  if (Number(g.trengerAntall) > 1) { return (d ? d + ' - ' : '') + 'nr. ' + g.plass; }
+  return d || 'Vinner';
+}
+
+// Bygger ett hjul per avgjorelse som gjenstar. Navnene som ruller er gruppas
+// egne kandidater - da ser det riktig ut i det hjulet stopper.
+function byggBanditt(grupper) {
+  var kol = [];
+  (grupper || []).forEach(function (g) {
+    var mangler = Number(g.trengerAntall || 1) - (g.rekkefolge || []).length;
+    for (var i = 0; i < mangler; i++) {
+      kol.push({ gruppe: g, plass: (g.rekkefolge || []).length + i + 1 });
+    }
+  });
+  var h = '<div class="bandittRam"><div class="bandittHjul">';
+  kol.forEach(function (k, i) {
+    var g = k.gruppe;
+    var merke = bandittMerkeTekst({ divisjon: g.divisjon, inverter: g.inverter,
+                                    trengerAntall: g.trengerAntall, plass: k.plass });
+    var pool = (g.kandidater || []).slice();
+    // Stripa ma vaere lang nok til at bade rullingen (40 steg) og landingen
+    // (4 runder + posisjon) holder seg innenfor - ellers ruller den forbi
+    // slutten og hjulet star tomt.
+    var runder = Math.max(8, Math.ceil(60 / Math.max(pool.length, 1)));
+    var strip = '';
+    for (var r = 0; r < runder; r++) {
+      pool.forEach(function (p) { strip += '<div class="navn">' + escHtml(p.navn) + '</div>'; });
+    }
+    h += '<div class="bandittKol"><div class="bandittMerke">' + escHtml(merke) + '</div>' +
+         '<div class="reel" id="reel' + i + '"><div class="strip">' + strip + '</div></div></div>';
+  });
+  h += '</div><div class="bandittSpak"><button id="spakBtn" onclick="draSpaken()">DRA SPAKEN</button></div></div>';
+  var w = document.getElementById('bandittWrap');
+  if (w) { w.innerHTML = h; w.style.display = 'block'; }
+  bandittKolonner = kol;
+  return kol.length;
+}
+
+var bandittKolonner = [];
+
+function rullHjul(i, ms) {
+  var el = document.getElementById('reel' + i);
+  if (!el) { return; }
+  var strip = el.querySelector('.strip');
+  strip.style.transition = 'none';
+  strip.style.transform = 'translateY(0px)';
+  // tvinger reflow slik at overgangen under faktisk starter fra 0
+  void strip.offsetHeight;
+  strip.style.transition = 'transform ' + (ms / 1000) + 's linear';
+  var maks = strip.children.length - 2;
+  strip.style.transform = 'translateY(-' + (REEL_H * Math.min(40, maks)) + 'px)';
+}
+
+// Stopper hjul i pa laget som vant, med en mjuk landing.
+function stoppHjul(i, vinnerNavn, cb) {
+  var el = document.getElementById('reel' + i);
+  if (!el) { if (cb) cb(); return; }
+  var g = (bandittKolonner[i] || {}).gruppe || {};
+  var pool = (g.kandidater || []);
+  var idx = 0;
+  for (var j = 0; j < pool.length; j++) {
+    if (String(pool[j].navn) === String(vinnerNavn)) { idx = j; break; }
+  }
+  var strip = el.querySelector('.strip');
+  var runder = 4;
+  var mal = REEL_H * (pool.length * runder + idx);
+  strip.style.transition = 'transform 1.1s cubic-bezier(0.22,1.1,0.36,1)';
+  strip.style.transform = 'translateY(-' + mal + 'px)';
+  setTimeout(function () {
+    el.classList.add('stoppet');
+    beep(660, .22, 'square', .25);
+    if (cb) { cb(); }
+  }, 1150);
+}
+
+function draSpaken() {
+  if (bandittGar) { return; }
+  bandittGar = true;
+  var knapp = document.getElementById('spakBtn');
+  if (knapp) { knapp.disabled = true; knapp.textContent = 'TREKKER...'; }
+  setBulbsChasing(true);
+  for (var i = 0; i < bandittKolonner.length; i++) { rullHjul(i, 20); }
+  tickSoundsDuring(2000);
+
+  // Hent hele sekvensen forst - da vet vi hva hvert hjul skal lande pa.
+  var resultater = [];
+  var hentNeste = function () {
+    apiGet('trekkFellesVinner').then(function (svar) {
+      resultater.push(svar);
+      if (!svar.ferdig) { hentNeste(); return; }
+      landHjulene(resultater);
+    }).catch(function (e) {
+      console.error(e);
+      bandittGar = false;
+      setBulbsChasing(false);
+      if (knapp) { knapp.disabled = false; knapp.textContent = 'DRA SPAKEN'; }
+    });
+  };
+  setTimeout(hentNeste, 600);
+}
+
+function landHjulene(resultater) {
+  var i = 0;
+  var neste = function () {
+    if (i >= resultater.length) {
+      bandittGar = false;
+      setBulbsChasing(false);
+      bulbsLandCelebrate();
+      confetti();
+      visFellesFasit((resultater[resultater.length - 1] || {}).grupper);
+      bandittFerdig();
+      return;
+    }
+    var res = resultater[i];
+    stoppHjul(i, res.vinner.navn, function () {
+      var el = document.getElementById('uavgjortResultat');
+      if (el) { el.innerHTML += fellesLinje(res); }
+      merkNestePlanOmgang(res.vinner.navn);
+      i++;
+      setTimeout(neste, 700);
+    });
+  };
+  neste();
+}
+
+function bandittFerdig() {
+  var b = document.getElementById('spakBtn');
+  if (b) { b.style.display = 'none'; }
+  finishSpin();
+}
+
+function spinFelles() {
+  apiGet('trekkFellesVinner').then(function (svar) {
+    var pool = wheelKandidater.slice();
+    animerTilVinner(pool, svar.vinner, function () {
+      document.getElementById('uavgjortResultat').innerHTML += fellesLinje(svar);
+      merkNestePlanOmgang(svar.vinner.navn);
+      if (svar.ferdig) { visFellesFasit(svar.grupper); finishSpin(); return; }
+      wheelKandidater = (svar.kandidater || []).slice();
+      setTimeout(function () {
+        buildWheel(wheelKandidater);
+        wheelRotation = 0;
+        spinFelles();
+      }, 1600);
+    });
+  }).catch(function (e) {
+    console.error(e);
+    wheelSpinning = false;
+    var b = document.getElementById('spinBtn');
+    if (b) { b.disabled = false; }
+    setBulbsChasing(false);
+  });
+}
+
+// Til slutt sier vi tydelig hvem som ryker - det er de som ALDRI ble trukket.
+function visFellesFasit(grupper) {
+  var h = '';
+  (grupper || []).forEach(function (g) {
+    if (!g.inverter) { return; }
+    var trukket = (g.rekkefolge || []).map(function (x) { return String(x.id); });
+    var igjen = (g.kandidater || []).filter(function (k) { return trukket.indexOf(String(k.id)) === -1; });
+    if (!igjen.length) { return; }
+    h += '<p style="font-size:.55em;margin-top:12px;color:#ff6b6b;">Star igjen og gar til opp-/nedrykket: <b>' +
+      igjen.map(function (k) { return escHtml(k.navn); }).join(', ') + '</b></p>';
+  });
+  if (h) { document.getElementById('uavgjortResultat').innerHTML += h; }
+}
+
+// Hver snurr tilhorer raden den ble startet pa. Byttes raden underveis -
+// typisk fra opp-/nedrykkstrekningen til en vanlig uavgjort inne i en runde -
+// hadde de gjenstaende callbackene fortsatt a tegne opp hjulet med lagene fra
+// den GAMLE raden. Kandidatlista bak var riktig, sa det ble trukket riktig
+// lag, men navnene pa hjulet var fra forrige trekning (AVVIK-068).
+var spinGen = 0;
+var aktivSpinGen = 0;
+function starterSnurr() { aktivSpinGen = ++spinGen; }
+function snurrenErUtdatert() { return aktivSpinGen !== spinGen; }
+
+function spinToNextWinner(pool) {
+  if (snurrenErUtdatert()) { wheelSpinning = false; speilerAndres = false; setBulbsChasing(false); return; }
+  if (!uavgjortWinnersQueue.length) { finishSpin(); return; }
+  var winner = uavgjortWinnersQueue.shift();
+  var idx = -1;
+  for (var i = 0; i < pool.length; i++) {
+    if (String(pool[i].id) === String(winner.id)) { idx = i; break; }
+  }
+  if (idx === -1) { spinToNextWinner(pool); return; }
+  var n = pool.length;
+  var sliceAngle = 360 / n;
+  var winnerMid = idx * sliceAngle + sliceAngle / 2;
+  var fullSpins = 8 + Math.floor(Math.random() * 3);
+  var target = wheelRotation - (wheelRotation % 360) + fullSpins * 360 + (360 - winnerMid);
+  var overshoot = target + WHEEL_OVERSHOOT_DEG;
+  var svg = document.getElementById('wheelSvg');
+  svg.style.transition = 'transform ' + (WHEEL_SPIN_MS / 1000) + 's cubic-bezier(0.12,0.67,0.1,1)';
+  svg.style.transform = 'rotate(' + overshoot + 'deg)';
+  tickSoundsDuring(WHEEL_SPIN_MS);
+  setTimeout(function () {
+    svg.style.transition = 'transform ' + (WHEEL_BOUNCE_MS / 1000) + 's cubic-bezier(0.34,1.56,0.64,1)';
+    svg.style.transform = 'rotate(' + target + 'deg)';
+    wheelRotation = target;
+    landImpact();
+    setTimeout(function () {
+      if (snurrenErUtdatert()) { wheelSpinning = false; speilerAndres = false; setBulbsChasing(false); return; }
+      var el = document.getElementById('uavgjortResultat');
+      el.innerHTML += '<div>Vinner: ' + escHtml(winner.navn) + '</div>';
+      merkNestePlanOmgang(winner.navn);
+      beepWinFanfare();
+      if (uavgjortWinnersQueue.length) {
+        pool = pool.slice();
+        pool.splice(idx, 1);
+        setTimeout(function () {
+          // Vakt ogsa her: denne tegner hjulet PA NYTT, og uten sjekken ville
+          // den male opp forrige rads lag over det ferske hjulet (AVVIK-068).
+          if (snurrenErUtdatert()) { wheelSpinning = false; speilerAndres = false; setBulbsChasing(false); return; }
+          buildWheel(pool);
+          wheelRotation = 0;
+          spinToNextWinner(pool);
+        }, 1400);
+      } else {
+        finishSpin();
+      }
+    }, WHEEL_BOUNCE_MS + 80);
+  }, WHEEL_SPIN_MS);
+}
+
+// Nar det gjenstar flere trekninger i samme operasjon - typisk divisjon 1 og
+// divisjon 2 i opp-/nedrykket - gar hjulet rett videre selv. Quizmasteren
+// slipper turen innom PC-en mellom hver, og bekrefter en gang helt til slutt.
+var autoSnurrNeste = false;
+var speilerAndres = false;
+var speiletRadKey = null;
+
+function finishSpin() {
+  if (speilerAndres) {
+    // Vi speilet bare en trekning noen andre gjorde - da er det ikke var jobb
+    // a fore spillet videre.
+    speilerAndres = false;
+    wheelSpinning = false;
+    setBulbsChasing(false);
+    bulbsLandCelebrate();
+    confetti();
+    var sb = document.getElementById('spinBtn');
+    if (sb) { sb.style.display = 'none'; }
+    return;
+  }
+  wheelSpinning = false;
+  setBulbsChasing(false);
+  bulbsLandCelebrate();
+  confetti();
+  var spinBtn = document.getElementById('spinBtn');
+  if (spinBtn) spinBtn.style.display = 'none';
+  var el = document.getElementById('uavgjortResultat');
+  var gjenstar = gjenstaendeOmganger();
+  if (gjenstar > 0) {
+    el.innerHTML += '<p id="nesteNote" style="font-size:.5em;opacity:.75;margin-top:10px;">' +
+      gjenstar + ' omgang' + (gjenstar === 1 ? '' : 'er') + ' igjen - neste trekning kommer...</p>';
+    setTimeout(gaTilNesteTrekning, 4000);
+    return;
+  }
+  el.innerHTML += '<p style="font-size:.5em;opacity:.7;margin-top:10px;">' +
+    'Alle trekninger er ferdige. Gå til Styre-siden for å bekrefte og fortsette.</p>';
+}
+
+function gaTilNesteTrekning() {
+  apiGet('nesteUavgjort').then(function (svar) {
+    var note = document.getElementById('nesteNote');
+    if (svar && svar.flere) {
+      // Den nye raden plukkes opp av sjekkModus-pollingen, som kaller
+      // initUavgjort. Flagget under far hjulet til a snurre av seg selv.
+      autoSnurrNeste = true;
+      if (note) { note.textContent = 'Neste trekning gjores klar...'; }
+    } else if (note) {
+      note.textContent = 'Alle trekninger er ferdige. Gå til Styre-siden for å bekrefte og fortsette.';
+    }
+  }).catch(function (e) {
+    console.error(e);
+    var note = document.getElementById('nesteNote');
+    if (note) { note.textContent = 'Kom ikke videre av seg selv - bekreft på Styre-siden for å hente fram neste hjul.'; }
+  });
+}
+
+apneTrekningsseksjonHvisBedtOm();
 lastBommertPanel();
 lastJoker();
 

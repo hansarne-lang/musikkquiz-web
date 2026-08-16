@@ -812,7 +812,7 @@ var AVVIK_DATA = [
   {
     id: "AVVIK-062",
     tittel: "Lykkehjulet: ett felles hjul for begge divisjoner, ett lag om gangen",
-    omrade: "Lykkehjul - Kode.gs + trekning.html + hovedskjerm.html + styre.html",
+    omrade: "Lykkehjul - Kode.gs + styre.html + hovedskjerm.html + styre.html",
     alvorlighet: "middels",
     status: "venter",
     funnetDato: "2026-08-16",
@@ -860,13 +860,37 @@ var AVVIK_DATA = [
   {
     id: "AVVIK-066",
     tittel: "Enarmet banditt erstatter lykkehjulet: ett trekk avgjor alt",
-    omrade: "Lykkehjul - trekning.html + hovedskjerm.html",
+    omrade: "Lykkehjul - styre.html + hovedskjerm.html",
     alvorlighet: "lav",
     status: "venter",
     funnetDato: "2026-08-16",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Lykkehjulet fra AVVIK-062 trakk ett lag per spinn. Tre avgjorelser tok tre spinn a rundt 13 sekunder hver - snaut et minutt der publikum sa det samme hjulet snurre om og om igjen. Onsket var en mekanisme der alt avgjores i en omgang.",
     losning: "En enarmet banditt med ett hjul per avgjorelse. Spaken dras EN gang: alle hjulene starter samtidig, og stopper etter hverandre med et lite opphold - ett lag per hjul. Over hvert hjul star det hva det avgjor: \"Div 1 - trygg\", \"Div 2 - nr. 1\", \"Div 2 - nr. 2\". Et hjul for en bunngruppe viser hvem som er TRYGG, ikke hvem som ryker, i trad med regelen fra AVVIK-062. Hvert hjul ruller gjennom sin egen gruppes lag, ikke alle, sa det ser riktig ut i det hjulet stopper. Antall hjul leses av gruppene og kan bli faerre enn ventet nar en gruppe loser seg selv. Backend er urort - hele mekanikken bygger pa fellesHjulStatus og trekkFellesVinner fra AVVIK-062. Storskjermen speiler maskinen: den bygger de samme hjulene uten spak, og stopper hjul nummer i nar valgt-lista vokser. Blir trekningen ferdig raskere enn pollingen rekker a folge med, spilles hele sekvensen av i ettertid i stedet for a falle tilbake til lykkehjulet. Stillingstabellen fra AVVIK-065 star fortsatt ved siden av. 10 tester i e2e16.js.",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-067",
+    tittel: "Trekning og lykkehjul flyttet inn i styringspanelet",
+    omrade: "Styring - styre.html (trekning.html er borte)",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Kategoritrekningen, buzzer-visningen, kategorispillet og lykkehjulet la i en egen side, trekning.html. Quizmasteren matte veksle mellom to faner gjennom hele kvelden: starte noe i styringspanelet, bytte fane for a trekke, bytte tilbake for a bekrefte.",
+    losning: "Hele trekning.html er flyttet inn i styre.html som en egen seksjon, \"Trekning & hjul\", og fila er slettet. Seksjonen star normalt sammenklappet, men overskriften merkes NAA sa snart en kategoritrekning, et kategorispill eller en hjultrekning er i gang, og kortene i styringspanelet har knapper som ruller rett ned dit. ?trekning=1 apner den ved sidelast. Sammenslaingen matte ikke doble trafikken mot Apps Script: trekningen hadde sine egne pollere for uavgjortStatus og opprykkStatus, og de leser na tilstanden fra samlekallet styrePoll som styringspanelet allerede gjor hvert 2,5 sekund. Buzzer-visningen (700 ms) og kategorilista (5 s) poller bare mens seksjonen faktisk star apen. Navnekollisjoner: velgKat fantes i begge og heter velgKatTrekning her, .grid heter .trGrid, og #app heter #trApp. Fullskjerm-overleggene for finalevinner og bommert er ikke tatt med - de hoerer hjemme pa storskjermen, og et overlegg over kontrollene ville sperret panelet midt i kvelden.",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-068",
+    tittel: "Hjulet viste lagene fra forrige trekning etter opp-/nedrykket",
+    omrade: "Lykkehjul - styre.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Ny test e2e12.js (overgangen mellom de to mekanismene)",
+    beskrivelse: "Nar opp-/nedrykkstrekningen var ferdig og en vanlig uavgjort inne i en runde tok over, ble lykkehjulet staaende med lagene fra opp-/nedrykket. Kandidatlista bak var riktig, sa det ble trukket riktig lag - men navnene publikum sa pa hjulet var fra forrige trekning. Arsaken var speilingen fra AVVIK-048: den snurrer hjulet gjennom en trekning noen andre har gjort, og tegner hjulet pa nytt for hver omgang med et opphold pa 1,4 sekunder. Byttet raden mens den holdt pa, fortsatte de utestaende callbackene a male opp den gamle raden - og finishSpin skrev til og med sluttmeldingen fra forrige trekning inn i den nye.",
+    losning: "En generasjonsteller: hver snurr merkes med sin generasjon, og telleren okes bade nar en ny snurr starter og nar raden byttes. Alle callbackene i snurresekvensen - ogsa den inne i 1,4-sekunders-opphold som tegner hjulet pa nytt - gir seg stille nar generasjonen ikke stemmer, i stedet for a kalle finishSpin. I tillegg: speilingen kjores ikke lenger for felles trekninger i det hele tatt. De gar pa den enarmede banditten (AVVIK-066), som viser seg selv - a speile dem som en hjulsnurr ville vist en mekanikk vi ikke lenger bruker. 9 tester i e2e12.js.",
     sistOppdatert: "2026-08-16"
   }
 ];

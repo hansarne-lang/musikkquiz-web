@@ -17,8 +17,7 @@
       { url: 'index.html', tekst: 'Oversikt', under: 'Startpunktet med QR og lenker' },
       { url: 'kjoreplan.html', tekst: 'Kjøreplan', under: 'Hele kvelden på ett ark' },
       { skille: true },
-      { url: 'styre.html', tekst: 'Styring / Admin', under: 'Fasit, poeng, opp-/nedrykk' },
-      { url: 'trekning.html', tekst: 'Trekning', under: 'Kategorier og lykkehjul' },
+      { url: 'styre.html', tekst: 'Styring / Admin', under: 'Fasit, poeng, trekning og lykkehjul' },
       { url: 'hovedskjerm.html', tekst: 'Storskjerm', under: 'Bildet publikum ser' }
     ] },
     { navn: 'Resultater', punkter: [
