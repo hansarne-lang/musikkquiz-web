@@ -864,6 +864,47 @@ async function kjorAlle() {
       });
     });
 
+    await kjorTest("Backend", "R9.27 Lagnavn valideres likt begge veier inn (AVVIK-060)", async function () {
+      // Rene lesetester gar ikke her - vi ma faktisk prove a lagre. Derfor
+      // sendes bare navn som SKAL avvises; slipper ett gjennom, er det en feil
+      // uansett, og da har vi lart det vi trengte.
+      var svar = {};
+      var proev = async function (navn, merkelapp) {
+        try {
+          await apiGet('saveTeams', { teams: JSON.stringify([{ navn: navn, divisjon: 1, bord: 1 }]) });
+          svar[merkelapp] = 'SLAPP GJENNOM';
+        } catch (e) { svar[merkelapp] = 'avvist'; }
+      };
+      await proev('D'.repeat(61), 'for langt');
+      await proev('=1+1', 'formel =');
+      await proev('@SUM(A1)', 'formel @');
+      await proev('   ', 'tomt');
+      var slapp = Object.keys(svar).filter(function (k) { return svar[k] !== 'avvist'; });
+      assert(!slapp.length, 'disse burde vaert avvist: ' + slapp.join(', ') +
+        ' - lagnavn uten validering kan bli til formler i regnearket');
+      return Object.keys(svar).map(function (k) { return k + ': ' + svar[k]; }).join(' | ');
+    });
+
+    await kjorTest("Backend", "R9.28 Historikken kan ryddes (AVVIK-061)", async function () {
+      var f = null;
+      try { await apiGet('slettHistorikkKveld', { dato: '1999-01-01T00:00:00.000Z' }); }
+      catch (e) { f = e.message; }
+      assert(f, 'slettHistorikkKveld svarte OK pa et tidsstempel som ikke finnes');
+      assert(!/Ukjent api-handling/i.test(f),
+        'slettHistorikkKveld finnes ikke i backend - er den distribuert?');
+      assert(/Fant ingen kveld/i.test(f), 'uventet feilmelding: ' + f);
+      return 'finnes og avviser ukjent tidsstempel';
+    });
+
+    await kjorTest("Ovrig", "R9.29 Historikksiden har slett-knapp per kveld (AVVIK-061)", async function () {
+      return await medSide('historikk.html', 3000, function (w) {
+        assert(typeof w.slettKveld === 'function', 'slettKveld mangler i historikk.html');
+        harMerker(w, 'slettKveld', ['slettHistorikkKveld', 'confirm']);
+        harMerker(w, 'visKveldsliste', ['slettKveld']);
+        return 'slett-knapp med bekreftelse';
+      });
+    });
+
     // ========== Gruppe: Backend (AVVIK-027, 041) - kun lesing ==========
     await kjorTest("Backend", "R7.1 Buzzeren har ingen rester i vinnerfeltene (AVVIK-027)", async function () {
       var b = await apiGet('buzzerStatus');

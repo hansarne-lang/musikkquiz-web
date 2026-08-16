@@ -180,10 +180,36 @@ function visKveldsliste(kvelder) {
     html += '<h4>B-finale</h4><p>' + (k.finaleBVinner ? '🏆 <b>' + escHtml(k.finaleBVinner) + '</b> vant B-finalen.' : '<span class="tomt">B-finale ikke spilt denne kvelden.</span>') + '</p>';
     html += '<h4>Jokerbruk</h4>' + visJokerTabellHistorikk(k.jokerBruk);
     html += '<h4>🤦 Beste bommert - høydepunkter</h4>' + visBommerterHistorikk(k.bommerter);
+    // Generalprover og avbrutte kvelder ble liggende for alltid - det fantes
+    // ingen vei ut igjen. Slettingen gar pa eksakt tidsstempel (AVVIK-061).
+    html += '<p style="margin-top:18px;"><button type="button" class="slettKveld" data-dato="' +
+      escHtml(k.dato) + '" style="border-color:#ef5350;color:#ef5350;">Slett denne kvelden fra historikken</button></p>';
     html += '</div></details>';
   });
   html += '</div>';
   wrap.innerHTML = html;
+  koblePaSletting();
+}
+
+function koblePaSletting() {
+  var knapper = document.querySelectorAll('.slettKveld');
+  for (var i = 0; i < knapper.length; i++) {
+    knapper[i].onclick = function () { slettKveld(this.getAttribute('data-dato'), this); };
+  }
+}
+
+function slettKveld(dato, knapp) {
+  if (!confirm('Slette denne kvelden fra historikken for godt?\n\n' + formatDato(dato) +
+               '\n\nDette kan ikke angres.')) { return; }
+  knapp.disabled = true;
+  knapp.textContent = 'Sletter...';
+  apiGet('slettHistorikkKveld', { dato: dato }).then(function () {
+    last();
+  }).catch(function (e) {
+    knapp.disabled = false;
+    knapp.textContent = 'Slett denne kvelden fra historikken';
+    alert('Klarte ikke a slette kvelden: ' + (e && e.message ? e.message : e));
+  });
 }
 
 // ---- Sesongoversikt ----

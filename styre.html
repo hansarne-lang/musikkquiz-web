@@ -1154,7 +1154,7 @@ function tegnLagRader(n, navnListe) {
   for (var i = 1; i <= n; i++) {
     var div = i <= Math.ceil(n / 2) ? 1 : 2;
     var forslag = (navnListe && navnListe[i - 1]) ? navnListe[i - 1] : ('Lag ' + i);
-    html += '<tr><td>' + i + '</td><td><input class="navn" value="' + forslag + '"></td><td><select class="div"><option value="1"' + (div == 1 ? ' selected' : '') + '>1</option><option value="2"' + (div == 2 ? ' selected' : '') + '>2</option></select></td><td><input class="bord" type="number" value="' + i + '"></td></tr>';
+    html += '<tr><td>' + i + '</td><td><input class="navn" maxlength="60" value="' + forslag + '"></td><td><select class="div"><option value="1"' + (div == 1 ? ' selected' : '') + '>1</option><option value="2"' + (div == 2 ? ' selected' : '') + '>2</option></select></td><td><input class="bord" type="number" value="' + i + '"></td></tr>';
   }
   html += '</table><button onclick="lagreLag()">Lagre lag og lag QR-koder</button></div>';
   document.getElementById('lagRaderDiv').innerHTML = html;

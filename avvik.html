@@ -784,6 +784,30 @@ var AVVIK_DATA = [
     beskrivelse: "getGjeldendeRunde() returnerte forste rad med status apen, og fant den ingen, SISTE RAD i Runder-arket. nullstillRunder legger inn alle seks rundene med en gang, sa siste rad er alltid 6. scoreRunde lukker runden nar alle tre sangene er poenggitt - og i det oyeblikket sto det ingen apen runde igjen. Fra da av svarte backend runde 6 pa alt: styringspanelet ville vist \"Fasit for runde 6\" ved neste sidelast, startOpprykk ville lagret opp-/nedrykket pa runde 6 i stedet for runde 1, og apneNeste ville forsokt a apne runde 7 - som etter AVVIK-057 blir avvist. Da star kvelden bom fast: runde 2 kan aldri apnes, fordi apneRunde krever at opp-/nedrykket gjelder runde 1. Dette var ogsa rotarsaken bak AVVIK-055; den rettelsen skjermet bare visningen pa storskjermen, ikke resten av systemet. Traff en ekte kveld 16.08.2026.",
     losning: "getGjeldendeRunde() returnerer fortsatt den apne runden nar det finnes en. Er ingen runde apen - altsa mellom to runder - svarer den na med den SISTE SPILTE runden, funnet via poengmerkene per sang i kolonne 12-14 av Runder-arket, som er det eneste sporet av at en runde faktisk har vaert spilt. Finnes ingen slike, svarer den 1. Verifisert i produksjon rett etter distribusjon: styreData gikk fra runde 6 til runde 1, og stilling melder apenRunde 0 (mellom rundene) med runde 1. Simulatoren lukket heller aldri runden etter poengberegning, og traff derfor aldri denne tilstanden - det er rettet, slik at suitene na spiller gjennom \"mellom to runder\" pa ekte.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-060",
+    tittel: "Lagnavn hadde ingen grense i Lag-oppsett, og formler ble lagret som formler",
+    omrade: "Kode.gs - registrerLagSelv, saveTeams, endreKlubbNavn_",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Sporsmal fra quizmaster om lengdegrense og injeksjon",
+    beskrivelse: "Lagnavn kom inn to veier med helt ulike regler. Selvpaameldingen hadde 60 tegn, tomt-sjekk og dublettsjekk. Lag-oppsett i styringspanelet hadde INGEN validering: verken maxlength i feltet eller sjekk i saveTeams. Malt i sandkassen gikk et navn pa 200 tegn rett inn og strakk stillingssiden til 2875 px pa en 1920-skjerm - vannrett rulling pa projektoren. I tillegg, og verre: Sheets tolker en streng som begynner med =, +, - eller @ som en FORMEL nar den skrives med appendRow eller setValues. Verifisert at \"=1+1\" ble godtatt som lagnavn. I det ekte arket betyr det at et lag kan melde seg pa som \"=1/0\" og sta som #DIV/0! i tabellen resten av kvelden, eller som \"=IMPORTXML(...)\" og hente data utenfra inn i regnearket. Det finnes ingen SQL i losningen - alt er Sheets - men formelinjeksjon er samme klasse problem. XSS var derimot allerede dekket av AVVIK-012/028/029/030/034/035/043/046.",
+    losning: "Ny felles rensLagnavn_() som brukes av alle tre veiene inn (registrerLagSelv, saveTeams, endreKlubbNavn_): kontrolltegn stripes, navnet trimmes, tomt avvises, maks 60 tegn, og navn som BEGYNNER med =, + , - eller @ avvises med en forklarende melding. Navn som bare inneholder likhetstegn lenger inne, som \"Lag = best\", er fortsatt lov. saveTeams avviser i tillegg to like lagnavn i samme oppsett, og feltet i panelet har fatt maxlength=60. 16 tester i e2e11.js.",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-061",
+    tittel: "Arkiverte kvelder kunne ikke fjernes fra historikken",
+    omrade: "Historikk - Kode.gs + historikk.html",
+    alvorlighet: "lav",
+    status: "venter",
+    funnetDato: "2026-08-16",
+    funnetAv: "Opprydding etter generalprover og avbrutte testkvelder",
+    beskrivelse: "arkiverKveldOgNullstill legger til en rad i Historikk-arket, men det fantes ingen vei tilbake. Etter testkvelder og en avbrutt generalprove sto det fire kvelder i historikken som aldri hadde vaert ekte quizkvelder - to av dem uten et eneste poeng. De teller med i sesongoversikten og ser ut som ekte kvelder for alle som apner siden.",
+    losning: "Ny slettHistorikkKveld(dato) i backend og en Slett-knapp per kveld i historikk.html, med bekreftelse for. Slettingen skjer pa eksakt tidsstempel og ikke pa radnummer, slik at to slettinger etter hverandre ikke kan komme til a treffe feil rad. Ukjent eller tomt tidsstempel avvises med en tydelig feilmelding i stedet for a slette noe.",
+    sistOppdatert: "2026-08-16"
   }
 ];
 
