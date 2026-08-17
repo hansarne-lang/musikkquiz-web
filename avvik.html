@@ -1003,6 +1003,18 @@ var AVVIK_DATA = [
     beskrivelse: "Sida viste et sammendrag med fire tall og deretter 68 kort etter hverandre. Det gikk fint a lese ETT avvik, men umulig a se hvor de satt, hvor alvorlige de var, eller hvordan de ble funnet. Samtidig la det et etterslep i statusfeltet: 13 avvik sto som \"rettet i kode - venter pa distribusjon\" lenge etter at de var lagt ut og verifisert i produksjon.",
     losning: "En statistikkdel over lista, regnet ut fra AVVIK_DATA i det sida lastes - legger man inn et nytt avvik, folger tallene med av seg selv. Seks noketall, en fordeling av alvorlighet, sokyler per dag stablet etter alvorlighet, liggende stolper for hvilke komponenter som er berort og for hvordan avvikene ble funnet, og en matrise komponent x alvorlighet. Diagrammene er ren SVG uten bibliotek eller nettverkskall. Fargebruken folger en fast regel: stolpene har EN farge fordi lengden allerede koder storrelsen, mens alvorlighet og matrisen bruker en ordinal rampe i samme hue - trinnene er validert mot flatefargen, og hvert tall star skrevet i merket sa fargen aldri baerer betydningen alene. Alle diagrammene har pekeboks pa bade mus og tastatur, og en knapp viser de samme tallene som tabell. De 13 etterslepende statusene er satt til lost.",
     sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-070",
+    tittel: "Kategorien kom en sang av gangen - feilklikk var umulig a rette",
+    omrade: "Opp-/nedrykk - Kode.gs + styre.html",
+    alvorlighet: "middels",
+    status: "venter",
+    funnetDato: "2026-08-17",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Kategorien i opp-/nedrykket er fem buzzer-dueller. Panelet viste EN sang av gangen: fasit, spilleknapp og tre lagknapper, og sa hoppet det videre til neste. To problemer med det. Man sa aldri hvor mange dueller som gjensto eller hva som kom, og poengene ble talt opp med en teller - klikket man feil lag pa sang 2, var det ingen vei tilbake uten a nullstille hele opp-/nedrykket. Reservesangene (omspillslista) var heller ikke synlige for de plutselig ble aktuelle.",
+    losning: "Alle fem sangene ligger na under hverandre, hver med fasit, egen spilleknapp og egne lagknapper - pluss reserven under, tydelig merket med at den bare brukes hvis to lag ender likt. Star det flere reserver i lista, sier raden fra om hvor mange som er igjen. Backend lagrer resultatet PER sang i en ny kolonne (SangResultat) i stedet for a telle oppover: poengsummen regnes ut av lista hver gang, radene kan registreres i hvilken som helst rekkefolge, en rad kan rettes til et annet lag, og \"Angre\" tommer den helt. \"Ingen riktig\" er sin egen tilstand, ikke det samme som en tom rad. Kategorien avgjores forst nar alle fem star registrert - akkurat som for, men na kan alt rettes helt fram til det siste klikket. Den gamle veien (registrerOpprykkPoeng/hoppOverSang) skriver inn i den samme lista, sa listevisningen og kategorispillet i trekningsseksjonen aldri kan komme i utakt. 21 tester i e2e17.js.",
+    sistOppdatert: "2026-08-17"
   }
 ];
 

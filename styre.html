@@ -37,6 +37,36 @@ button:hover{background:#00ff00;filter:none;}
 label{display:inline-block;margin-top:6px;}
 summary{cursor:pointer;font-weight:800;font-size:1.05em;}
 
+/* Sanglista i kategorien (AVVIK-070): fem buzzer-dueller under hverandre,
+   pluss reserven. Radene er lave med vilje - hele kategorien skal fa plass
+   pa en skjerm. */
+.sangliste{margin-top:14px;}
+.sangrad{border:1px solid #3a3f4b;border-radius:10px;padding:11px 14px;margin-bottom:8px;
+  display:grid;grid-template-columns:1fr auto;grid-template-areas:'topp topp' 'fasit spotify' 'knapper knapper';
+  gap:5px 12px;align-items:center;}
+.sangrad.na{background:rgba(0,255,255,.05);}
+.sangrad.spilt{opacity:.72;}
+.sangrad.reserve{border-style:dashed;opacity:.85;margin-top:14px;}
+.sangtopp{grid-area:topp;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sangnr{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#7b8494;font-weight:600;}
+.sangmerke{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;
+  padding:2px 9px;border-radius:20px;border:1px solid;}
+.sangmerke.na{color:#00ffff;border-color:#00ffff;}
+.sangmerke.vant{color:#0ca30c;border-color:#0ca30c;}
+.sangmerke.ingen{color:#8a93a3;border-color:#3a3f4b;}
+.sangmerke.reserve{color:#ffca28;border-color:#ffca28;}
+.sangfasit{grid-area:fasit;font-size:14px;color:#e8eaf0;}
+.sangaar{color:#9aa3b2;}
+.sangspotify{grid-area:spotify;justify-self:end;}
+.sangspotify.tom{font-size:11.5px;color:#5b6373;}
+.sangknapper{grid-area:knapper;display:flex;gap:7px;flex-wrap:wrap;margin-top:3px;}
+.sangknapper button{padding:7px 13px;font-size:13px;}
+.sangreservenote{grid-area:knapper;font-size:11.5px;color:#7b8494;margin-top:2px;}
+@media (max-width:640px){
+  .sangrad{grid-template-columns:1fr;grid-template-areas:'topp' 'fasit' 'spotify' 'knapper';}
+  .sangspotify{justify-self:start;}
+}
+
 /* Faseinndeling (AVVIK-063): panelet folger kvelden i stedet for a vise alt
    samtidig. Gruppa du er i star apen, resten er sammenklappet. */
 .fase{border:1px solid var(--m-kant,#2f3542);border-radius:10px;margin:0 0 14px;padding:0;background:transparent;}
@@ -870,6 +900,101 @@ function opprykkStilling(o, ferdig) {
   return h + '</table>';
 }
 
+
+// ---- Sanglista i kategorien (AVVIK-070) -------------------------------------
+// Panelet viste EN sang av gangen. Da sa man aldri hvor mange buzzer-dueller som
+// gjensto, og et feilklikk var umulig a rette. Na ligger alle fem under
+// hverandre med hver sine knapper, og reservesangen star under - den brukes bare
+// hvis to lag ender likt.
+function sangKnapp(indeks, lag, aktiv, valgt) {
+  var erValgt = valgt !== null && valgt !== undefined && String(valgt) === String(lag.id);
+  var stil = erValgt
+    ? 'background:#00ff00;color:#000;border-color:#00ff00;'
+    : (aktiv ? '' : 'background:#1c1f27;color:#8a93a3;border-color:#2f3542;');
+  return '<button style="' + stil + '" onclick="settSang(' + attr(indeks) + ',' + attr(lag.id) + ')">' +
+    escHtml(lag.navn) + '</button> ';
+}
+
+function sangRad(o, indeks, sang, valgt) {
+  var lag = [o.lagA, o.lagB, o.lagC].filter(Boolean);
+  var ferdig = (valgt !== null && valgt !== undefined);
+  var aktiv = (Number(o.sangIndex) === indeks);
+  var ramme = ferdig ? '#2f3542' : (aktiv ? '#00ffff' : '#3a3f4b');
+  var h = '<div class="sangrad' + (aktiv ? ' na' : '') + (ferdig ? ' spilt' : '') +
+    '" style="border-color:' + ramme + ';">';
+  h += '<div class="sangtopp"><span class="sangnr">Sang ' + (indeks + 1) + ' av 5</span>';
+  if (aktiv && !ferdig) { h += '<span class="sangmerke na">Står for tur</span>'; }
+  else if (ferdig && valgt === '') { h += '<span class="sangmerke ingen">Ingen riktig</span>'; }
+  else if (ferdig) {
+    var vinner = lag.filter(function (l) { return String(l.id) === String(valgt); })[0];
+    h += '<span class="sangmerke vant">' + escHtml(vinner ? vinner.navn : 'Ukjent') + '</span>';
+  }
+  h += '</div>';
+  h += '<div class="sangfasit">' + escHtml(sang ? (sang.artist + ' - ' + sang.latt) : 'Sang ' + (indeks + 1)) +
+    (sang && sang.aar ? ' <span class="sangaar">(' + escHtml(sang.aar) + ')</span>' : '') + '</div>';
+  h += sangSpotify(sang);
+  h += '<div class="sangknapper">';
+  lag.forEach(function (l) { h += sangKnapp(indeks, l, aktiv, valgt); });
+  var ingenStil = (valgt === '') ? 'background:#666;color:#fff;border-color:#666;' :
+    (aktiv ? '' : 'background:#1c1f27;color:#8a93a3;border-color:#2f3542;');
+  h += '<button style="' + ingenStil + '" onclick="settSang(' + attr(indeks) + ',\'\')">Ingen riktig</button> ';
+  if (ferdig) {
+    h += '<button style="background:transparent;color:#9aa3b2;border-color:#3a3f4b;" onclick="settSang(' +
+      attr(indeks) + ',\'angre\')">Angre</button>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function sangSpotify(sang) {
+  var u = spotifyUrl(sang && sang.spotify);
+  if (!u) { return '<div class="sangspotify tom">Ingen Spotify-lenke</div>'; }
+  // Kort etikett med vilje - radene skal vaere lave nok til at hele kategorien
+  // far plass pa en skjerm. title og aria-label sier hva knappen apner.
+  return '<div class="sangspotify"><a href="' + escHtml(u) + '" target="_blank" rel="noopener" ' +
+    'title="Spill av i Spotify" aria-label="Spill av i Spotify">' +
+    '<button style="background:#1db954;color:#fff;padding:7px 14px;font-size:13px;">Spill av</button></a></div>';
+}
+
+// Reserven: forste ubrukte omspillsang. Flere dukker opp av seg selv hvis den
+// forste ikke skiller lagene - lista er den samme som omspillet spiller fra.
+function reserveRad(o) {
+  var oms = o.omspillSanger || [];
+  var brukt = Number(o.omspillBrukt || 0);
+  var neste = oms[brukt];
+  var igjen = Math.max(0, oms.length - brukt);
+  var h = '<div class="sangrad reserve">';
+  h += '<div class="sangtopp"><span class="sangnr">Reserve</span>' +
+    '<span class="sangmerke reserve">Bare hvis to lag ender likt</span></div>';
+  if (!neste) {
+    h += '<div class="sangfasit" style="opacity:.6;">Omspillslista er tom - da må du velge nedrykk selv.</div></div>';
+    return h;
+  }
+  h += '<div class="sangfasit">' + escHtml(neste.artist + ' - ' + neste.latt) +
+    (neste.aar ? ' <span class="sangaar">(' + escHtml(neste.aar) + ')</span>' : '') + '</div>';
+  h += sangSpotify(neste);
+  if (igjen > 1) {
+    h += '<div class="sangreservenote">' + (igjen - 1) + ' reserve' + (igjen - 1 === 1 ? '' : 'r') +
+      ' til i lista hvis den første ikke skiller lagene.</div>';
+  }
+  return h + '</div>';
+}
+
+function sangListe(o) {
+  var sanger = o.kategoriSanger || [];
+  var res = o.sangResultat || [];
+  var h = '<div class="sangliste">';
+  for (var i = 0; i < 5; i++) {
+    h += sangRad(o, i, sanger[i], (res.length > i ? res[i] : null));
+  }
+  h += reserveRad(o);
+  return h + '</div>';
+}
+
+function settSang(indeks, lagId) {
+  apiGet('settSangResultat', { indeks: indeks, lagId: lagId }).then(visOpprykk).catch(feil);
+}
+
 function visOpprykk(o) {
   var html = '';
   if (o.status === 'venter_uavgjort') {
@@ -889,16 +1014,14 @@ function visOpprykk(o) {
     });
     html += '</div>';
   } else if (o.status === 'pagar') {
+    var gjort = (o.sangResultat || []).filter(function (v) { return v !== null && v !== undefined; }).length;
     html = '<div class="card"><h2>Kategori: ' + escHtml(o.valgtKategori) + '</h2>';
-    html += '<p><b>Sang ' + (o.sangIndex + 1) + '</b> av 5</p>';
-    html += '<p>Fasit: ' + escHtml(o.gjeldendeSang.artist) + ' - ' + escHtml(o.gjeldendeSang.latt) + ' (' + escHtml(o.gjeldendeSang.aar) + ')</p>';
-    html += spotifyKnapp(o.gjeldendeSang);
+    html += '<p style="font-size:.85em;opacity:.8;">' + gjort + ' av 5 registrert. ' +
+      'Klikk laget som svarte riktig pa hver sang - du kan rette en rad helt til den siste er klikket. ' +
+      'Kategorien avgjores i det femte klikket faller.</p>';
     html += opprykkStilling(o, false);
-    html += '<p>Hvem svarte riktig?</p>';
-    html += '<button onclick="registrer(' + attr(o.lagA.id) + ')">' + escHtml(o.lagA.navn) + '</button> ';
-    html += '<button onclick="registrer(' + attr(o.lagB.id) + ')">' + escHtml(o.lagB.navn) + '</button> ';
-    html += '<button onclick="registrer(' + attr(o.lagC.id) + ')">' + escHtml(o.lagC.navn) + '</button> ';
-    html += '<button onclick="hopp()">Ingen riktig / hopp over...</button></div>';
+    html += sangListe(o);
+    html += '</div>';
   } else if (o.status === 'omspill') {
     // Kategorien er tom for ordinaere sanger, men to eller tre lag star likt
     // nederst. Da spilles en ekstra sang av gangen, bare mellom dem.
