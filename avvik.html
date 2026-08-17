@@ -49,6 +49,91 @@ button:hover{background:#00ff00;}
 .felt-lbl{color:#00ffff;font-size:0.75em;text-transform:uppercase;margin-top:8px;}
 .felt-innhold{font-size:0.9em;color:#ddd;margin-top:2px;line-height:1.4;}
 .oppdatert{font-size:0.72em;color:#666;margin-top:10px;text-align:right;}
+
+/* --------------------------------------------------------------------------
+   Statistikk (AVVIK-069). Morkt diagramflate-tema som folger meny.css.
+   Fargene er validert mot flata #1a1d25: en enkelt bla hue for stolper
+   (magnitude er kodet i lengden, ikke i fargen), og en ordinal tretrinns
+   bla rampe for alvorlighet, som ER en ordnet skala. Ingen statusfarger
+   brukes til serier.
+   -------------------------------------------------------------------------- */
+#statistikk{
+  --flate:#1a1d25;
+  --blekk:#e8eaf0;
+  --blekk2:#9aa3b2;
+  --dempet:#7b8494;
+  --rutenett:#2c303a;
+  --akse:#3a3f4b;
+  --serie:#3987e5;
+  --ord1:#86b6ef;   /* lav     */
+  --ord2:#3987e5;   /* middels */
+  --ord3:#184f95;   /* hoy     */
+}
+#statistikk .diagrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:16px;}
+#statistikk .dia{background:var(--flate);border:1px solid var(--rutenett);border-radius:10px;padding:16px 18px 12px;}
+#statistikk .dia h3{font-family:var(--m-font);text-transform:none;letter-spacing:-.01em;
+  font-size:14px;font-weight:600;color:var(--blekk);margin:0 0 2px;}
+#statistikk .dia .undertekst{font-size:12px;color:var(--dempet);margin:0 0 14px;line-height:1.4;}
+#statistikk .dia.bred{grid-column:1/-1;}
+#statistikk svg{display:block;width:100%;height:auto;overflow:visible;}
+#statistikk .aksetekst{font-family:var(--m-font);font-size:11px;fill:var(--dempet);}
+#statistikk .verditekst{font-family:var(--m-font);font-size:11px;fill:var(--blekk2);font-weight:600;}
+#statistikk .kategoritekst{font-family:var(--m-font);font-size:12px;fill:var(--blekk2);}
+
+/* nokkel: fargen bor pa en prikk ved siden av teksten, aldri i teksten */
+#statistikk .nokkel{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 12px;font-size:12px;color:var(--blekk2);}
+#statistikk .nokkel span{display:inline-flex;align-items:center;gap:6px;}
+#statistikk .nokkel i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+/* KPI-rad */
+#statistikk .kpirad{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+#statistikk .kpi{background:var(--flate);border:1px solid var(--rutenett);border-radius:10px;padding:14px 16px;}
+#statistikk .kpi .lbl{font-size:11.5px;color:var(--dempet);letter-spacing:.02em;}
+#statistikk .kpi .val{font-size:30px;font-weight:600;color:var(--blekk);line-height:1.15;margin-top:3px;}
+#statistikk .kpi .und{font-size:11.5px;color:var(--blekk2);margin-top:2px;}
+#statistikk .kpi.god .val{color:#0ca30c;}
+
+/* alvorlighetsstolpe (HTML, ikke SVG - se kommentaren i skriptet) */
+#statistikk .alvorrad{display:flex;gap:2px;align-items:flex-start;}
+#statistikk .alvorfelt{flex-basis:0;min-width:0;}
+#statistikk .alvorfyll{height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--m-font);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;}
+#statistikk .alvormerke{font-family:var(--m-font);font-size:12px;color:var(--blekk2);margin-top:7px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* matrise */
+#statistikk table.matrise{width:100%;border-collapse:separate;border-spacing:2px;font-family:var(--m-font);}
+#statistikk table.matrise th{background:transparent;color:var(--dempet);font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;border:0;padding:4px 6px;text-align:center;}
+#statistikk table.matrise th.venstre{text-align:left;}
+#statistikk table.matrise td{border:0;padding:0;}
+#statistikk table.matrise td.navn{color:var(--blekk2);font-size:12.5px;padding:0 8px 0 2px;white-space:nowrap;}
+#statistikk .celle{display:block;border-radius:5px;padding:7px 0;text-align:center;
+  font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;}
+
+/* tabellvisning - samme tall uten a matte peke pa noe */
+#statistikk .tabellknapp{background:transparent;border:1px solid var(--rutenett);color:var(--blekk2);
+  font-size:12px;padding:7px 13px;border-radius:8px;text-transform:none;letter-spacing:0;
+  font-family:var(--m-font);font-weight:500;}
+#statistikk .tabellknapp:hover{background:#22262f;color:var(--blekk);}
+#statistikk .datatabell{margin-top:14px;}
+#statistikk .datatabell table{width:100%;border-collapse:collapse;font-family:var(--m-font);font-size:12.5px;}
+#statistikk .datatabell th{background:transparent;color:var(--dempet);font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em;border-bottom:1px solid var(--rutenett);padding:7px 8px;text-align:left;}
+#statistikk .datatabell td{border-bottom:1px solid rgba(255,255,255,.05);padding:6px 8px;color:var(--blekk2);}
+#statistikk .datatabell td.tall{text-align:right;font-variant-numeric:tabular-nums;color:var(--blekk);}
+
+/* pekeboks */
+#statTips{position:fixed;pointer-events:none;z-index:2000;background:#0f1116;border:1px solid var(--akse,#3a3f4b);
+  border-radius:8px;padding:9px 11px;font-family:var(--m-font);font-size:12.5px;color:#9aa3b2;
+  box-shadow:0 8px 24px rgba(0,0,0,.6);display:none;max-width:280px;}
+#statTips .tv{color:#e8eaf0;font-weight:600;font-size:14px;}
+#statTips .tn{display:flex;align-items:center;gap:7px;margin-top:2px;}
+#statTips .tn i{width:14px;height:2px;border-radius:2px;display:inline-block;flex:none;}
+#statistikk .mark{transition:opacity .1s;cursor:default;}
+#statistikk .mark:hover,#statistikk .mark:focus{opacity:.78;outline:none;}
+
+@media print{#statistikk{display:none;}}
 </style>
 <link rel="stylesheet" href="meny.css">
 <script src="meny.js" defer></script>
@@ -61,6 +146,20 @@ button:hover{background:#00ff00;}
 <h2>Sammendrag</h2>
 <div class="stats" id="stats"></div>
 <div class="filterrow" id="filterrow"></div>
+</div>
+
+
+<div class="card" id="statistikk">
+<h2>Statistikk</h2>
+<p style="font-size:.8em;color:#7b8494;margin:6px 0 16px;line-height:1.5;">
+Alt under regnes ut fra avvikslista i det siden lastes - legger du inn et nytt avvik, oppdaterer tallene seg selv.
+</p>
+<div class="kpirad" id="kpirad"></div>
+<div class="diagrid" id="diagrid"></div>
+<div style="margin-top:14px;">
+<button class="tabellknapp" id="tabellBryter" onclick="veksleDatatabell()">Vis tallene som tabell</button>
+</div>
+<div class="datatabell" id="datatabell" style="display:none;"></div>
 </div>
 
 <div id="liste"></div>
@@ -742,7 +841,7 @@ var AVVIK_DATA = [
     tittel: "\"Apne runde X+1\" sto over opp-/nedrykket, som ma spilles forst",
     omrade: "Styringspanel - styre.html",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Sporsmal fra quizmaster: hvorfor kommer ikke opp-/nedrykket FOR apne runde?",
     beskrivelse: "Etter hver av runde 1-5 skal opp-/nedrykksspillet spilles, og forst da kan neste runde apnes. Backend handhever det allerede: apneRunde kaster \"Opp-/nedrykk for runde X ma fullfores for runde X+1 kan apnes\". Panelet viste likevel knappen \"Apne runde X+1\" rett etter at siste sang var poenggitt, med opp-/nedrykkskortet UNDER. Rekkefolgen pa skjermen sa altsa ut som om runden apnes forst og opp-/nedrykket kommer etterpa - stikk i strid med bade kjoreplanen og hva backend tillater. Trykket quizmasteren pa knappen, fikk han en feilmelding midt i sendingen. Noyaktig samme felle som AVVIK-042, bare for opp-/nedrykket i stedet for uavgjort.",
@@ -754,7 +853,7 @@ var AVVIK_DATA = [
     tittel: "Panelet tilbod \"Apne runde 7\" etter runde 6",
     omrade: "Styringspanel + Kode.gs",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Gjennomgang av rundeflyten mens AVVIK-056 ble rettet",
     beskrivelse: "Knappen \"Apne runde X+1\" ble tegnet sa snart alle tre sangene i runden var poenggitt, uten a se pa hvilken runde det var. Etter runde 6 - siste ordinaere runde - sto det derfor \"Apne runde 7\". Backend hadde ingen ovre sperre heller: apneRunde(7) gikk rett til setRundeStatus_, som ikke fant noen rad for runde 7 og la til en ny. Kvelden ville dermed fatt en runde 7 som verken kjoreplanen, poengberegningen eller storskjermens \"Runde X av 6\" kjenner til. Ett feilklikk i det som skulle vaert overgangen til B-finalen holdt.",
@@ -766,7 +865,7 @@ var AVVIK_DATA = [
     tittel: "Snarveiene la fortsatt pa storskjermen, bare gjemt bak en musebevegelse",
     omrade: "Storskjerm - hovedskjerm.html",
     alvorlighet: "lav",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "AVVIK-038 gjorde navigasjonsraden usynlig for publikum, men den la der fortsatt og dukket opp i tre sekunder hver gang noen beveget musa. Pa en projektor er det bare stoy: en rad med Oversikt / Stilling / Styre-Admin / Historikk / Hovedskjerm / Veiledning som blinker fram midt i sendingen hvis noen sa mye som borter borti musa ved styringsbordet.",
@@ -778,7 +877,7 @@ var AVVIK_DATA = [
     tittel: "Backend trodde vi var pa runde 6 med en gang runde 1 var poenggitt",
     omrade: "Kode.gs - getGjeldendeRunde",
     alvorlighet: "hoy",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Quizmaster sto fast under en ekte kveld etter runde 1",
     beskrivelse: "getGjeldendeRunde() returnerte forste rad med status apen, og fant den ingen, SISTE RAD i Runder-arket. nullstillRunder legger inn alle seks rundene med en gang, sa siste rad er alltid 6. scoreRunde lukker runden nar alle tre sangene er poenggitt - og i det oyeblikket sto det ingen apen runde igjen. Fra da av svarte backend runde 6 pa alt: styringspanelet ville vist \"Fasit for runde 6\" ved neste sidelast, startOpprykk ville lagret opp-/nedrykket pa runde 6 i stedet for runde 1, og apneNeste ville forsokt a apne runde 7 - som etter AVVIK-057 blir avvist. Da star kvelden bom fast: runde 2 kan aldri apnes, fordi apneRunde krever at opp-/nedrykket gjelder runde 1. Dette var ogsa rotarsaken bak AVVIK-055; den rettelsen skjermet bare visningen pa storskjermen, ikke resten av systemet. Traff en ekte kveld 16.08.2026.",
@@ -790,7 +889,7 @@ var AVVIK_DATA = [
     tittel: "Lagnavn hadde ingen grense i Lag-oppsett, og formler ble lagret som formler",
     omrade: "Kode.gs - registrerLagSelv, saveTeams, endreKlubbNavn_",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Sporsmal fra quizmaster om lengdegrense og injeksjon",
     beskrivelse: "Lagnavn kom inn to veier med helt ulike regler. Selvpaameldingen hadde 60 tegn, tomt-sjekk og dublettsjekk. Lag-oppsett i styringspanelet hadde INGEN validering: verken maxlength i feltet eller sjekk i saveTeams. Malt i sandkassen gikk et navn pa 200 tegn rett inn og strakk stillingssiden til 2875 px pa en 1920-skjerm - vannrett rulling pa projektoren. I tillegg, og verre: Sheets tolker en streng som begynner med =, +, - eller @ som en FORMEL nar den skrives med appendRow eller setValues. Verifisert at \"=1+1\" ble godtatt som lagnavn. I det ekte arket betyr det at et lag kan melde seg pa som \"=1/0\" og sta som #DIV/0! i tabellen resten av kvelden, eller som \"=IMPORTXML(...)\" og hente data utenfra inn i regnearket. Det finnes ingen SQL i losningen - alt er Sheets - men formelinjeksjon er samme klasse problem. XSS var derimot allerede dekket av AVVIK-012/028/029/030/034/035/043/046.",
@@ -802,7 +901,7 @@ var AVVIK_DATA = [
     tittel: "Arkiverte kvelder kunne ikke fjernes fra historikken",
     omrade: "Historikk - Kode.gs + historikk.html",
     alvorlighet: "lav",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Opprydding etter generalprover og avbrutte testkvelder",
     beskrivelse: "arkiverKveldOgNullstill legger til en rad i Historikk-arket, men det fantes ingen vei tilbake. Etter testkvelder og en avbrutt generalprove sto det fire kvelder i historikken som aldri hadde vaert ekte quizkvelder - to av dem uten et eneste poeng. De teller med i sesongoversikten og ser ut som ekte kvelder for alle som apner siden.",
@@ -814,7 +913,7 @@ var AVVIK_DATA = [
     tittel: "Lykkehjulet: ett felles hjul for begge divisjoner, ett lag om gangen",
     omrade: "Lykkehjul - Kode.gs + styre.html + hovedskjerm.html + styre.html",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Hver uavgjort ble trukket for seg. Divisjon 1 og divisjon 2 fikk hvert sitt hjul etter hverandre, og hver trekning plukket HELE settet i ett eneste spinn: sto tre lag likt om to plasser, kom begge ut samtidig og ingen sa hvem som ble nr. 1. Derfor fantes det en egen tredje trekning bare for a avgjore hvem av de to som matte utfordre. Publikum matte se pa tre separate hjul for a fa vite hva som skjedde.",
@@ -826,7 +925,7 @@ var AVVIK_DATA = [
     tittel: "Styringspanelet viste hele kvelden samtidig - fire skjermhoyder",
     omrade: "Styringspanel - styre.html",
     alvorlighet: "lav",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Gjennomgang av panelet mot kjoreplanen",
     beskrivelse: "Panelet var 4074 px hoyt - rundt fire skjermhoyder - og viste ALT samtidig fra forste minutt til siste: lag-oppsett, kategorier, buzzer-oppsett, fasit, opp-/nedrykk, B-finale, finale, joker, ny sesong, arkivering og nullstilling. Finalene sto framme fra kvelden startet, selv om de ikke kan spilles for etter runde 6, og \"Start ny sesong\" la midt i det aktive panelet ved siden av kort man bruker hvert femte minutt. Rekkefolgen fulgte omtrent kjoreplanen, men ingenting fortalte hvor i kvelden man var - man matte rulle for a finne kortet som gjaldt akkurat na. AVVIK-056 var den eneste plassen panelet tilpasset seg i det hele tatt.",
@@ -838,7 +937,7 @@ var AVVIK_DATA = [
     tittel: "QR-koden for pamelding fantes bare pa styringspanelet",
     omrade: "Storskjerm - hovedskjerm.html",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Velges QR-pamelding i Lag-oppsett, tegnes koden i styringspanelet - pa quizmasterens egen PC-skjerm, 220 px stor. Lagene som skal scanne den sitter i salen og ser projektoren. I praksis matte quizmasteren enten holde PC-en opp mot lokalet eller lese hoyt opp adressen. Storskjermen viste i mellomtiden stillingstabellen, som pa det tidspunktet er tom.",
@@ -850,7 +949,7 @@ var AVVIK_DATA = [
     tittel: "Lykkehjulet sto alene - publikum sa ikke tabellen det gjaldt",
     omrade: "Storskjerm - hovedskjerm.html",
     alvorlighet: "lav",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Storskjermen byttet mellom visninger som gjensidig utelukket hverandre: sto lykkehjulet framme, var stillingstabellen borte. Men hjulet finnes nettopp fordi to eller flere lag star likt i tabellen - og publikum kunne ikke se hvem det gjaldt eller hva som sto pa spill mens det snurret. De matte huske stillingen fra for trekningen startet.",
@@ -862,7 +961,7 @@ var AVVIK_DATA = [
     tittel: "Enarmet banditt erstatter lykkehjulet: ett trekk avgjor alt",
     omrade: "Lykkehjul - styre.html + hovedskjerm.html",
     alvorlighet: "lav",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Lykkehjulet fra AVVIK-062 trakk ett lag per spinn. Tre avgjorelser tok tre spinn a rundt 13 sekunder hver - snaut et minutt der publikum sa det samme hjulet snurre om og om igjen. Onsket var en mekanisme der alt avgjores i en omgang.",
@@ -874,7 +973,7 @@ var AVVIK_DATA = [
     tittel: "Trekning og lykkehjul flyttet inn i styringspanelet",
     omrade: "Styring - styre.html (trekning.html er borte)",
     alvorlighet: "lav",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Kategoritrekningen, buzzer-visningen, kategorispillet og lykkehjulet la i en egen side, trekning.html. Quizmasteren matte veksle mellom to faner gjennom hele kvelden: starte noe i styringspanelet, bytte fane for a trekke, bytte tilbake for a bekrefte.",
@@ -886,11 +985,23 @@ var AVVIK_DATA = [
     tittel: "Hjulet viste lagene fra forrige trekning etter opp-/nedrykket",
     omrade: "Lykkehjul - styre.html",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-16",
     funnetAv: "Ny test e2e12.js (overgangen mellom de to mekanismene)",
     beskrivelse: "Nar opp-/nedrykkstrekningen var ferdig og en vanlig uavgjort inne i en runde tok over, ble lykkehjulet staaende med lagene fra opp-/nedrykket. Kandidatlista bak var riktig, sa det ble trukket riktig lag - men navnene publikum sa pa hjulet var fra forrige trekning. Arsaken var speilingen fra AVVIK-048: den snurrer hjulet gjennom en trekning noen andre har gjort, og tegner hjulet pa nytt for hver omgang med et opphold pa 1,4 sekunder. Byttet raden mens den holdt pa, fortsatte de utestaende callbackene a male opp den gamle raden - og finishSpin skrev til og med sluttmeldingen fra forrige trekning inn i den nye.",
     losning: "En generasjonsteller: hver snurr merkes med sin generasjon, og telleren okes bade nar en ny snurr starter og nar raden byttes. Alle callbackene i snurresekvensen - ogsa den inne i 1,4-sekunders-opphold som tegner hjulet pa nytt - gir seg stille nar generasjonen ikke stemmer, i stedet for a kalle finishSpin. I tillegg: speilingen kjores ikke lenger for felles trekninger i det hele tatt. De gar pa den enarmede banditten (AVVIK-066), som viser seg selv - a speile dem som en hjulsnurr ville vist en mekanikk vi ikke lenger bruker. 9 tester i e2e12.js.",
+    sistOppdatert: "2026-08-16"
+  },
+  {
+    id: "AVVIK-069",
+    tittel: "Avvikslista var 68 kort pa rad - ingen kunne se monsteret",
+    omrade: "Frontend - avvik.html",
+    alvorlighet: "lav",
+    status: "lost",
+    funnetDato: "2026-08-16",
+    funnetAv: "Onske fra quizmaster",
+    beskrivelse: "Sida viste et sammendrag med fire tall og deretter 68 kort etter hverandre. Det gikk fint a lese ETT avvik, men umulig a se hvor de satt, hvor alvorlige de var, eller hvordan de ble funnet. Samtidig la det et etterslep i statusfeltet: 13 avvik sto som \"rettet i kode - venter pa distribusjon\" lenge etter at de var lagt ut og verifisert i produksjon.",
+    losning: "En statistikkdel over lista, regnet ut fra AVVIK_DATA i det sida lastes - legger man inn et nytt avvik, folger tallene med av seg selv. Seks noketall, en fordeling av alvorlighet, sokyler per dag stablet etter alvorlighet, liggende stolper for hvilke komponenter som er berort og for hvordan avvikene ble funnet, og en matrise komponent x alvorlighet. Diagrammene er ren SVG uten bibliotek eller nettverkskall. Fargebruken folger en fast regel: stolpene har EN farge fordi lengden allerede koder storrelsen, mens alvorlighet og matrisen bruker en ordinal rampe i samme hue - trinnene er validert mot flatefargen, og hvert tall star skrevet i merket sa fargen aldri baerer betydningen alene. Alle diagrammene har pekeboks pa bade mus og tastatur, og en knapp viser de samme tallene som tabell. De 13 etterslepende statusene er satt til lost.",
     sistOppdatert: "2026-08-16"
   }
 ];
@@ -980,6 +1091,441 @@ function tegnListe() {
 
 tegnStats();
 tegnListe();
+</script>
+
+<script>
+/* ===========================================================================
+   Statistikk over avvikene (AVVIK-069).
+
+   Alt leses fra AVVIK_DATA, sa grafene folger lista. Diagrammene er tegnet
+   som ren SVG - ingen bibliotek, ingen nettverkskall, og de virker like godt
+   pa en prosjektor som pa mobil.
+
+   Fargevalg: stolpediagrammene har EN farge, fordi lengden allerede koder
+   storrelsen - en rampe der ville doblet samme informasjon. Alvorlighet er
+   derimot en ordnet skala (lav < middels < hoy) og far en ordinal tretrinns
+   rampe i samme hue. Statusfargene (gronn/gul/rod) er holdt utenfor seriene.
+   =========================================================================== */
+
+var ST_FARGE = { flate: '#1a1d25', serie: '#3987e5', ord: ['#86b6ef', '#3987e5', '#184f95'] };
+var ST_ALVOR = [
+  { n: 'lav', tekst: 'Lav', f: ST_FARGE.ord[0] },
+  { n: 'middels', tekst: 'Middels', f: ST_FARGE.ord[1] },
+  { n: 'hoy', tekst: 'Høy', f: ST_FARGE.ord[2] }
+];
+
+function stTekst(s) { return document.createTextNode(String(s)); }
+
+function stSvgEl(navn, attr) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', navn);
+  for (var k in attr) { if (attr[k] !== null && attr[k] !== undefined) el.setAttribute(k, attr[k]); }
+  return el;
+}
+
+/* ---- pekeboks -------------------------------------------------------------
+   Verdien leder, navnet folger: her har leseren allerede kategorien og vil ha
+   tallet. Alt som star her finnes ogsa i tabellvisningen, sa ingenting er
+   gjemt bak en musepeker. */
+var stTips = null;
+function stTipsVis(hendelse, verdi, navn, farge) {
+  if (!stTips) { stTips = document.createElement('div'); stTips.id = 'statTips'; document.body.appendChild(stTips); }
+  stTips.innerHTML = '';
+  var v = document.createElement('div'); v.className = 'tv'; v.appendChild(stTekst(verdi));
+  var n = document.createElement('div'); n.className = 'tn';
+  if (farge) { var i = document.createElement('i'); i.style.background = farge; n.appendChild(i); }
+  n.appendChild(stTekst(navn));
+  stTips.appendChild(v); stTips.appendChild(n);
+  stTips.style.display = 'block';
+  var x = hendelse.clientX + 14, y = hendelse.clientY + 14;
+  if (x + 290 > window.innerWidth) { x = window.innerWidth - 296; }
+  stTips.style.left = x + 'px'; stTips.style.top = y + 'px';
+}
+function stTipsSkjul() { if (stTips) { stTips.style.display = 'none'; } }
+
+function stKobleTips(el, verdi, navn, farge) {
+  el.classList.add('mark');
+  el.setAttribute('tabindex', '0');
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', navn + ': ' + verdi);
+  el.addEventListener('pointermove', function (h) { stTipsVis(h, verdi, navn, farge); });
+  el.addEventListener('pointerleave', stTipsSkjul);
+  el.addEventListener('focus', function () {
+    var r = el.getBoundingClientRect();
+    stTipsVis({ clientX: r.left + r.width / 2, clientY: r.top }, verdi, navn, farge);
+  });
+  el.addEventListener('blur', stTipsSkjul);
+}
+
+/* ---- utregninger ---------------------------------------------------------- */
+function stTell(liste, nokkel) {
+  var m = {};
+  liste.forEach(function (x) { var k = nokkel(x); m[k] = (m[k] || 0) + 1; });
+  return m;
+}
+
+function stKilde(s) {
+  var t = String(s || '').toLowerCase();
+  if (/test_|test\.html|e2e|testrapport/.test(t)) return 'Automatisk test';
+  if (/ønske|onske/.test(t) && /quizmaster/.test(t)) return 'Ønske fra quizmaster';
+  if (/quizmaster|hendelse|generalprøve|generalprove|kveld/.test(t)) return 'Oppdaget under kveld';
+  if (/reproduksjon|chromium|gjennomspilling|kontroll av produksjon|lesetest/.test(t)) return 'Gjennomspilling i nettleser';
+  if (/gjennomgang/.test(t)) return 'Kodegjennomgang';
+  return 'Annet';
+}
+
+var ST_KOMPONENT = [
+  ['Kode.gs', 'Backend (Kode.gs)'], ['styre.html', 'Styringspanel'], ['hovedskjerm.html', 'Storskjerm'],
+  ['trekning.html', 'Trekningsside'], ['stilling.html', 'Stillingsside'], ['lag.html', 'Lagside'],
+  ['registrer.html', 'Påmelding'], ['historikk.html', 'Historikk'], ['bildeadmin.html', 'Bildeadmin'],
+  ['bilder.html', 'Bilder'], ['buzzertest.html', 'Buzzertest'], ['avvik.html', 'Avvikssiden'],
+  ['veiledning.html', 'Veiledning'], ['index.html', 'Oversikt'],
+  ['test_utvidet.html', 'Testverktøy'], ['test_avvik.html', 'Testverktøy'], ['test.html', 'Testverktøy']
+];
+function stKomponenter(omrade) {
+  var o = String(omrade || ''), ut = [];
+  ST_KOMPONENT.forEach(function (par) {
+    if (o.indexOf(par[0]) > -1 && ut.indexOf(par[1]) === -1) { ut.push(par[1]); }
+  });
+  if (!ut.length) {
+    // Noen omraderader er skrevet i ord i stedet for filnavn. Da leser vi ordene.
+    var t = o.toLowerCase();
+    if (/påmelding|pamelding/.test(t)) { ut.push('Påmelding'); }
+    if (/opp-\/nedrykk|lykkehjul|backend/.test(t)) { ut.push('Backend (Kode.gs)'); }
+    if (/storskjerm/.test(t)) { ut.push('Storskjerm'); }
+    if (/styringspanel|styring/.test(t)) { ut.push('Styringspanel'); }
+  }
+  if (!ut.length) { ut.push('Uplassert'); }
+  return ut;
+}
+
+function stDager(a, b) {
+  var d1 = new Date(a + 'T00:00:00'), d2 = new Date(b + 'T00:00:00');
+  if (isNaN(d1) || isNaN(d2)) { return null; }
+  return Math.round((d2 - d1) / 86400000);
+}
+
+/* ---- KPI-rad --------------------------------------------------------------
+   Fem enkelttall er en KPI-rad, ikke et sammenlikningsdiagram: de deler ingen
+   skala, og et sokylediagram av dem ville invitert til sammenlikninger som
+   ikke betyr noe. */
+function stTegnKpi() {
+  var d = AVVIK_DATA;
+  var apne = d.filter(function (x) { return x.status === 'apen'; }).length;
+  var venter = d.filter(function (x) { return x.status === 'venter'; }).length;
+  var lost = d.filter(function (x) { return x.status === 'lost'; }).length;
+  var hoy = d.filter(function (x) { return x.alvorlighet === 'hoy'; }).length;
+  var tider = d.map(function (x) { return stDager(x.funnetDato, x.sistOppdatert); })
+               .filter(function (x) { return x !== null; }).sort(function (a, b) { return a - b; });
+  var median = tider.length ? tider[Math.floor(tider.length / 2)] : 0;
+  var samme = tider.filter(function (x) { return x === 0; }).length;
+
+  var kort = [
+    { lbl: 'Registrerte avvik', val: d.length, und: 'siden 13. august 2026' },
+    { lbl: 'Åpne akkurat nå', val: apne, und: apne === 0 ? 'ingenting står ubehandlet' : 'venter på retting', god: apne === 0 },
+    { lbl: 'Venter på utrulling', val: venter, und: venter === 0 ? 'alt er i produksjon' : 'rettet, men ikke lagt ut', god: venter === 0 },
+    { lbl: 'Løst og verifisert', val: lost, und: Math.round(lost / d.length * 100) + ' % av alle' },
+    { lbl: 'Høy alvorlighet', val: hoy, und: 'kunne gitt feil resultat' },
+    { lbl: 'Median rettetid', val: median === 0 ? 'Samme dag' : median + ' d', und: samme + ' av ' + d.length + ' rettet samme dag' }
+  ];
+  var wrap = document.getElementById('kpirad');
+  wrap.innerHTML = '';
+  kort.forEach(function (k) {
+    var el = document.createElement('div');
+    el.className = 'kpi' + (k.god ? ' god' : '');
+    var l = document.createElement('div'); l.className = 'lbl'; l.appendChild(stTekst(k.lbl));
+    var v = document.createElement('div'); v.className = 'val'; v.appendChild(stTekst(k.val));
+    var u = document.createElement('div'); u.className = 'und'; u.appendChild(stTekst(k.und));
+    el.appendChild(l); el.appendChild(v); el.appendChild(u);
+    wrap.appendChild(el);
+  });
+}
+
+/* ---- diagramkort ---------------------------------------------------------- */
+function stKort(bred, tittel, undertekst) {
+  var d = document.createElement('div');
+  d.className = 'dia' + (bred ? ' bred' : '');
+  var h = document.createElement('h3'); h.appendChild(stTekst(tittel));
+  var p = document.createElement('p'); p.className = 'undertekst'; p.appendChild(stTekst(undertekst));
+  d.appendChild(h); d.appendChild(p);
+  document.getElementById('diagrid').appendChild(d);
+  return d;
+}
+
+function stNokkel(kort, punkter) {
+  var n = document.createElement('div'); n.className = 'nokkel';
+  punkter.forEach(function (p) {
+    var s = document.createElement('span');
+    var i = document.createElement('i'); i.style.background = p.f;
+    s.appendChild(i); s.appendChild(stTekst(p.tekst));
+    n.appendChild(s);
+  });
+  kort.appendChild(n);
+}
+
+/* ---- 1: stablede soyler per dag ------------------------------------------
+   Delmengder av en helhet over tid. 2 px mellomrom i flatefargen skiller
+   segmentene - ingen ramme rundt merkene. */
+function stTegnPerDag() {
+  var dager = [];
+  AVVIK_DATA.forEach(function (a) { if (dager.indexOf(a.funnetDato) === -1) dager.push(a.funnetDato); });
+  dager.sort();
+  var rader = dager.map(function (dag) {
+    var i = AVVIK_DATA.filter(function (a) { return a.funnetDato === dag; });
+    return { dag: dag, lav: i.filter(function (a) { return a.alvorlighet === 'lav'; }).length,
+             middels: i.filter(function (a) { return a.alvorlighet === 'middels'; }).length,
+             hoy: i.filter(function (a) { return a.alvorlighet === 'hoy'; }).length, sum: i.length };
+  });
+  var maks = Math.max.apply(null, rader.map(function (r) { return r.sum; }));
+  var kort = stKort(false, 'Avvik funnet per dag', 'Stablet etter alvorlighet. De aller fleste ble funnet og rettet samme dag.');
+  stNokkel(kort, ST_ALVOR);
+
+  var B = 430, H = 230, mv = 34, mh = 8, mt = 18, mb = 30;
+  var plotH = H - mt - mb, plotB = B - mv - mh;
+  var svg = stSvgEl('svg', { viewBox: '0 0 ' + B + ' ' + H, role: 'group', 'aria-label': 'Avvik funnet per dag, stablet etter alvorlighet' });
+
+  var trinn = Math.max(1, Math.ceil(maks / 4));
+  for (var t = 0; t <= maks + trinn; t += trinn) {
+    if (t > maks + trinn / 2) break;
+    var y = mt + plotH - (t / maks) * plotH;
+    svg.appendChild(stSvgEl('line', { x1: mv, x2: B - mh, y1: y, y2: y, stroke: t === 0 ? '#3a3f4b' : '#2c303a', 'stroke-width': 1 }));
+    var tk = stSvgEl('text', { x: mv - 7, y: y + 4, 'text-anchor': 'end', class: 'aksetekst' });
+    tk.appendChild(stTekst(t)); svg.appendChild(tk);
+  }
+
+  var band = plotB / rader.length, bredde = Math.min(24, band * 0.5);
+  rader.forEach(function (r, i) {
+    var x = mv + band * i + (band - bredde) / 2;
+    var y = mt + plotH;
+    [['lav', 0], ['middels', 1], ['hoy', 2]].forEach(function (par, k) {
+      var n = r[par[0]];
+      if (!n) { return; }
+      var h = (n / maks) * plotH - 2;      /* 2 px flate mellom segmentene */
+      if (h < 2) { h = 2; }
+      y -= (h + 2);
+      var topp = (k === 2 || (k === 1 && !r.hoy) || (k === 0 && !r.hoy && !r.middels));
+      var rekt = stSvgEl('rect', { x: x, y: y, width: bredde, height: h, fill: ST_FARGE.ord[k],
+        rx: topp ? 4 : 0, ry: topp ? 4 : 0 });
+      stKobleTips(rekt, n + (n === 1 ? ' avvik' : ' avvik'), ST_ALVOR[k].tekst + ' · ' + r.dag, ST_FARGE.ord[k]);
+      svg.appendChild(rekt);
+    });
+    var sum = stSvgEl('text', { x: x + bredde / 2, y: y - 7, 'text-anchor': 'middle', class: 'verditekst' });
+    sum.appendChild(stTekst(r.sum)); svg.appendChild(sum);
+    var dl = stSvgEl('text', { x: mv + band * i + band / 2, y: H - 10, 'text-anchor': 'middle', class: 'aksetekst' });
+    dl.appendChild(stTekst(r.dag.slice(8) + '. aug')); svg.appendChild(dl);
+  });
+  kort.appendChild(svg);
+}
+
+/* ---- 2: liggende stolper, en farge ---------------------------------------
+   Kategoriene har ingen egen rangorden ut over antallet, og lengden koder
+   allerede storrelsen. Da er EN farge riktig - en rampe her ville malt samme
+   tall to ganger. */
+function stTegnStolper(kort, rader, etikett) {
+  var maks = Math.max.apply(null, rader.map(function (r) { return r.n; }));
+  var radH = 26, B = 430, mv = 152, mh = 40;
+  var H = rader.length * radH + 6;
+  var svg = stSvgEl('svg', { viewBox: '0 0 ' + B + ' ' + H, role: 'group', 'aria-label': etikett });
+  var plotB = B - mv - mh;
+  rader.forEach(function (r, i) {
+    var y = i * radH + 4, h = Math.min(18, radH - 8);
+    var br = Math.max(3, (r.n / maks) * plotB);
+    var navn = stSvgEl('text', { x: mv - 10, y: y + h / 2 + 4, 'text-anchor': 'end', class: 'kategoritekst' });
+    navn.appendChild(stTekst(r.navn)); svg.appendChild(navn);
+    var rekt = stSvgEl('rect', { x: mv, y: y, width: br, height: h, fill: ST_FARGE.serie, rx: 4, ry: 4 });
+    /* firkantet mot grunnlinja, avrundet i enden som bærer tallet */
+    var lapp = stSvgEl('rect', { x: mv, y: y, width: Math.min(4, br), height: h, fill: ST_FARGE.serie });
+    stKobleTips(rekt, r.n + ' avvik', r.navn, ST_FARGE.serie);
+    svg.appendChild(rekt); svg.appendChild(lapp);
+    var v = stSvgEl('text', { x: mv + br + 8, y: y + h / 2 + 4, class: 'verditekst' });
+    v.appendChild(stTekst(r.n)); svg.appendChild(v);
+  });
+  kort.appendChild(svg);
+}
+
+function stTegnKomponenter() {
+  var m = {};
+  AVVIK_DATA.forEach(function (a) {
+    stKomponenter(a.omrade).forEach(function (k) { m[k] = (m[k] || 0) + 1; });
+  });
+  var alle = Object.keys(m).map(function (k) { return { navn: k, n: m[k] }; })
+    .sort(function (a, b) { return b.n - a.n; });
+  // Halen foldes sammen: ti stolper leses, tjue blir en tapet. Alle enkeltdelene
+  // star fortsatt i tabellvisningen.
+  var rader = alle.slice(0, 10);
+  var hale = alle.slice(10);
+  if (hale.length) {
+    rader.push({ navn: 'Andre sider (' + hale.length + ')',
+      n: hale.reduce(function (sum, r) { return sum + r.n; }, 0) });
+  }
+  var kort = stKort(false, 'Hvor avvikene satt',
+    'Et avvik kan berøre flere filer, så summen er høyere enn antall avvik. Backend og styringspanelet bærer mest.');
+  stTegnStolper(kort, rader, 'Antall avvik per komponent');
+}
+
+function stTegnKilder() {
+  var m = stTell(AVVIK_DATA, function (a) { return stKilde(a.funnetAv); });
+  var rader = Object.keys(m).map(function (k) { return { navn: k, n: m[k] }; })
+    .sort(function (a, b) { return b.n - a.n; });
+  var funnetForKvelden = AVVIK_DATA.filter(function (a) { return stKilde(a.funnetAv) !== 'Oppdaget under kveld'; }).length;
+  var kort = stKort(false, 'Hvordan avvikene ble funnet',
+    funnetForKvelden + ' av ' + AVVIK_DATA.length + ' ble fanget opp før de rakk å ødelegge en kveld.');
+  stTegnStolper(kort, rader, 'Antall avvik per kilde');
+}
+
+/* ---- 3: en enkelt stablet stolpe for alvorlighet -------------------------- */
+function stTegnAlvorlighet() {
+  var m = stTell(AVVIK_DATA, function (a) { return a.alvorlighet; });
+  var sum = AVVIK_DATA.length;
+  var kort = stKort(true, 'Alvorlighet',
+    'Hvor mye det enkelte avviket kunne påvirket en kveld. Høy betyr at det kunne gitt feil resultat.');
+  stNokkel(kort, ST_ALVOR);
+  // Bygget i HTML og ikke SVG: kortet gar i full bredde, og en SVG med fast
+  // viewBox ville blast opp all tekst i takt med bredden.
+  var rad = document.createElement('div'); rad.className = 'alvorrad';
+  ST_ALVOR.forEach(function (a) {
+    var n = m[a.n] || 0;
+    if (!n) { return; }
+    var pst = Math.round(n / sum * 100);
+    var celle = document.createElement('div');
+    celle.className = 'alvorfelt';
+    celle.style.flexGrow = n;
+    var felt = document.createElement('div');
+    felt.className = 'alvorfyll';
+    felt.style.background = a.f;
+    felt.style.color = (a.n === 'lav') ? '#0b0b0b' : '#ffffff';
+    felt.appendChild(stTekst(n));
+    var merke = document.createElement('div');
+    merke.className = 'alvormerke';
+    merke.appendChild(stTekst(a.tekst + ' · ' + pst + ' %'));
+    celle.appendChild(felt); celle.appendChild(merke);
+    stKobleTips(felt, n + ' avvik (' + pst + ' %)', a.tekst, a.f);
+    rad.appendChild(celle);
+  });
+  kort.appendChild(rad);
+}
+
+/* ---- 4: matrise komponent x alvorlighet ----------------------------------
+   Et rutenett av tall er en tabell, ikke et diagram. Fargen er en sekvensiell
+   rampe i EN hue - morkere = flere - og tallet star i ruta, sa fargen aldri
+   bærer betydningen alene. */
+function stTegnMatrise() {
+  var m = {};
+  AVVIK_DATA.forEach(function (a) {
+    stKomponenter(a.omrade).forEach(function (k) {
+      if (!m[k]) { m[k] = { lav: 0, middels: 0, hoy: 0, sum: 0 }; }
+      m[k][a.alvorlighet]++; m[k].sum++;
+    });
+  });
+  var rader = Object.keys(m).map(function (k) { return { navn: k, v: m[k] }; })
+    .sort(function (a, b) { return b.v.sum - a.v.sum; }).slice(0, 8);
+  var maks = 0;
+  rader.forEach(function (r) { ['lav', 'middels', 'hoy'].forEach(function (a) { maks = Math.max(maks, r.v[a]); }); });
+
+  var kort = stKort(false, 'Alvorlighet per komponent',
+    'De åtte mest berørte delene. Lysere rute = flere avvik; tallet står i ruta, så fargen aldri bærer betydningen alene.');
+  var tab = document.createElement('table'); tab.className = 'matrise';
+  var thead = document.createElement('thead'), trh = document.createElement('tr');
+  var th0 = document.createElement('th'); th0.className = 'venstre'; th0.appendChild(stTekst('Komponent')); trh.appendChild(th0);
+  ST_ALVOR.forEach(function (a) { var th = document.createElement('th'); th.appendChild(stTekst(a.tekst)); trh.appendChild(th); });
+  var ths = document.createElement('th'); ths.appendChild(stTekst('Sum')); trh.appendChild(ths);
+  thead.appendChild(trh); tab.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  // Sekvensiell rampe i EN hue. Rutene ER en ordnet skala, sa trinnene er
+  // validert med --ordinal mot flata #1a1d25: alle nabotrinn har synlig
+  // lysgap, og det morkeste trinnet med data (#184f95) klarer 2:1 mot flata.
+  // Nullruta (#1f2430) er den eneste som far synke ned mot flatefargen -
+  // "ingenting" skal ikke rope. Tallet star i hver rute uansett.
+  var RAMPE = ['#1f2430', '#184f95', '#256abf', '#3987e5', '#6da7ec', '#9ec5f4'];
+  rader.forEach(function (r) {
+    var tr = document.createElement('tr');
+    var td0 = document.createElement('td'); td0.className = 'navn'; td0.appendChild(stTekst(r.navn)); tr.appendChild(td0);
+    ST_ALVOR.forEach(function (a) {
+      var n = r.v[a.n];
+      var td = document.createElement('td');
+      var c = document.createElement('span'); c.className = 'celle';
+      var andel = maks ? n / maks : 0;
+      var idx = n === 0 ? 0 : Math.min(RAMPE.length - 1, 1 + Math.round(andel * (RAMPE.length - 2)));
+      c.style.background = RAMPE[idx];
+      c.style.color = idx >= 4 ? '#0b0b0b' : (n === 0 ? '#5b6373' : '#ffffff');
+      c.appendChild(stTekst(n));
+      if (n) { stKobleTips(c, n + (n === 1 ? ' avvik' : ' avvik'), r.navn + ' · ' + a.tekst, RAMPE[idx]); }
+      td.appendChild(c); tr.appendChild(td);
+    });
+    var tds = document.createElement('td');
+    var cs = document.createElement('span'); cs.className = 'celle';
+    cs.style.background = 'transparent'; cs.style.color = '#e8eaf0';
+    cs.appendChild(stTekst(r.v.sum)); tds.appendChild(cs); tr.appendChild(tds);
+    tbody.appendChild(tr);
+  });
+  tab.appendChild(tbody);
+  kort.appendChild(tab);
+}
+
+/* ---- tabellvisning -------------------------------------------------------- */
+function stBygGTabell(tittel, kolonner, rader) {
+  var h = document.createElement('h3');
+  h.style.cssText = 'font-family:var(--m-font);text-transform:none;letter-spacing:0;font-size:13px;color:#9aa3b2;margin:18px 0 6px;';
+  h.appendChild(stTekst(tittel));
+  var t = document.createElement('table');
+  var thead = document.createElement('thead'), tr = document.createElement('tr');
+  kolonner.forEach(function (k) { var th = document.createElement('th'); th.appendChild(stTekst(k)); tr.appendChild(th); });
+  thead.appendChild(tr); t.appendChild(thead);
+  var tb = document.createElement('tbody');
+  rader.forEach(function (r) {
+    var rad = document.createElement('tr');
+    r.forEach(function (celle, i) {
+      var td = document.createElement('td');
+      if (i > 0) { td.className = 'tall'; }
+      td.appendChild(stTekst(celle)); rad.appendChild(td);
+    });
+    tb.appendChild(rad);
+  });
+  t.appendChild(tb);
+  var boks = document.createElement('div');
+  boks.appendChild(h); boks.appendChild(t);
+  return boks;
+}
+
+function veksleDatatabell() {
+  var boks = document.getElementById('datatabell');
+  var knapp = document.getElementById('tabellBryter');
+  if (boks.style.display !== 'none') {
+    boks.style.display = 'none';
+    knapp.textContent = 'Vis tallene som tabell';
+    return;
+  }
+  boks.innerHTML = '';
+  var dager = [];
+  AVVIK_DATA.forEach(function (a) { if (dager.indexOf(a.funnetDato) === -1) dager.push(a.funnetDato); });
+  dager.sort();
+  boks.appendChild(stBygGTabell('Avvik funnet per dag', ['Dato', 'Lav', 'Middels', 'Høy', 'Sum'],
+    dager.map(function (d) {
+      var i = AVVIK_DATA.filter(function (a) { return a.funnetDato === d; });
+      return [d, i.filter(function (a) { return a.alvorlighet === 'lav'; }).length,
+                 i.filter(function (a) { return a.alvorlighet === 'middels'; }).length,
+                 i.filter(function (a) { return a.alvorlighet === 'hoy'; }).length, i.length];
+    })));
+
+  var mk = {};
+  AVVIK_DATA.forEach(function (a) { stKomponenter(a.omrade).forEach(function (k) { mk[k] = (mk[k] || 0) + 1; }); });
+  boks.appendChild(stBygGTabell('Avvik per komponent', ['Komponent', 'Antall'],
+    Object.keys(mk).map(function (k) { return [k, mk[k]]; }).sort(function (a, b) { return b[1] - a[1]; })));
+
+  var mkil = stTell(AVVIK_DATA, function (a) { return stKilde(a.funnetAv); });
+  boks.appendChild(stBygGTabell('Avvik per kilde', ['Slik ble det funnet', 'Antall'],
+    Object.keys(mkil).map(function (k) { return [k, mkil[k]]; }).sort(function (a, b) { return b[1] - a[1]; })));
+
+  boks.style.display = 'block';
+  knapp.textContent = 'Skjul tabellen';
+}
+
+stTegnKpi();
+stTegnAlvorlighet();
+stTegnPerDag();
+stTegnKilder();
+stTegnKomponenter();
+stTegnMatrise();
 </script>
 </body>
 </html>
