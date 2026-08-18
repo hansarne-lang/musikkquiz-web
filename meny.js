@@ -14,8 +14,9 @@
 
   var GRUPPER_FULL = [
     { navn: 'Kvelden', punkter: [
-      { url: 'index.html', tekst: 'Oversikt', under: 'Startpunktet med QR og lenker' },
+      { url: 'index.html', tekst: 'Oversikt', under: 'Alle lenkene og status på systemet' },
       { url: 'kjoreplan.html', tekst: 'Kjøreplan', under: 'Hele kvelden på ett ark' },
+      { url: 'regler.html', tekst: 'Regler', under: 'Poeng, årstall, joker, opp-/nedrykk' },
       { skille: true },
       { url: 'styre.html', tekst: 'Styring / Admin', under: 'Fasit, poeng, trekning og lykkehjul' },
       { url: 'hovedskjerm.html', tekst: 'Storskjerm', under: 'Bildet publikum ser' }
@@ -46,8 +47,10 @@
     ] }
   ];
 
-  // Lagsidene apnes pa lagenes egne telefoner. De skal ikke ha en vei inn i
-  // styringspanelet - verken ved et uhell eller med vilje.
+  // Lagsidene apnes pa lagenes egne telefoner, og har en kortere meny uten vei
+  // inn i styringspanelet. NB: stilling.html tegner fortsatt HELE menyen, sa et
+  // lag som gar dit kommer videre derfra - vil du tette det, ma stilling.html
+  // ogsa merkes med data-meny="lag".
   var GRUPPER_LAG = [
     { navn: 'Laget', punkter: [
       { url: 'lag.html', tekst: 'Svarskjema', under: 'Send inn svarene deres' },
@@ -56,7 +59,7 @@
     ] },
     { navn: 'Kvelden', punkter: [
       { url: 'stilling.html', tekst: 'Stilling', under: 'Hvordan ligger vi an?' },
-      { url: 'veiledning.html', tekst: 'Veiledning', under: 'Reglene kort forklart' }
+      { url: 'regler.html', tekst: 'Regler', under: 'Poeng, årstall og joker' }
     ] }
   ];
 

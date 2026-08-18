@@ -64,6 +64,10 @@ code{color:#ffff00;}
 <li><b>Finale</b> - status og poeng i finalen.</li>
 <li><b>Uavgjort</b> - hvilken uavgjort-trekning (lykkehjul) som eventuelt venter eller nettopp er trukket akkurat nå.</li>
 <li><b>UavgjortLogg</b> - historikk over tidligere lykkehjul-trekninger denne kvelden, slik at samme uavgjorte situasjon ikke trekkes på nytt hvis den dukker opp igjen senere (f.eks. hvis flere lag er involvert i flere grenser samtidig).</li>
+<li><b>Omspillsanger</b> - reservesangene som brukes hvis to eller tre lag ender likt nederst i et opp-/nedrykk. Én sang spilles av gangen, bare mellom lagene som står likt. Den første ubrukte reserven vises alltid nederst i sanglista, så du ser hva som kommer.</li>
+<li><b>FinaleB</b> - status og poeng i B-finalen.</li>
+<li><b>Historikk</b> - arkiverte kvelder: sluttstilling, finaleresultat, jokerbruk og beste bommert. Fylles av "Avslutt kveld og arkiver".</li>
+<li><b>JokerLog</b> - hvilke lag som har brukt jokeren sin denne sesongen, og om den ga uttelling.</li>
 </ul>
 <p>Hvis noe skulle gå galt underveis, finnes det egne nullstillingsknapper for lag, poeng, opprykksspill/trekning, brukte kategorier, runder/fasit og innsendte svar på <a href="styre.html">Styre/Admin-siden</a> (under "Nullstilling") - disse er trygge å bruke fra appen i stedet for å redigere regnearket manuelt. "Nullstill kategorier" gjør alle kategorier tilgjengelige for trekning igjen, "Nullstill runder/fasit" fjerner eventuell manuelt lagret fasit slik at alle runder faller tilbake til automatisk henting fra Ark 12, og "Nullstill innsendte svar" tømmer alle svar lagene har sendt inn (for alle runder) - nyttig som opprydding f.eks. hvis test-/gamle svar dukker opp forhåndsutfylt på et lags side, eller som generell opprydding før en ny quizkveld.</p>
 </div>
@@ -105,18 +109,32 @@ code{color:#ffff00;}
 <p class="diagram-caption">Gul boks = kveldens høydepunkt</p>
 </div>
 
+<h2>Slik er styringspanelet bygd opp</h2>
+<div class="card">
+<p>Panelet viser ikke hele kvelden på én gang - det er delt i seksjoner som følger kvelden, og bare den du er i står åpen. Finner du ikke en knapp, ligger den nesten alltid i en sammenklappet seksjon.</p>
+<ul>
+<li><b>1 &middot; Før kvelden</b> - lag-oppsett og QR-koder, kategorier, buzzer-modus.</li>
+<li><b>2 &middot; Under runden</b> - fasit, poengberegning sang for sang, opp-/nedrykk, buzzer og beste bommert. Uavgjort-kort dukker opp øverst her.</li>
+<li><b>Trekning &amp; hjul</b> - kategoritrekningen, buzzer-visningen, kategorispillet og lykkehjulet/banditten. <b>Denne står normalt lukket</b>, men overskriften merkes <b>NÅ</b> i det øyeblikket noe faktisk skjer der. Knappene "Gå til trekningen" og "Gå til lykkehjulet" i kortene ruller deg rett ned dit. Vet du at kvelden starter med et opp-/nedrykk, kan du åpne panelet med <span class="fil">styre.html?trekning=1</span> så står seksjonen åpen med en gang.</li>
+<li><b>3 &middot; Etter runde 6</b> - B-finale og finale.</li>
+<li><b>Storskjerm</b> - overstyring av hovedskjermen: <b>Auto</b> (følger quizen selv), <b>Velkomstskjerm</b>, <b>Pausemelding</b> med egen tekst, <b>Sluttresultat</b> og <b>Skjul skjerm</b>. Husk å sette den tilbake til Auto etter en pause.</li>
+<li><b>4 &middot; Etterpå</b> - joker-oversikt, "Avslutt kveld og arkiver", ny sesong og nullstilling.</li>
+</ul>
+<p>Panelet åpner selv den seksjonen du er i og merker den "NÅ". Har du åpnet en seksjon manuelt, får den stå - panelet lukker bare den det åpnet selv. Når en runde er ferdigscoret og opp-/nedrykket må spilles, flytter opp-/nedrykkskortet seg øverst i "Under runden".</p>
+</div>
+
 <h2>Slik gjennomfører du en quiz</h2>
 <div class="card">
 <ol>
 <li><b>Sett opp lag.</b> Gå til <a href="styre.html">Admin-siden</a>. Du har to muligheter under Lag-oppsett:
   <ul>
     <li><b>Manuelt:</b> opprett alle lagene med navn, divisjon (1 eller 2) og bordnummer, og trykk lagre. QR-koder og lenker genereres automatisk for hvert lag.</li>
-    <li><b>QR-kode-påmelding:</b> huk av "QR-kode-påmelding" og trykk "Start selvregistrering". Du får én felles QR-kode som lagene skanner selv - de skriver inn lagnavnet sitt og får divisjon og bord tildelt automatisk. Listen over påmeldte lag oppdaterer seg mens de melder seg på. Trykk "Lukk påmelding" når alle er med. <b>Merk:</b> "Start selvregistrering" nullstiller dagens lagliste, så den skal bare brukes helt i starten av kvelden. Lukk påmeldingen før første runde åpnes - ellers kan et lag som melder seg på sent havne nederst med 0 poeng og bli trukket inn i nedrykksspillet.</li>
+    <li><b>QR-kode-påmelding:</b> huk av "QR-kode-påmelding" og trykk "Start selvregistrering". Du får én felles QR-kode som lagene skanner selv - de skriver inn lagnavnet sitt og får divisjon og bord tildelt automatisk. Listen over påmeldte lag oppdaterer seg mens de melder seg på. <b>QR-koden vises samtidig stort på storskjermen</b>, sammen med lista over hvem som har meldt seg på - du trenger ikke snu PC-en mot salen. <b>Merk:</b> "Start selvregistrering" nullstiller dagens lagliste, så den skal bare brukes helt i starten av kvelden. Trykk "Lukk påmelding" når alle lagene er med - da forsvinner QR-koden fra storskjermen. Åpner du en runde uten å ha gjort det, lukkes påmeldingen automatisk likevel, men da har koden stått lenger enn nødvendig. Får du med et lag helt på tampen, havner det nederst med 0 poeng og kan bli trukket rett inn i nedrykksspillet.</li>
   </ul></li>
 <li><b>Del ut lenker/QR-koder.</b> Hvert lag skanner sin QR-kode eller åpner sin lenke på en mobil/nettbrett ved bordet. QR-kodene ligger under Lag-oppsett uansett om lagene er opprettet manuelt eller har meldt seg på selv.</li>
 <li><b>Spill av sangene.</b> Runde 1 er åpen fra start. Spill de 3 sangene for runden.</li>
 <li><b>Lagene svarer - sang for sang.</b> Hvert lag fyller inn Artist, Låt og Årstall for sang 1 på sin side og trykker "Send svar sang 1". Feltene låses da, og sang 2 blir tilgjengelig - sang 3 blir først tilgjengelig når sang 2 er sendt. Slik kan laget ikke sende inn (eller endre) svar på en sang som allerede er spilt av, samtidig som de kan svare fortløpende mens sangene spilles.</li>
-<li><b>Beregn poeng - sang for sang.</b> Fasit er allerede fylt inn automatisk fra <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>. På Styre-siden vises hver av de 3 sangene i runden som et eget kort. Så snart en sang er spilt og lagene har svart, trenger du <b>ikke</b> vente på de andre sangene - trykk "Beregn poeng sang X (automatisk)" for den sangen med en gang. Systemet gir 3p for riktig artist, 2p for riktig låt og 1p for riktig årstall - med trappetrinns-toleranse etter hvor gammel sangen er: <b>eksakt år kreves for sanger fra 2001 og senere</b>, <b>+/-1 år godkjennes for sanger fra 1981-2000</b>, og <b>+/-2 år godkjennes for sanger til og med 1980</b>. I tillegg er det toleranse for små skrivefeil på artist og låt. Har en sang 3 eller flere artister i fasiten (skrevet kommaseparert, f.eks. "Stromae, Adele, Doja Cat"), gis det prosentvis artistpoeng ut fra hvor mange av navnene laget har fått med - avrundet til nærmeste hele poeng. Feil eller ekstra navn laget gjetter på trekker ikke poeng. Har sangen 1 eller 2 artister i fasiten, er det fortsatt alt-eller-ingenting på artistpoenget, som før. Alternativt trykk "Vurder svar med Claude først" på det samme sang-kortet for å la Claude kvalitetssikre svarene for akkurat den sangen før poengberegning (se eget avsnitt under). Stillingen på <a href="stilling.html">Stilling-siden</a> oppdaterer seg da <b>umiddelbart</b> - tilskuerne ser poengsummen endre seg etter hver sang, ikke bare når hele runden er ferdig. Et grønt merke ("SCORET") viser hvilke sanger som allerede er poengberegnet, og en sang kan ikke beregnes to ganger. For hvert innsendt svar lagres en fasit-vurdering (riktig/feil per artist, låt og år, samt om Claude har overstyrt) i <b>Svar-arket</b> i regnearket, slik at du kan ettergå avgjørelsene i etterkant.</li>
+<li><b>Beregn poeng - sang for sang.</b> Fasit er allerede fylt inn automatisk fra <a href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank">regnearket</a>. På Styre-siden vises hver av de 3 sangene i runden som et eget kort. Så snart en sang er spilt og lagene har svart, trenger du <b>ikke</b> vente på de andre sangene - trykk "Beregn poeng sang X (automatisk)" for den sangen med en gang. Systemet gir 3p for riktig artist, 2p for riktig låt og 1p for riktig årstall - med trappetrinns-toleranse etter hvor gammel sangen er: <b>eksakt år for sanger fra 2020 og nyere</b>, <b>+/-1 år for 2000-2019</b>, <b>+/-2 år for 1980-1999</b> og <b>+/-3 år for alt eldre enn 1980</b> (hele regelverket står på <a href="regler.html">Regler-siden</a>). I tillegg er det toleranse for små skrivefeil på artist og låt. Har en sang 3 eller flere artister i fasiten (skrevet kommaseparert, f.eks. "Stromae, Adele, Doja Cat"), gis det prosentvis artistpoeng ut fra hvor mange av navnene laget har fått med - avrundet til nærmeste hele poeng. Feil eller ekstra navn laget gjetter på trekker ikke poeng. Har sangen 1 eller 2 artister i fasiten, er det fortsatt alt-eller-ingenting på artistpoenget, som før. Alternativt trykk "Vurder svar med Claude først" på det samme sang-kortet for å la Claude kvalitetssikre svarene for akkurat den sangen før poengberegning (se eget avsnitt under). Stillingen på <a href="stilling.html">Stilling-siden</a> oppdaterer seg da <b>umiddelbart</b> - tilskuerne ser poengsummen endre seg etter hver sang, ikke bare når hele runden er ferdig. Et grønt merke ("SCORET") viser hvilke sanger som allerede er poengberegnet, og en sang kan ikke beregnes to ganger. For hvert innsendt svar lagres en fasit-vurdering (riktig/feil per artist, låt og år, samt om Claude har overstyrt) i <b>Svar-arket</b> i regnearket, slik at du kan ettergå avgjørelsene i etterkant.</li>
 <li><b>Vis stilling.</b> Åpne <a href="stilling.html">Stilling-siden</a> på en skjerm alle kan se - den viser 1. og 2. divisjonstabell og oppdaterer seg selv, sang for sang.</li>
 <li><b>Opp-/nedrykk etter HVER runde (1-5).</b> Når alle 3 sangene i runden er poengberegnet, lukkes runden automatisk. Før runde 2-6 kan åpnes, må opp-/nedrykksspillet mellom divisjonene kjøres og fullføres for runden som nettopp ble ferdigspilt - se detaljert fremgangsmåte i <a href="#trekningdetaljer">eget avsnitt lenger ned</a>. Systemet nekter å åpne neste runde ("Åpne runde X+1") før dette er gjort, med en tydelig feilmelding. <span class="status ferdig">klart</span></li>
 <li><b>Åpne neste runde.</b> Når opp-/nedrykket for runden er fullført, dukker "Åpne runde X+1"-knappen opp på Styre-siden. Trykk den og gjenta fra steg 3 for rundene 2-6.</li>
@@ -166,7 +184,7 @@ code{color:#ffff00;}
 <li><b>Trykk "Vurder svar med Claude først"</b> på sang-kortet for den aktuelle sangen på Styre-siden. En tekstboks fylles automatisk med fasit og alle innsendte svar for akkurat den sangen.</li>
 <li><b>Kopier teksten</b> (egen knapp) og lim den inn i en vanlig Claude-samtale (nettleser, app eller her).</li>
 <li><b>Claude vurderer</b> hvert svar og svarer med én linje per lag/felt i formatet <code>LAGID|FELT|OK</code>.</li>
-<li><b>Lim inn Claude sitt svar</b> i feltet under på det samme sang-kortet og trykk "Bruk vurdering og beregn poeng". Poeng for akkurat den sangen beregnes da med Claude sin vurdering av artist og låt, mens årstall fortsatt sjekkes automatisk med samme trappetrinns-toleranse som ellers (eksakt for sanger fra 2001+, +/-1 år for 1981-2000, +/-2 år til og med 1980) - og stillingen oppdateres umiddelbart.</li>
+<li><b>Lim inn Claude sitt svar</b> i feltet under på det samme sang-kortet og trykk "Bruk vurdering og beregn poeng". Poeng for akkurat den sangen beregnes da med Claude sin vurdering av artist og låt, mens årstall fortsatt sjekkes automatisk med samme trappetrinns-toleranse som ellers (eksakt for 2020+, +/-1 år for 2000-2019, +/-2 år for 1980-1999, +/-3 år før 1980) - og stillingen oppdateres umiddelbart.</li>
 <li><b>Alt lagres til gjennomgang:</b> for hvert innsendte svar lagrer systemet i <b>Svar-arket</b> i regnearket om artist, låt og årstall ble godkjent, poengsummen for svaret, og om Claude overstyrte den automatiske vurderingen - slik at du alltid kan ettergå avgjørelsen i etterkant.</li>
 </ol>
 </div>
@@ -201,10 +219,10 @@ code{color:#ffff00;}
 <li><b>Åpne trekningen.</b> Klikk "Gå til trekningen" på Styre-siden. Seksjonen "Trekning &amp; hjul" åpner seg lenger nede på samme side - du blir altså værende i styringspanelet hele veien. Publikum følger med på Hovedskjermen.</li>
 <li><b>Kryss av brukte kategorier.</b> Nederst i trekningsseksjonen ligger en liste med avkrysningsbokser for alle kategorier som alt er brukt tidligere på kvelden, slik at de ikke kan trekkes på nytt. Avkrysning lagres automatisk med en gang.</li>
 <li><b>Start trekningen.</b> Klikk "Start trekning". Systemet trekker 4 tilfeldige kategorier blant de som ikke er krysset av (minst 4 ledige kreves), med animasjon og lyd.</li>
-<li><b>Laget velger kategori.</b> De 4 trukne kategoriene vises som knapper - både i trekningsseksjonen (klikk direkte på flisen) og i opp-/nedrykkskortet. Klikk kategorien laget velger. Den krysses da automatisk av som brukt i kategorilista.</li>
-<li><b>Spill av og registrer vinner.</b> Styre-siden viser sangene i valgt kategori en etter en, med en "Spill av i Spotify"-knapp på hver sang (hentet fra Spotify-kolonnen i kategoriarket). Mens kategorien spilles står poengtavla på storskjermen med ett kort per lag og lederen markert, og stillingen vises også som tabell i styringspanelet. Når alle 5 sangene er spilt, vises resultatet i 30 sekunder: hvem som vant kategorien, poengsummene, og hvem som rykker ned. Klikk laget som svarer riktig, eller "Ingen riktig / hopp over".</li>
-<li><b>Poenglikhet.</b> Ved likt poeng velger admin manuelt hvilket lag som rykker ned.</li>
-<li><b>Trekke på nytt.</b> Klikk "Nullstill opp-/nedrykk" øverst på Trekningssiden for å nullstille trekningen og starte den på nytt - lagene og poengene beholdes.</li>
+<li><b>Laget velger kategori.</b> Det er <b>nest nederste lag i 1. divisjon</b> (utfordreren) som velger - systemet avviser valg fra de to andre. De 4 trukne kategoriene vises som knapper - både i trekningsseksjonen (klikk direkte på flisen) og i opp-/nedrykkskortet. Klikk kategorien laget velger. Den krysses da automatisk av som brukt i kategorilista.</li>
+<li><b>Spill av og registrer vinner.</b> Opp-/nedrykkskortet viser <b>alle fem sangene i kategorien under hverandre</b>, hver med fasit og sin egen "Spill av"-knapp (Spotify-lenken fra kategoriarket). Klikk laget som svarte riktig på hver rad - eller "Ingen riktig". Klikket du feil, trykker du "Angre" på raden og setter den på nytt; du kan rette hvilken som helst rad helt til den femte er registrert, og kategorien avgjøres i det siste klikket faller. Nederst ligger én reservesang merket "Bare hvis to lag ender likt". Mens kategorien spilles står poengtavla på storskjermen med ett kort per lag og lederen markert, og stillingen vises også som tabell i styringspanelet. Når alle 5 sangene er spilt, vises resultatet i 30 sekunder: hvem som vant kategorien, poengsummene, og hvem som rykker ned.</li>
+<li><b>Poenglikhet.</b> Står to eller tre lag likt nederst etter de fem sangene, går det automatisk til omspill: én ekstra sang av gangen fra reservelista, og bare mellom lagene som står likt. Først hvis den lista er brukt opp, må du velge manuelt hvilket lag som rykker ned.</li>
+<li><b>Trekke på nytt.</b> Klikk "Nullstill opp-/nedrykk" øverst i seksjonen "Trekning &amp; hjul" for å nullstille trekningen og starte den på nytt - lagene og poengene beholdes.</li>
 </ol>
 </div>
 
@@ -224,7 +242,7 @@ code{color:#ffff00;}
 <line x1="230.0" y1="200" x2="230.0" y2="236" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC3)"/>
 <rect x="30" y="236" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
 <text x="230.0" y="258" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">3. TREKK 4 KATEGORIER</text>
-<text x="230.0" y="276" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Åpne Trekningssiden på storskjerm</text>
+<text x="230.0" y="276" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Åpne "Trekning &amp; hjul"</text>
 <line x1="230.0" y1="306" x2="230.0" y2="342" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC3)"/>
 <rect x="30" y="342" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
 <text x="230.0" y="364" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">4. LAGET VELGER KATEGORI</text>
@@ -253,7 +271,7 @@ code{color:#ffff00;}
 <li><b>Buzzer-runde.</b> Les opp et spørsmål og åpne buzzeren på Buzzer-kortet. Lagene trykker på sin tildelte fysiske knapp, eller på BUZZ-knappen på lagsiden - laget som er først vises som vinner på Styre-siden.</li>
 <li><b>Gi poeng.</b> Når et lag har buzzet og svart riktig, trykk "+1" for laget på Finale-kortet. Steng/nullstill buzzeren for neste spørsmål og gjenta.</li>
 <li><b>Avslutt.</b> Trykk "Avslutt finale" for å kåre vinneren (høyest poengsum). Er det uavgjort om seieren, avgjøres det med lykkehjulet på samme måte. "Nullstill finale" tilbakestiller hvis du må gjøre om.</li>
-<li><b>Visning.</b> Det er ikke laget noen egen storskjermside for selve finale-spørsmålene - alt styres og vises fra Styre-siden. Lykkehjulet (ved uavgjort) vises derimot på Trekningssiden/storskjermen, akkurat som kategori-trekningen.</li>
+<li><b>Visning.</b> Selve finalespørsmålene leser du opp - de vises ingen steder. Storskjermen viser derimot buzzeren live ("BUZZER ÅPEN!" og navnet på laget som var først), og når finalen avsluttes spretter et vinneroverlegg med konfetti opp der. Blir det uavgjort, vises hjulet både i seksjonen "Trekning &amp; hjul" og på storskjermen, akkurat som kategori-trekningen.</li>
 </ol>
 </div>
 
@@ -313,9 +331,9 @@ code{color:#ffff00;}
 </ol>
 <p>Alle situasjoner utenom den første (opp-/nedrykk, finaleplass/-vinner og B-finaleplass/-vinner) oppdages <b>automatisk</b> av systemet når du trykker "Start opprykksspill", "Start finale", "Avslutt finale", "Start B-finale" eller "Avslutt B-finale" - spillet stopper da opp av seg selv til uavgjort er løst. 1. plass-kåringen er kun kosmetisk og sjekkes manuelt når du ønsker det.</p>
 <ol>
-<li><b>Systemet oppdager uavgjort.</b> På <a href="styre.html">Styre-siden</a> dukker det opp et lyserosa kort "Uavgjort-trekning" med hvem som er involvert og hva trekningen gjelder. For 1. plass-kåring: trykk "Sjekk divisjonsvinner (Div 1/2)" i samme kort for å sjekke manuelt, f.eks. rett etter runde 6.</li>
+<li><b>Systemet oppdager uavgjort.</b> På <a href="styre.html">Styre-siden</a> dukker det opp et lyserosa kort "Uavgjort-trekning" med hvem som er involvert og hva trekningen gjelder. For 1. plass-kåring: trykk "Sjekk divisjonsvinnere (begge divisjoner)" i samme kort for å sjekke manuelt - én sjekk dekker begge divisjonene, f.eks. rett etter runde 6.</li>
 <li><b>Åpne lykkehjulet.</b> Trykk "Gå til lykkehjulet" i kortet. Seksjonen "Trekning &amp; hjul" lenger nede på Styre-siden bytter automatisk til hjul-visning så lenge en uavgjort-trekning venter, og overskriften merkes med NÅ. Storskjermen viser det samme.</li>
-<li><b>Drei hjulet.</b> Trykk "Drei hjulet!" i trekningsseksjonen. Gjelder det opp-/nedrykket, står det en enarmet banditt der i stedet - da drar du spaken én gang, og alle avgjørelsene faller på plass etter hverandre. Over hjulet står alle omgangene som skal kjøres, satt opp på forhånd - opp-/nedrykket kan kreve inntil tre trekninger etter hverandre, og rutene fylles med vinnernavn etter hvert. Hjulet går selv videre til neste trekning når en er ferdig, så du blir stående i panelet til alt er avgjort. Hovedskjermen viser den samme snurringen. Hjulet spinner med lyd og confetti og lander på vinneren/vinnerne. Trengs det flere vinnere fra samme trekning (f.eks. to av tre lag skal videre), gjentas trekningen automatisk for gjenværende kandidater rett etterpå.</li>
+<li><b>Dra spaken - eller drei hjulet.</b> Gjelder trekningen <b>opp-/nedrykket eller 1. plass i en divisjon</b>, står det en <b>enarmet banditt</b> i seksjonen: ett hjul per avgjørelse, side om side, med merking over hvert hjul om hva det avgjør ("Div 1 - trygg", "Div 2 - nr. 1", "Div 2 - nr. 2"). Trykk <b>"DRA SPAKEN" én gang</b>, så faller alle avgjørelsene på plass etter hverandre, med lyd og konfetti. Lykkehjulet er skjult så lenge banditten står framme.<br>Alle <b>andre</b> uavgjortheter - finaleplass, finalevinner, B-finaleplass og B-finalevinner - bruker det vanlige lykkehjulet med knappen "Drei hjulet!". Der snurres det én gang per vinner som skal trekkes, og hjulet går selv videre til neste omgang, så du blir stående i panelet til alt er avgjort. Over hjulet står alle omgangene satt opp på forhånd, og rutene fylles med vinnernavn etter hvert.<br>Hovedskjermen viser det samme som panelet - og med <b>divisjonstabellene stående ved siden av</b>, så publikum ser tabellen trekningen faktisk gjelder.</li>
 <li><b>Bekreft.</b> Rull opp til kortet i seksjon 2 - det viser nå resultatet av trekningen. Trykk "Bekreft og fortsett" for å gå videre i spillet med det trukne resultatet.</li>
 <li><b>Spillet fortsetter</b> akkurat der det stoppet - opp-/nedrykksspillet, finale-kvalifiseringen eller kåringen av finalevinner fullføres automatisk med resultatet fra hjulet.</li>
 </ol>
@@ -334,7 +352,7 @@ code{color:#ffff00;}
 <line x1="230.0" y1="94" x2="230.0" y2="130" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC5)"/>
 <rect x="30" y="130" width="400" height="70" fill="#000000" stroke="#00ffff" stroke-width="2"/>
 <text x="230.0" y="152" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">2. ÅPNE LYKKEHJULET</text>
-<text x="230.0" y="170" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Trekningssiden bytter selv til hjul-visning</text>
+<text x="230.0" y="170" fill="#ffffff" font-family="Courier New, monospace" font-size="12" text-anchor="middle">Seksjonen bytter selv til hjul-visning</text>
 <line x1="230.0" y1="200" x2="230.0" y2="236" stroke="#00ffff" stroke-width="2" marker-end="url(#arrowC5)"/>
 <rect x="30" y="236" width="400" height="53" fill="#000000" stroke="#00ffff" stroke-width="2"/>
 <text x="230.0" y="258" fill="#ffff00" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="middle">3. DREI HJULET</text>
@@ -351,10 +369,12 @@ code{color:#ffff00;}
 <h2>Hurtiglenker</h2>
 <div class="card">
 <a class="linkbox" href="https://docs.google.com/spreadsheets/d/1NpPzpJQEGNPI-vuBxaDPH5cRzc3WLqKNUEg2e8CUz_E/edit" target="_blank"><b>Regneark</b><span>Databasen bak quizzen</span></a>
-<a class="linkbox" href="styre.html"><b>Styre / Admin</b><span>Lag-oppsett, fasit, poeng, opprykk, buzzer, finale og B-finale</span></a>
-<a class="linkbox" href="hovedskjerm.html" target="_blank"><b>Hovedskjerm</b><span>Publikumsskjermen til prosjektoren - stilling, trekning, buzzer, lykkehjul og bommert</span></a>
+<a class="linkbox" href="regler.html"><b>Regler</b><span>Poeng, årstrappa, joker, opp-/nedrykk og finale - fasiten for alt som avgjør poeng</span></a>
+<a class="linkbox" href="styre.html"><b>Styre / Admin</b><span>Hele kvelden: lag-oppsett, fasit, poeng, trekning og hjul, opprykk, buzzer, finale og B-finale</span></a>
+<a class="linkbox" href="kjoreplan.html" target="_blank"><b>Kjøreplan</b><span>Hele kvelden på ett A4-ark - laget for utskrift</span></a>
+<a class="linkbox" href="hovedskjerm.html" target="_blank"><b>Hovedskjerm</b><span>Publikumsskjermen til prosjektoren - påmeldings-QR, stilling, trekning, buzzer, hjul/banditt med tabellene ved siden av, bommert, velkomst, pause og sluttresultat</span></a>
 <a class="linkbox" href="stilling.html"><b>Stilling</b><span>Divisjonstabeller for storskjerm</span></a>
-
+<a class="linkbox" href="registrer.html" target="_blank"><b>Påmelding</b><span>Siden lagene skanner seg inn på med QR-koden</span></a>
 <a class="linkbox" href="historikk.html"><b>Historikk</b><span>Tidligere kvelder og sesongoversikt</span></a>
 <a class="linkbox" href="index.html"><b>Oversikt</b><span>Tilbake til forsiden med alle lenker</span></a>
 </div>

@@ -122,7 +122,7 @@ function vis(data) {
       html += '<button type="button" disabled>Send svar sang ' + i + '</button> <span style="font-size:0.85em;opacity:0.7;">Send sang ' + (i - 1) + ' først</span>';
     } else {
       if (!data.jokerBrukt) {
-        html += '<label class="jokerlabel"><input type="checkbox" class="joker" data-sang="' + i + '"> 🃏 Bruk joker på denne sangen (dobler poengsummen HVIS artist, låt og årstall ALLE er riktig - kun 1 gang per sesong)</label>';
+        html += '<label class="jokerlabel"><input type="checkbox" class="joker" data-sang="' + i + '"> 🃏 Bruk joker på denne sangen (dobler poengsummen HVIS artist, låt og årstall alle blir godkjent - årstallet har litt slingringsmonn. Kun 1 gang per sesong)</label>';
       }
       html += '<button type="button" onclick="sendSangInn(' + i + ')">Send svar sang ' + i + '</button>';
     }
@@ -139,7 +139,7 @@ function sendSangInn(sangNr) {
   var jokerEl = document.querySelector('.joker[data-sang="' + sangNr + '"]');
   var bruktJoker = !!(jokerEl && jokerEl.checked);
   var statusDiv = document.getElementById('statusSang' + sangNr);
-  if (bruktJoker && !confirm('Sikker på at dere vil bruke jokeren nå? Dere får kun én joker per sesong, og den dobler poengsummen KUN hvis alle tre felt (artist, låt og årstall) er helt riktig.')) {
+  if (bruktJoker && !confirm('Sikker på at dere vil bruke jokeren nå? Dere får kun én joker per sesong, og den dobler poengsummen KUN hvis alle tre felt (artist, låt og årstall) blir godkjent.')) {
     return;
   }
   if (statusDiv) statusDiv.innerHTML = '<p>Sender...</p>';

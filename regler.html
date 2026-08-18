@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Musikkquiz - Regler</title>
+<style>
+:root{
+  --bg:#000000;
+  --accent:#00ffff;
+  --accent2:#ffff00;
+  --card:#000000;
+  --text:#ffffff;
+}
+* {box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);font-family:'Courier New',Courier,monospace;color:var(--text);letter-spacing:0.5px;}
+h1,h2,h3{font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;}
+h1{color:#ffff00;background:#0000aa;padding:8px 14px;display:inline-block;border:2px solid #ffffff;}
+h2{color:#00ffff;}
+h3{color:#00ff00;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.card{background:var(--card);border:2px solid var(--accent);border-radius:0;padding:20px;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:6px 10px;text-align:left;}
+th{background:#0000aa;color:#ffff00;text-transform:uppercase;font-size:0.85em;}
+tr:nth-child(even){background:rgba(0,255,255,0.08);}
+.small{font-size:11px;color:#00ff00;}
+
+/* Regelsida leses mest pa mobil, midt i en kveld. Da skal poengtallene og
+   arstrappa vaere det man ser forst - resten er utdyping. */
+.poenggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 4px;}
+.poengkort{border:1px solid var(--m-kant,#2f3542);border-radius:10px;padding:14px 16px;background:var(--m-flate,transparent);}
+.poengkort .tall{font-size:32px;font-weight:700;color:#0ca30c;line-height:1.1;}
+.poengkort .hva{font-size:13px;color:var(--m-blekk2,#9aa3b2);margin-top:2px;}
+.aartabell td:first-child{white-space:nowrap;font-weight:600;}
+.aartabell .tol{font-weight:700;color:#ffff00;white-space:nowrap;}
+.merk{border-left:3px solid #ffca28;padding:8px 0 8px 12px;margin:12px 0;font-size:.95em;}
+.eks{font-size:.92em;opacity:.85;margin-top:6px;}
+#regnemaskin input{width:110px;}
+#regnesvar{margin-top:10px;font-size:1.05em;}
+#regnesvar b{color:#0ca30c;}
+#regnesvar.nei b{color:#ff6b6b;}
+@media print{
+  body{background:#fff;color:#000;}
+  .card{border-color:#000;}
+  h1{background:none;color:#000;border:0;padding:0;}
+  #regnemaskin,.utskriftskjul{display:none;}
+}
+</style>
+<link rel="stylesheet" href="meny.css">
+<script src="meny.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+<h1>Musikkquiz - Regler</h1>
+<p style="opacity:.8;margin-top:10px;">Alt som avgjør poengene, samlet på ett sted. Denne siden er fasiten - står det noe annet i en annen tekst, er det denne som gjelder.</p>
+
+<div class="card">
+<h2>Poeng per sang</h2>
+<p>Hver sang gir inntil <b>6 poeng</b>. De tre feltene vurderes hver for seg, så et halvriktig svar gir alltid noe.</p>
+<div class="poenggrid">
+  <div class="poengkort"><div class="tall">3 p</div><div class="hva">Riktig artist</div></div>
+  <div class="poengkort"><div class="tall">2 p</div><div class="hva">Riktig låt/tittel</div></div>
+  <div class="poengkort"><div class="tall">1 p</div><div class="hva">Riktig årstall</div></div>
+</div>
+<p class="eks">Det er ingen minuspoeng. Blankt svar og feil svar gir det samme: null.</p>
+</div>
+
+<div class="card">
+<h2>Årstall - hvor nøyaktig må dere være?</h2>
+<p>Jo nyere sangen er, jo mer nøyaktig må årstallet være. Toleransen regnes fra <b>fasitåret</b>, ikke fra det dere svarer.</p>
+<table class="aartabell">
+<tr><th>Sangen er fra</th><th>Godkjent avvik</th><th>Eksempel</th></tr>
+<tr><td>2020 og nyere</td><td class="tol">Eksakt år</td><td>Fasit 2023 &rarr; bare 2023 gir poeng</td></tr>
+<tr><td>2000-2019</td><td class="tol">+/- 1 år</td><td>Fasit 2005 &rarr; 2004, 2005 og 2006 gir poeng</td></tr>
+<tr><td>1980-1999</td><td class="tol">+/- 2 år</td><td>Fasit 1985 &rarr; 1983 til 1987 gir poeng</td></tr>
+<tr><td>Før 1980</td><td class="tol">+/- 3 år</td><td>Fasit 1972 &rarr; 1969 til 1975 gir poeng</td></tr>
+</table>
+<div class="merk">Skriv alltid et årstall, selv om dere er usikre. Et gjett innenfor toleransen gir poeng - et blankt felt gir aldri noe.</div>
+
+<div id="regnemaskin" class="utskriftskjul" style="margin-top:16px;">
+<h3 style="font-size:.95em;">Prøv selv</h3>
+<label>Fasitår <input type="number" id="fasitAar" value="1985" min="1900" max="2100"></label>
+<label style="margin-left:10px;">Deres svar <input type="number" id="gjettAar" value="1987" min="1900" max="2100"></label>
+<div id="regnesvar"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Artist og låt</h2>
+<p>Det er <b>toleranse for små skrivefeil</b> på både artist og låt - dere trenger ikke treffe stavemåten perfekt. Store og små bokstaver spiller ingen rolle.</p>
+<h3>Sanger med flere artister</h3>
+<p>Har fasiten <b>tre eller flere</b> artister (for eksempel en låt med to gjesteartister), gis artistpoenget forholdsmessig etter hvor mange navn dere får med, avrundet til nærmeste hele poeng. Skill navnene med komma.</p>
+<p class="eks">Eksempel: fasiten har tre artister, dere får med to av dem &rarr; 2 av 3 av 3 poeng = 2 poeng. Ekstra navn dere gjetter på trekker ikke.</p>
+<p>Har sangen <b>én eller to</b> artister i fasiten, er artistpoenget alt eller ingenting.</p>
+</div>
+
+<div class="card">
+<h2>Joker</h2>
+<p>Hvert lag har <b>én joker per sesong</b>. Den krysses av på én enkelt sang før svaret sendes inn, og <b>dobler poengsummen for den sangen</b> - men bare hvis alle tre feltene blir godkjent.</p>
+<p>«Godkjent» betyr det samme som ellers: artist og låt med skrivefeil-toleranse, og årstall innenfor trappa over. Er dere ett år unna på en sang fra 1990, teller årstallet fortsatt som riktig, og jokeren utløses.</p>
+<div class="merk">Full uttelling med joker er <b>12 poeng</b> på én sang. Bommer dere på ett av de tre feltene, er jokeren brukt opp uten gevinst - den kommer ikke tilbake før neste sesong.</div>
+</div>
+
+<div class="card">
+<h2>Slik svarer dere</h2>
+<ul>
+<li>Hvert lag har sin egen svarside, som dere når via QR-koden eller lenka dere fikk ved påmelding. <b>Ta vare på lenka</b> - den brukes hele kvelden.</li>
+<li>Svarene sendes inn <b>sang for sang</b>. Sang 2 åpner seg først når sang 1 er sendt inn, og sang 3 når sang 2 er sendt inn.</li>
+<li>Et innsendt svar kan <b>ikke endres</b>. Feltene låser seg med en gang.</li>
+<li>Hver runde er tre sanger. Kvelden har seks runder.</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Divisjoner, opp- og nedrykk</h2>
+<p>Lagene er delt i <b>1. og 2. divisjon</b>. Etter hver av rundene 1-5 spilles et opp-/nedrykksspill mellom tre lag:</p>
+<ul>
+<li>De <b>to nederste</b> i 1. divisjon</li>
+<li><b>Nr. 2</b> i 2. divisjon</li>
+</ul>
+<p>Det nest nederste laget i 1. divisjon velger én av fire tilfeldig trukne kategorier. Så spilles <b>fem sanger fra kategorien som buzzer-dueller</b> - først til å trykke får svare, og riktig svar gir ett poeng.</p>
+<p>Laget med <b>færrest</b> poeng etter de fem sangene rykker ned til 2. divisjon. De to andre spiller i 1. divisjon neste runde.</p>
+<p>Ender to eller tre lag likt nederst, spilles <b>ekstra sanger</b> fra en egen reserveliste - én av gangen, bare mellom lagene som står likt - til noen skiller seg ut.</p>
+<p>Etter runde 6 spilles det <b>ikke</b> opp-/nedrykk. Da går det rett til finalene.</p>
+</div>
+
+<div class="card">
+<h2>Finale og B-finale</h2>
+<p>Etter runde 6 avgjøres kvelden med to finaler:</p>
+<ul>
+<li><b>B-finalen</b> spilles mellom de to beste i 2. divisjon.</li>
+<li><b>Finalen</b> spilles mellom de to beste i 1. divisjon.</li>
+</ul>
+<p>Begge er buzzer-dueller: quizmasteren leser et spørsmål, første lag som trykker får svare, og riktig svar gir poeng.</p>
+</div>
+
+<div class="card">
+<h2>Uavgjort</h2>
+<p>Står lag likt om en plass som må avgjøres - hvem som skal med i opp-/nedrykket, hvem som tar finaleplassen, hvem som vinner en divisjon - trekkes det på storskjermen, og alle ser det skje.</p>
+<ul>
+<li><b>Opp-/nedrykk og divisjonsvinnere</b> avgjøres på en enarmet banditt: ett hjul per avgjørelse, og ett drag i spaken avgjør alt på én gang.</li>
+<li><b>Finaleplass, finalevinner og B-finale</b> avgjøres på lykkehjulet.</li>
+</ul>
+<p>Trekningen er tilfeldig, og resultatet lagres - den samme trekningen gir det samme svaret hvis siden lastes på nytt.</p>
+</div>
+
+<div class="card">
+<h2>Beste bommert</h2>
+<p>Kveldens morsomste feilsvar kan vises på storskjermen. Det gir ingen poeng - men det gir applaus.</p>
+</div>
+
+<div class="card" style="border-color:#ffca28;">
+<h2 style="color:#ffca28;">For quizmasteren</h2>
+<p>Denne delen handler om hvordan poengene faktisk beregnes, og er ikke noe lagene trenger å lese.</p>
+<h3>Poengberegning sang for sang</h3>
+<p>Hver sang beregnes for seg fra styringspanelet, så snart lagene har svart - du trenger ikke vente på resten av runden. Stillingen oppdateres umiddelbart. En sang kan ikke beregnes to ganger, og runden lukker seg selv når alle tre er ferdige.</p>
+<h3>Vurdering med Claude</h3>
+<p>På hvert sangkort kan du la Claude kvalitetssikre artist- og låtsvarene før poengene beregnes. Claude vurderer <b>bare artist og låt</b> - årstallet regnes alltid maskinelt etter trappa over, og kan ikke overstyres av vurderingen.</p>
+<h3>Overstyring</h3>
+<p>Etter en Claude-vurdering kan du krysse av manuelt per lag og felt før du beregner. Hvert innsendte svar lagres med sin fasit-vurdering i Svar-arket, sammen med om vurderingen ble overstyrt, slik at avgjørelsene kan ettergås i etterkant.</p>
+<h3>Omspill i opp-/nedrykket</h3>
+<p>Reservesangene hentes fra arket <b>Omspillsanger</b>. Er lista brukt opp uten at lagene skilles, må du velge manuelt hvilket lag som rykker ned.</p>
+<h3>Der reglene står i koden</h3>
+<p class="small">Årstrappa: <code>aarToleranse_</code> i Kode.gs. Poengvektene og artistfordelingen: <code>scoreEnSang_</code> og <code>scoreArtistPoeng_</code>. Jokerdoblingen: <code>scoreSang</code>. Endres én av dem, må denne siden oppdateres i samme slengen.</p>
+</div>
+
+</div>
+<script>
+// Arstrappa star ETT sted i denne fila, og bade tabellen over og regnemaskina
+// under leser den samme regelen. Speiler aarToleranse_ i Kode.gs (AVVIK-071).
+function aarToleranse(fasitAar) {
+  var f = parseInt(fasitAar, 10);
+  if (isNaN(f)) { return null; }
+  if (f >= 2020) { return 0; }
+  if (f >= 2000) { return 1; }
+  if (f >= 1980) { return 2; }
+  return 3;
+}
+
+function regnUtAar() {
+  var f = parseInt(document.getElementById('fasitAar').value, 10);
+  var g = parseInt(document.getElementById('gjettAar').value, 10);
+  var ut = document.getElementById('regnesvar');
+  ut.className = '';
+  ut.textContent = '';
+  if (isNaN(f) || isNaN(g)) { ut.textContent = 'Fyll inn begge årstallene.'; return; }
+  var tol = aarToleranse(f);
+  var ok = Math.abs(f - g) <= tol;
+  var spenn = tol === 0 ? ('bare ' + f) : ((f - tol) + ' til ' + (f + tol));
+  if (!ok) { ut.className = 'nei'; }
+  var b = document.createElement('b');
+  b.textContent = ok ? 'Godkjent - 1 poeng' : 'Ikke godkjent - 0 poeng';
+  ut.appendChild(b);
+  ut.appendChild(document.createTextNode(
+    '. Sanger fra ' + f + ' har ' + (tol === 0 ? 'ingen slingringsmonn' : '+/- ' + tol + ' år') +
+    ', så godkjent svar er ' + spenn + '.'));
+}
+
+document.getElementById('fasitAar').addEventListener('input', regnUtAar);
+document.getElementById('gjettAar').addEventListener('input', regnUtAar);
+regnUtAar();
+</script>
+</body>
+</html>
