@@ -1009,11 +1009,35 @@ var AVVIK_DATA = [
     tittel: "Kategorien kom en sang av gangen - feilklikk var umulig a rette",
     omrade: "Opp-/nedrykk - Kode.gs + styre.html",
     alvorlighet: "middels",
-    status: "venter",
+    status: "lost",
     funnetDato: "2026-08-17",
     funnetAv: "Onske fra quizmaster",
     beskrivelse: "Kategorien i opp-/nedrykket er fem buzzer-dueller. Panelet viste EN sang av gangen: fasit, spilleknapp og tre lagknapper, og sa hoppet det videre til neste. To problemer med det. Man sa aldri hvor mange dueller som gjensto eller hva som kom, og poengene ble talt opp med en teller - klikket man feil lag pa sang 2, var det ingen vei tilbake uten a nullstille hele opp-/nedrykket. Reservesangene (omspillslista) var heller ikke synlige for de plutselig ble aktuelle.",
     losning: "Alle fem sangene ligger na under hverandre, hver med fasit, egen spilleknapp og egne lagknapper - pluss reserven under, tydelig merket med at den bare brukes hvis to lag ender likt. Star det flere reserver i lista, sier raden fra om hvor mange som er igjen. Backend lagrer resultatet PER sang i en ny kolonne (SangResultat) i stedet for a telle oppover: poengsummen regnes ut av lista hver gang, radene kan registreres i hvilken som helst rekkefolge, en rad kan rettes til et annet lag, og \"Angre\" tommer den helt. \"Ingen riktig\" er sin egen tilstand, ikke det samme som en tom rad. Kategorien avgjores forst nar alle fem star registrert - akkurat som for, men na kan alt rettes helt fram til det siste klikket. Den gamle veien (registrerOpprykkPoeng/hoppOverSang) skriver inn i den samme lista, sa listevisningen og kategorispillet i trekningsseksjonen aldri kan komme i utakt. 21 tester i e2e17.js.",
+    sistOppdatert: "2026-08-17"
+  },
+  {
+    id: "AVVIK-071",
+    tittel: "Arstall-regelen sto beskrevet fire steder, og ingen av dem stemte med koden",
+    omrade: "Poengberegning - Kode.gs + veiledning.html + styre.html + regler.html",
+    alvorlighet: "hoy",
+    status: "lost",
+    funnetDato: "2026-08-17",
+    funnetAv: "Gjennomgang av dokumentasjonen mot koden",
+    beskrivelse: "Toleransen for arstall var beskrevet fire steder: to ganger i veiledningen, i teksten som limes inn i Claude nar quizmasteren kvalitetssikrer svar, og i regelteksten pa lagslidene. Alle fire sa det samme - \"eksakt ar fra 2001, +/-1 ar for 1981-2000, +/-2 ar til og med 1980\" - og INGEN av dem stemte med scoreAar_, som ga +/-1 ar fra 2000, +/-2 ar fra 1980 og +/-3 ar for eldre sanger. Hele trappa la ett hakk feil bade i grensene og i tallene. Lagene ble altsa fortalt en strengere regel enn den de faktisk ble malt mot, og Claude fikk feil premiss i prompten hver eneste runde.",
+    losning: "Quizmasteren bestemte den riktige trappa: eksakt ar for 2020 og nyere, +/-1 ar for 2000-2019, +/-2 ar for 1980-1999 og +/-3 ar for alt eldre enn 1980. Trappa er skilt ut i sin egen funksjon aarToleranse_ i Kode.gs sa den star ETT sted i backend. Alle fire tekstene er rettet. I tillegg er det laget en egen regelside, regler.html, som samler alt som avgjor poeng - poeng per svar, arstrappa med eksempler, skrivefeil-toleranse, flere artister, joker, opp-/nedrykk, finale og uavgjort - pluss en liten regnemaskin der man kan taste inn fasitar og gjett og se om det gir poeng. Sida har ogsa en del for quizmasteren om hvordan poengene beregnes teknisk. Den er lenket fra hovedmenyen, lagmenyen, forsiden og veiledningen. 12 enhetstester i aarstrapp.js, som blant annet sammenligner regelsidas egen trapp med backend for hvert arstall fra 1950 til 2030 - da kan de to ikke sprike igjen uten at en test roper.",
+    sistOppdatert: "2026-08-17"
+  },
+  {
+    id: "AVVIK-072",
+    tittel: "Dokumentasjonen beskrev en app som ikke lenger fantes",
+    omrade: "Dokumentasjon - veiledning.html, kjoreplan.html, index.html, meny.js, lag.html",
+    alvorlighet: "middels",
+    status: "lost",
+    funnetDato: "2026-08-17",
+    funnetAv: "Onske fra quizmaster - full gjennomgang av alle sidene",
+    beskrivelse: "Etter omleggingene i AVVIK-062 til 070 hadde dokumentasjonen blitt liggende etter. Veiledningen og kjoreplanen sendte quizmasteren til \"Trekningssiden\", som er slettet. Kategorispillet ble beskrevet som en sang av gangen. Poenglikhet i opp-/nedrykket sto som noe man loser manuelt, selv om omspillet har vaert automatisk lenge. Kjoreplanen pastod at adminknappene pa storskjermen hentes fram med en musebevegelse - det finnes ingen slik kode. Pameldingssida skulle \"ga videre til lagsiden av seg selv\". Knappenavn stemte ikke. Faseinndelingen av styringspanelet, pamelding-QR-en pa storskjermen, tabellene ved siden av hjulet og hele Storskjerm-seksjonen var ikke nevnt med et ord. Lagsida lovde at jokeren krever arstallet \"helt riktig\", mens koden godtar arstall innenfor toleransen. Fire ark manglet i oversikten over regnearket, deriblant Omspillsanger.",
+    losning: "Alle sidene gjennomgatt mot koden og rettet. Veiledningen har fatt et nytt avsnitt om hvordan styringspanelet er bygd opp fase for fase, avsnittene om kategorispillet, omspillet, banditten og finalen er skrevet om, og hurtiglenkene er utvidet med regler, kjoreplan og pamelding. Kjoreplanen er rettet pa atte punkter. Forsiden beskriver na banditten, pamelding-QR-en, faseinndelingen og statistikkdelen pa avvikssida, og de brekkasjefolsomme testantallene er tatt bort der de ikke kan holdes oppdatert. Menyen har fatt regelsida i bade full og redusert profil, og \"Reglene kort forklart\" pa veiledningen i lagmenyen er byttet ut med den faktiske regelsida. Knappen \"Start oppryktsspill\" i panelet var feilstavet og heter na \"Start opprykksspill\". regler.html er lagt til i smoke-testen (14 sider).",
     sistOppdatert: "2026-08-17"
   }
 ];
